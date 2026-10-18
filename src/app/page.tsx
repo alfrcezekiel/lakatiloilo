@@ -2,7 +2,7 @@
 
 import { getAccommodations, getDestinations } from "@/lib/api";
 import type { Accommodation, Destination } from "@/lib/api";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { HeroSection } from "@/components/HeroSection";
 import { SearchBar } from "@/components/SearchBar";
 import { CategoryChips } from "@/components/CategoryChips";
@@ -19,6 +19,9 @@ import { ScrollToTop } from "@/components/ScrollToTop";
 export default function Home() {
   const [destinations, setDestinations] = useState<Destination[]>([]);
   const [accommodations, setAccommodations] = useState<Accommodation[]>([]);
+  // "all", "iloilo_city" or "iloilo_province", set by the filter buttons in
+  // CategoryExploreSection. Kept here so the lists below use it too.
+  const [selectedLocation, setSelectedLocation] = useState("all");
 
   // The only place the home page loads data: one request per endpoint.
   // Child components get the lists as props instead of fetching again.
@@ -34,6 +37,24 @@ export default function Home() {
     getDestinations().then(setDestinations).catch(() => {});
     getAccommodations().then(setAccommodations).catch(() => {});
   }, []);
+
+  // What every section shows: the category cards count these and the lists
+  // display them, so both always agree with the location filter.
+  const visibleDestinations = useMemo(
+    () =>
+      selectedLocation === "all"
+        ? destinations
+        : destinations.filter((d) => d.location_type === selectedLocation),
+    [destinations, selectedLocation],
+  );
+
+  const visibleAccommodations = useMemo(
+    () =>
+      selectedLocation === "all"
+        ? accommodations
+        : accommodations.filter((a) => a.location_type === selectedLocation),
+    [accommodations, selectedLocation],
+  );
 
   return (
     <main className="min-h-screen">
@@ -57,52 +78,55 @@ export default function Home() {
           <FeaturesSection />
         </div>
         <CategoryExploreSection
-          destinations={destinations}
-          accommodations={accommodations}
+          destinations={visibleDestinations}
+          accommodations={visibleAccommodations}
+          selectedLocation={selectedLocation}
+          onLocationChange={setSelectedLocation}
         />
       </section>
 
       <section className="bg-linear-to-br from-teal-900 to-emerald-800">
         <CategoryList
-          destinations={destinations}
+          destinations={visibleDestinations}
           category="mountain"
           title="Mountains & Hiking Spots"
           id="mountain-list"
         />
         <CategoryList
-          destinations={destinations}
+          destinations={visibleDestinations}
           category="food"
           title="Foods & Dine-ins"
           id="food-list"
         />
         <CategoryList
-          destinations={destinations}
+          destinations={visibleDestinations}
           category="walking"
           title="Walking Areas"
           id="walking-list"
         />
         <CategoryList
-          destinations={destinations}
+          destinations={visibleDestinations}
           category="festival"
           title="Festivals"
           id="festival-list"
         />
         <CategoryList
-          destinations={destinations}
+          destinations={visibleDestinations}
           category="nature"
           title="Nature & Parks"
           id="nature-list"
         />
         <CategoryList
-          destinations={destinations}
+          destinations={visibleDestinations}
           category="heritage"
           title="Heritage Sites"
           id="heritage-list"
         />
 
-        <div id="accommodation-list">
-          <AccommodationList accommodations={accommodations} />
-        </div>
+        <AccommodationList
+          accommodations={visibleAccommodations}
+          id="accommodation-list"
+        />
       </section>
 
       <DockNavbar />

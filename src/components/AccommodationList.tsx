@@ -12,11 +12,17 @@ interface Accommodation {
 
 interface AccommodationListProps {
   accommodations: Accommodation[];
+  id?: string;
 }
 
-export function AccommodationList({ accommodations }: AccommodationListProps) {
+export function AccommodationList({ accommodations, id }: AccommodationListProps) {
+  // Same as the destination lists: hide the section when the filter leaves
+  // nothing to show. The id goes with it, so the Hotels and Condominiums
+  // cards have nothing to scroll to when they show 0 places.
+  if (accommodations.length === 0) return null;
+
   return (
-    <section className="py-16">
+    <section id={id} className="py-16">
       <div className="mx-auto max-w-6xl px-4 sm:px-6">
         <h2 className="mb-8 text-3xl font-semibold text-white">
           Hotels & Condominiums

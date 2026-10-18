@@ -17,7 +17,7 @@ export function DockNavbar() {
     { id: "explore", label: "Home" },
     { id: "about", label: "About" },
     { id: "features", label: "Features" },
-    { id: "categories", label: "Explore" },
+    { id: "explore-categories", label: "Explore" },
   ];
 
   return (

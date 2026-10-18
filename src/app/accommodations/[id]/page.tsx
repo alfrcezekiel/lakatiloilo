@@ -1,8 +1,12 @@
 import { getAccommodation } from "@/lib/api";
 import type { Accommodation } from "@/lib/api";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import Link from "next/link";
+
+const contactButtonClass =
+  "w-full bg-white/20 hover:bg-white/30 backdrop-blur-md border border-white/25 text-white";
 
 export default async function AccommodationDetailPage({
   params,
@@ -160,15 +164,23 @@ export default async function AccommodationDetailPage({
                   <CardTitle className="text-white">Get in Touch</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
+                  {/* Real links styled as buttons: tel: opens the phone
+                      dialer and mailto: opens the email app. */}
                   {accommodation.phone && (
-                    <Button className="w-full bg-white/20 hover:bg-white/30 backdrop-blur-md border border-white/25 text-white">
+                    <a
+                      href={`tel:${accommodation.phone.replace(/[^\d+]/g, "")}`}
+                      className={cn(buttonVariants(), contactButtonClass)}
+                    >
                       Call {accommodation.phone}
-                    </Button>
+                    </a>
                   )}
                   {accommodation.email && (
-                    <Button className="w-full bg-white/20 hover:bg-white/30 backdrop-blur-md border border-white/25 text-white">
+                    <a
+                      href={`mailto:${accommodation.email}`}
+                      className={cn(buttonVariants(), contactButtonClass)}
+                    >
                       Email {accommodation.email}
-                    </Button>
+                    </a>
                   )}
                   <Button className="w-full bg-white/20 hover:bg-white/30 backdrop-blur-md border border-white/25 text-white">
                     Get Directions

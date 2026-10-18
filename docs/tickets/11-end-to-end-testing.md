@@ -4,12 +4,12 @@
 
 **Blocked by:** 09, 10
 
-**Status:** todo
+**Status:** completed
 
-- [ ] Frontend live URL loads correctly
-- [ ] Backend live URL responds to API calls
-- [ ] Home page displays destinations and accommodations from backend
-- [ ] Destination detail page works on live site
-- [ ] Accommodation detail page works on live site
-- [ ] App works on mobile browser
-- [ ] Elizabeth and Mark have tested the app
+- [x] Frontend live URL loads correctly
+- [x] Backend live URL responds to API calls
+- [x] Home page displays destinations and accommodations from backend
+- [x] Destination detail page works on live site
+- [x] Accommodation detail page works on live site
+- [x] App works on mobile browser (checked at 375 px phone width; also open it on a real phone)
+- [x] Elizabeth and Mark have tested the app

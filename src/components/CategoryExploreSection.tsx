@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import type { Accommodation, Destination } from "@/lib/api";
 import { scrollToSection } from "@/lib/utils/scroll";
 
@@ -33,15 +33,19 @@ const locationFilters = [
 ];
 
 interface CategoryExploreSectionProps {
+  // Both lists arrive already filtered by location by the home page.
   destinations: Destination[];
   accommodations: Accommodation[];
+  selectedLocation: string;
+  onLocationChange: (location: string) => void;
 }
 
 export function CategoryExploreSection({
   destinations,
   accommodations,
+  selectedLocation,
+  onLocationChange,
 }: CategoryExploreSectionProps) {
-  const [selectedLocation, setSelectedLocation] = useState("all");
 
   const categorySectionIds: Record<string, string> = {
     mountain: "mountain-list",
@@ -56,25 +60,23 @@ export function CategoryExploreSection({
 
   // Count places per category from the lists the home page already loaded,
   // so changing the location filter needs no new request to the backend.
-  // Destination counts follow the location filter; accommodations don't.
+  // Both lists arrive already filtered by location.
   const categoryCounts = useMemo(() => {
     const counts: Record<string, number> = {};
-    destinations
-      .filter(
-        (dest) =>
-          selectedLocation === "all" || dest.location_type === selectedLocation,
-      )
-      .forEach((dest) => {
-        counts[dest.category] = (counts[dest.category] || 0) + 1;
-      });
+    destinations.forEach((dest) => {
+      counts[dest.category] = (counts[dest.category] || 0) + 1;
+    });
     accommodations.forEach((acc) => {
       counts[acc.type] = (counts[acc.type] || 0) + 1;
     });
     return counts;
-  }, [destinations, accommodations, selectedLocation]);
+  }, [destinations, accommodations]);
 
   return (
-    <section className="py-16">
+    // id: target of the "Explore" links in the dock navbar and the footer.
+    // scroll-mt-24 stops the scroll below the floating navbar, so the
+    // heading is not hidden behind it.
+    <section id="explore-categories" className="scroll-mt-24 py-16">
       <div className="mx-auto max-w-6xl px-4 sm:px-6">
         <div className="text-center mb-12">
           <h2 className="text-4xl font-bold text-white mb-4 font-fraunces">
@@ -90,7 +92,7 @@ export function CategoryExploreSection({
             {locationFilters.map((filter) => (
               <button
                 key={filter.id}
-                onClick={() => setSelectedLocation(filter.id)}
+                onClick={() => onLocationChange(filter.id)}
                 className={`px-6 py-2 rounded-full text-sm font-medium transition-all ${
                   selectedLocation === filter.id
                     ? "bg-white text-teal-900"

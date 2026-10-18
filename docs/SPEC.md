@@ -100,18 +100,18 @@ PostGIS extension: Enabled on Supabase database. The `location` column stores ge
 No login required. The MVP works as a read-only browsing platform.
 
 ## Done for the demo
-- [ ] NestJS backend project structure created in `backend/` directory
-- [ ] Supabase database with PostGIS extension enabled
-- [ ] destinations and accommodations tables created with spatial columns
-- [ ] Seed data: 5-10 destinations and 5-10 accommodations inserted via SQL
-- [ ] NestJS v1 API endpoints implemented and tested
-- [ ] Spatial query endpoint (/near) working with PostGIS
-- [ ] CORS configured for Next.js frontend
-- [ ] Next.js frontend modified to call NestJS APIs instead of direct Supabase
-- [ ] Home page displays destinations and accommodations from backend
-- [ ] Destination and accommodation detail pages working
-- [ ] Both frontend and backend deployed live
-- [ ] Elizabeth and Mark have tested the app
+- [x] NestJS backend project structure created in `backend/` directory
+- [x] Supabase database with PostGIS extension enabled
+- [x] destinations and accommodations tables created with spatial columns
+- [x] Seed data: 5-10 destinations and 5-10 accommodations inserted via SQL
+- [x] NestJS v1 API endpoints implemented and tested
+- [x] Spatial query endpoint (/near) working with PostGIS
+- [x] CORS configured for Next.js frontend
+- [x] Next.js frontend modified to call NestJS APIs instead of direct Supabase
+- [x] Home page displays destinations and accommodations from backend
+- [x] Destination and accommodation detail pages working
+- [x] Both frontend and backend deployed live
+- [x] Elizabeth and Mark have tested the app
 
 ## Out of scope
 - User accounts and login system
