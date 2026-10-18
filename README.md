@@ -1,6 +1,6 @@
 # PHINMA AI Builder — team template
 
-**Your live URL:** https://amor-phinma-builder-template.vercel.app/
+**Your live URL:** https://lakat-iloilo.vercel.app/
 
 This is your team's starting point. It is already a working Next.js app
 that deploys to Vercel. You will delete the starter page and build your

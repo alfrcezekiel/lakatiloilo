@@ -53,9 +53,9 @@ export function CategoryExploreSection() {
       const counts: Record<string, number> = {};
 
       // Fetch destination categories
-      let destQuery = supabase.from("destinations").select("category, location");
+      let destQuery = supabase.from("destinations").select("category, location_type");
       if (selectedLocation !== "all") {
-        destQuery = destQuery.eq("location", selectedLocation);
+        destQuery = destQuery.eq("location_type", selectedLocation);
       }
       const { data: destData } = await destQuery;
 
