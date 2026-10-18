@@ -4,10 +4,10 @@
 
 **Blocked by:** 04
 
-**Status:** todo
+**Status:** completed
 
-- [ ] GET /v1/accommodations endpoint implemented
-- [ ] GET /v1/accommodations supports query params: type
-- [ ] GET /v1/accommodations/:id endpoint implemented
-- [ ] Endpoints return data in correct JSON format
-- [ ] Endpoints tested with curl or Postman
+- [x] GET /v1/accommodations endpoint implemented
+- [x] GET /v1/accommodations supports query params: type
+- [x] GET /v1/accommodations/:id endpoint implemented
+- [x] Endpoints return data in correct JSON format
+- [x] Endpoints tested with curl or Postman

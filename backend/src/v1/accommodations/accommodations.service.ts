@@ -1,0 +1,33 @@
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { FindOptionsWhere, Repository } from 'typeorm';
+import { Accommodation } from '../../entities/accommodation.entity';
+
+// Talks to the accommodations table. The controller calls these methods.
+@Injectable()
+export class AccommodationsService {
+  constructor(
+    @InjectRepository(Accommodation)
+    private readonly accommodationsRepository: Repository<Accommodation>,
+  ) {}
+
+  // The filter is optional. TypeORM sends it as a query parameter,
+  // never glued into the SQL text, so user input cannot change the query.
+  findAll(type?: string): Promise<Accommodation[]> {
+    const where: FindOptionsWhere<Accommodation> = {};
+    if (type) where.type = type;
+
+    return this.accommodationsRepository.find({
+      where,
+      order: { name: 'ASC' },
+    });
+  }
+
+  async findOne(id: string): Promise<Accommodation> {
+    const accommodation = await this.accommodationsRepository.findOneBy({ id });
+    if (!accommodation) {
+      throw new NotFoundException(`Accommodation ${id} not found`);
+    }
+    return accommodation;
+  }
+}
