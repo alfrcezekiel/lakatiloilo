@@ -4,9 +4,32 @@ import * as dotenv from 'dotenv';
 
 dotenv.config({ path: '.env' });
 
-async function bootstrap() {
+// Websites allowed to call this API from the browser (CORS), read from the
+// CORS_ORIGIN environment variable as a comma-separated list, e.g.
+// CORS_ORIGIN=http://localhost:3000,https://lakat-iloilo.vercel.app
+const corsOrigins = (): string[] => {
+  const origins = (process.env.CORS_ORIGIN ?? '')
+    .split(',')
+    .map((origin) => origin.trim())
+    .filter(Boolean);
+  if (origins.length === 0) {
+    throw new Error(
+      'CORS_ORIGIN is not set. Add it to backend/.env (see .env.example).',
+    );
+  }
+  return origins;
+};
+
+const bootstrap = async () => {
+  // Read before starting Nest, so a missing CORS_ORIGIN fails straight away.
+  const origins = corsOrigins();
   const app = await NestFactory.create(AppModule);
-  await app.listen(5000);
-  console.log('Backend is running on http://localhost:5000');
-}
+  // The API is read-only, so browsers only need GET.
+  app.enableCors({ origin: origins, methods: ['GET'] });
+  // Vercel (and most hosts) tell the app which port to use through PORT.
+  // On your computer PORT is not set, so it falls back to 5000.
+  const port = process.env.PORT;
+  await app.listen(port);
+  console.log(`Backend is running on http://localhost:${port}`);
+};
 bootstrap();

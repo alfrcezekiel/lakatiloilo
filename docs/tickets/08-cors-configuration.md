@@ -4,9 +4,9 @@
 
 **Blocked by:** 03
 
-**Status:** todo
+**Status:** completed
 
-- [ ] CORS configured in NestJS main.ts
-- [ ] Frontend domain (localhost and Vercel URL) added to allowed origins
-- [ ] Frontend can successfully call backend APIs without CORS errors
-- [ ] CORS tested in browser console
+- [x] CORS configured in NestJS main.ts
+- [x] Frontend domain (localhost and Vercel URL) added to allowed origins
+- [x] Frontend can successfully call backend APIs without CORS errors (tested from localhost:3000 and from https://lakat-iloilo.vercel.app against the deployed backend)
+- [x] CORS tested in browser console

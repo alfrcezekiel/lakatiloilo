@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { FindOptionsWhere, Repository } from 'typeorm';
+import { NearParams, applyNear, withDistance } from '../near-query';
 import { Accommodation } from '../../entities/accommodation.entity';
 
 // Talks to the accommodations table. The controller calls these methods.
@@ -21,6 +22,18 @@ export class AccommodationsService {
       where,
       order: { name: 'ASC' },
     });
+  }
+
+  // Rows within near.radiusKm of the point, nearest first, each with
+  // distance_km. The optional type filter narrows the results further.
+  findNear(near: NearParams, type?: string) {
+    const qb = applyNear(
+      this.accommodationsRepository.createQueryBuilder('accommodation'),
+      'accommodation',
+      near,
+    );
+    if (type) qb.andWhere('accommodation.type = :type', { type });
+    return withDistance(qb);
   }
 
   async findOne(id: string): Promise<Accommodation> {

@@ -1,0 +1,7 @@
+# Files the Vercel CLI must never upload. Secrets go in the Vercel
+# dashboard (Settings -> Environment Variables), not in a file.
+.env
+.env.*
+!.env.example
+node_modules
+dist

@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { createClient as createBrowserClient } from "@/lib/supabase/client";
+import { useMemo, useState } from "react";
+import type { Accommodation, Destination } from "@/lib/api";
 import { scrollToSection } from "@/lib/utils/scroll";
 
 const categories = [
@@ -32,10 +32,16 @@ const locationFilters = [
   { id: "iloilo_province", label: "Iloilo Province" },
 ];
 
-export function CategoryExploreSection() {
-  const [categoryCounts, setCategoryCounts] = useState<Record<string, number>>({});
+interface CategoryExploreSectionProps {
+  destinations: Destination[];
+  accommodations: Accommodation[];
+}
+
+export function CategoryExploreSection({
+  destinations,
+  accommodations,
+}: CategoryExploreSectionProps) {
   const [selectedLocation, setSelectedLocation] = useState("all");
-  const supabase = createBrowserClient();
 
   const categorySectionIds: Record<string, string> = {
     mountain: "mountain-list",
@@ -48,36 +54,24 @@ export function CategoryExploreSection() {
     condominium: "accommodation-list",
   };
 
-  useEffect(() => {
-    const fetchCategoryCounts = async () => {
-      const counts: Record<string, number> = {};
-
-      // Fetch destination categories
-      let destQuery = supabase.from("destinations").select("category, location_type");
-      if (selectedLocation !== "all") {
-        destQuery = destQuery.eq("location_type", selectedLocation);
-      }
-      const { data: destData } = await destQuery;
-
-      if (destData) {
-        destData.forEach((dest) => {
-          counts[dest.category] = (counts[dest.category] || 0) + 1;
-        });
-      }
-
-      // Fetch accommodation types
-      const { data: accData } = await supabase.from("accommodations").select("type");
-      if (accData) {
-        accData.forEach((acc) => {
-          counts[acc.type] = (counts[acc.type] || 0) + 1;
-        });
-      }
-
-      setCategoryCounts(counts);
-    };
-
-    fetchCategoryCounts();
-  }, [supabase, selectedLocation]);
+  // Count places per category from the lists the home page already loaded,
+  // so changing the location filter needs no new request to the backend.
+  // Destination counts follow the location filter; accommodations don't.
+  const categoryCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    destinations
+      .filter(
+        (dest) =>
+          selectedLocation === "all" || dest.location_type === selectedLocation,
+      )
+      .forEach((dest) => {
+        counts[dest.category] = (counts[dest.category] || 0) + 1;
+      });
+    accommodations.forEach((acc) => {
+      counts[acc.type] = (counts[acc.type] || 0) + 1;
+    });
+    return counts;
+  }, [destinations, accommodations, selectedLocation]);
 
   return (
     <section className="py-16">
@@ -129,7 +123,7 @@ export function CategoryExploreSection() {
                   className="absolute inset-0 bg-cover bg-center transition-transform duration-300 group-hover:scale-110"
                   style={{ backgroundImage: `url(${imageUrl})` }}
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
+                <div className="absolute inset-0 bg-linear-to-t from-black/70 via-black/30 to-transparent" />
                 <div className="absolute inset-0 flex flex-col justify-end p-6">
                   <div className="text-4xl mb-2">{category.emoji}</div>
                   <h3 className="text-xl font-semibold text-white mb-1">

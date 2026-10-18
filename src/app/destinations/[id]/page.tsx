@@ -1,4 +1,5 @@
-import { createClient } from "@/lib/supabase/server";
+import { getDestination } from "@/lib/api";
+import type { Destination } from "@/lib/api";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
@@ -9,13 +10,13 @@ export default async function DestinationDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const supabase = await createClient();
-
-  const { data: destination, error } = await supabase
-    .from("destinations")
-    .select("*")
-    .eq("id", id)
-    .single();
+  let destination: Destination | null = null;
+  let error: Error | null = null;
+  try {
+    destination = await getDestination(id);
+  } catch (e) {
+    error = e instanceof Error ? e : new Error(String(e));
+  }
 
   if (error || !destination) {
     return (

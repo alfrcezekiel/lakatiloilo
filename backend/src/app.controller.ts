@@ -36,11 +36,12 @@ export class AppController {
         destinations: destinationCount,
         accommodations: accommodationCount,
       };
-    } catch (error) {
+    } catch {
+      // No error details here: this URL is public once deployed, and raw
+      // database errors can reveal hostnames and table names.
       return {
         status: 'error',
         message: 'Database connection failed',
-        error: error instanceof Error ? error.message : String(error),
       };
     }
   }

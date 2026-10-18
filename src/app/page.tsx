@@ -1,7 +1,8 @@
 "use client";
 
-import { createClient as createBrowserClient } from "@/lib/supabase/client";
-import { useState, useEffect } from "react";
+import { getAccommodations, getDestinations } from "@/lib/api";
+import type { Accommodation, Destination } from "@/lib/api";
+import { useState, useEffect, useRef } from "react";
 import { HeroSection } from "@/components/HeroSection";
 import { SearchBar } from "@/components/SearchBar";
 import { CategoryChips } from "@/components/CategoryChips";
@@ -16,28 +17,23 @@ import { DockNavbar } from "@/components/DockNavbar";
 import { ScrollToTop } from "@/components/ScrollToTop";
 
 export default function Home() {
-  const [destinations, setDestinations] = useState<any[]>([]);
-  const [accommodations, setAccommodations] = useState<any[]>([]);
-  const supabase = createBrowserClient();
+  const [destinations, setDestinations] = useState<Destination[]>([]);
+  const [accommodations, setAccommodations] = useState<Accommodation[]>([]);
+
+  // The only place the home page loads data: one request per endpoint.
+  // Child components get the lists as props instead of fetching again.
+  // In development, React Strict Mode runs effects twice; this ref stops
+  // the second run from sending the same requests again.
+  const hasFetched = useRef(false);
 
   useEffect(() => {
-    const fetchDestinations = async () => {
-      const { data } = await supabase
-        .from("destinations")
-        .select("*")
-        .order("name");
-      if (data) setDestinations(data);
-    };
-    const fetchAccommodations = async () => {
-      const { data } = await supabase
-        .from("accommodations")
-        .select("*")
-        .order("name");
-      if (data) setAccommodations(data);
-    };
-    fetchDestinations();
-    fetchAccommodations();
-  }, [supabase]);
+    if (hasFetched.current) return;
+    hasFetched.current = true;
+
+    // If the backend can't be reached, the lists just stay empty.
+    getDestinations().then(setDestinations).catch(() => {});
+    getAccommodations().then(setAccommodations).catch(() => {});
+  }, []);
 
   return (
     <main className="min-h-screen">
@@ -60,7 +56,10 @@ export default function Home() {
         <div id="features">
           <FeaturesSection />
         </div>
-        <CategoryExploreSection />
+        <CategoryExploreSection
+          destinations={destinations}
+          accommodations={accommodations}
+        />
       </section>
 
       <section className="bg-linear-to-br from-teal-900 to-emerald-800">
