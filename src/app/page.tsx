@@ -22,6 +22,9 @@ export default function Home() {
   // "all", "iloilo_city" or "iloilo_province", set by the filter buttons in
   // CategoryExploreSection. Kept here so the lists below use it too.
   const [selectedLocation, setSelectedLocation] = useState("all");
+  // True when the backend could not be reached, so visitors see a message
+  // instead of empty lists with no explanation.
+  const [loadError, setLoadError] = useState(false);
 
   // The only place the home page loads data: one request per endpoint.
   // Child components get the lists as props instead of fetching again.
@@ -33,9 +36,12 @@ export default function Home() {
     if (hasFetched.current) return;
     hasFetched.current = true;
 
-    // If the backend can't be reached, the lists just stay empty.
-    getDestinations().then(setDestinations).catch(() => {});
-    getAccommodations().then(setAccommodations).catch(() => {});
+    getDestinations()
+      .then(setDestinations)
+      .catch(() => setLoadError(true));
+    getAccommodations()
+      .then(setAccommodations)
+      .catch(() => setLoadError(true));
   }, []);
 
   // What every section shows: the category cards count these and the lists
@@ -86,6 +92,28 @@ export default function Home() {
       </section>
 
       <section className="bg-linear-to-br from-teal-900 to-emerald-800">
+        {loadError && (
+          <div className="mx-auto max-w-6xl px-4 pt-16 sm:px-6">
+            <div
+              role="alert"
+              className="rounded-2xl border border-white/25 bg-white/15 p-6 text-white backdrop-blur-md"
+            >
+              <p className="font-semibold">
+                We couldn&apos;t load places right now.
+              </p>
+              <p className="mt-1 text-white/80">
+                Please check your connection and try again.
+              </p>
+              <button
+                type="button"
+                onClick={() => window.location.reload()}
+                className="mt-4 rounded-md border border-white/25 bg-white/20 px-4 py-2 text-sm font-medium hover:bg-white/30"
+              >
+                Try again
+              </button>
+            </div>
+          </div>
+        )}
         <CategoryList
           destinations={visibleDestinations}
           category="mountain"

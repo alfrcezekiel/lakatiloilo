@@ -1,8 +1,8 @@
-# 06 — v1 accommodations API endpoints
+# 22 — v1 accommodations API endpoints
 
 **What to build:** Implement the v1 accommodations API endpoints to return accommodation data from the database.
 
-**Blocked by:** 04
+**Blocked by:** 20
 
 **Status:** completed
 

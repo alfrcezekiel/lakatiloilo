@@ -1,6 +1,6 @@
 # User test — Elizabeth and Mark
 
-Ticket 11's last box ("Elizabeth and Mark have tested the app") needs real
+Ticket 27's last box ("Elizabeth and Mark have tested the app") needs real
 people using the real site. This sheet keeps the test short and the same for
 both of them.
 
@@ -41,7 +41,7 @@ both of them.
 | Answers to questions 1–4 | | |
 
 When both rows are filled in, tick the box in
-`docs/tickets/11-end-to-end-testing.md`. Put new feature ideas from the
+`docs/tickets/27-end-to-end-testing.md`. Put new feature ideas from the
 test in `docs/LATER.md`, not straight into the MVP.
 
 ## Dry run by the team (before Elizabeth and Mark)

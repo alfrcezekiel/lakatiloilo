@@ -1,8 +1,8 @@
-# 08 — CORS configuration
+# 24 — CORS configuration
 
 **What to build:** Configure CORS in the NestJS backend to allow the Next.js frontend to make API calls.
 
-**Blocked by:** 03
+**Blocked by:** 19
 
 **Status:** completed
 

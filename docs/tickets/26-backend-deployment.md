@@ -1,8 +1,8 @@
-# 10 — Backend deployment
+# 26 — Backend deployment
 
 **What to build:** Deploy the NestJS backend to a hosting platform and configure environment variables.
 
-**Blocked by:** 07, 08
+**Blocked by:** 23, 24
 
 **Status:** completed
 

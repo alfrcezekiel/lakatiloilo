@@ -1,4 +1,4 @@
-# 02 — Connected to Supabase with PostGIS
+# 18 — Connected to Supabase with PostGIS
 
 **What to build:** Enable PostGIS extension on Supabase, create destinations and accommodations tables with spatial columns, set up Row Level Security policies, and seed initial data.
 

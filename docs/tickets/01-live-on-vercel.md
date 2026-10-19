@@ -8,4 +8,4 @@
 
 - [x] App is deployed on Vercel
 - [x] Live URL is added to the top of README.md
-- [ ] Team can open the live URL on a phone and see the app
+- [x] Team can open the live URL on a phone and see the app (checked during end-to-end testing, ticket 27)

@@ -30,9 +30,7 @@ export default async function AccommodationDetailPage({
             Accommodation not found
           </h1>
           {error && (
-            <p className="mt-2 text-sm text-white/70">
-              Error: {error.message}
-            </p>
+            <p className="mt-2 text-sm text-white/70">Error: {error.message}</p>
           )}
           <Link href="/">
             <Button className="mt-4 bg-white/20 hover:bg-white/30 backdrop-blur-md border border-white/25 text-white">
@@ -65,20 +63,6 @@ export default async function AccommodationDetailPage({
               ← Back to Home
             </Button>
           </Link>
-          <div className="flex gap-2">
-            <Button
-              variant="ghost"
-              className="bg-white/20 hover:bg-white/30 backdrop-blur-md border border-white/25 text-white"
-            >
-              ♥
-            </Button>
-            <Button
-              variant="ghost"
-              className="bg-white/20 hover:bg-white/30 backdrop-blur-md border border-white/25 text-white"
-            >
-              ⤴ Share
-            </Button>
-          </div>
         </div>
 
         {/* Glass Title Card */}
@@ -93,9 +77,7 @@ export default async function AccommodationDetailPage({
               <h1 className="text-3xl font-bold text-white mb-2">
                 {accommodation.name}
               </h1>
-              <p className="text-white/90 mb-2">
-                📍 {accommodation.address}
-              </p>
+              <p className="text-white/90 mb-2">📍 {accommodation.address}</p>
             </Card>
           </div>
         </div>
@@ -140,58 +122,46 @@ export default async function AccommodationDetailPage({
                 </CardContent>
               </Card>
             </section>
-
-            {/* Reviews Section (placeholder for future) */}
-            <section>
-              <h2 className="text-2xl font-semibold text-white mb-4">Reviews</h2>
-              <Card className="bg-white/15 backdrop-blur-md border border-white/25">
-                <CardContent className="p-6">
-                  <p className="text-white/70">
-                    Reviews coming soon! Sign up to be notified when we launch
-                    user reviews.
-                  </p>
-                </CardContent>
-              </Card>
-            </section>
           </div>
 
           {/* Sticky Sidebar */}
           <div className="lg:col-span-1">
             <div className="sticky top-6 space-y-6">
-              {/* Contact Actions Card */}
-              <Card className="bg-white/15 backdrop-blur-md border border-white/25">
-                <CardHeader>
-                  <CardTitle className="text-white">Get in Touch</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  {/* Real links styled as buttons: tel: opens the phone
+              {/* Contact Actions Card: hidden when there is no phone or email */}
+              {(accommodation.phone || accommodation.email) && (
+                <Card className="bg-white/15 backdrop-blur-md border border-white/25">
+                  <CardHeader>
+                    <CardTitle className="text-white">Get in Touch</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    {/* Real links styled as buttons: tel: opens the phone
                       dialer and mailto: opens the email app. */}
-                  {accommodation.phone && (
-                    <a
-                      href={`tel:${accommodation.phone.replace(/[^\d+]/g, "")}`}
-                      className={cn(buttonVariants(), contactButtonClass)}
-                    >
-                      Call {accommodation.phone}
-                    </a>
-                  )}
-                  {accommodation.email && (
-                    <a
-                      href={`mailto:${accommodation.email}`}
-                      className={cn(buttonVariants(), contactButtonClass)}
-                    >
-                      Email {accommodation.email}
-                    </a>
-                  )}
-                  <Button className="w-full bg-white/20 hover:bg-white/30 backdrop-blur-md border border-white/25 text-white">
-                    Get Directions
-                  </Button>
-                </CardContent>
-              </Card>
+                    {accommodation.phone && (
+                      <a
+                        href={`tel:${accommodation.phone.replace(/[^\d+]/g, "")}`}
+                        className={cn(buttonVariants(), contactButtonClass)}
+                      >
+                        Call {accommodation.phone}
+                      </a>
+                    )}
+                    {accommodation.email && (
+                      <a
+                        href={`mailto:${accommodation.email}`}
+                        className={cn(buttonVariants(), contactButtonClass)}
+                      >
+                        Email {accommodation.email}
+                      </a>
+                    )}
+                  </CardContent>
+                </Card>
+              )}
 
               {/* Type Card */}
               <Card className="bg-white/15 backdrop-blur-md border border-white/25">
                 <CardHeader>
-                  <CardTitle className="text-white">Accommodation Type</CardTitle>
+                  <CardTitle className="text-white">
+                    Accommodation Type
+                  </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <p className="text-white capitalize">{accommodation.type}</p>

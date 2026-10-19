@@ -50,15 +50,11 @@ const api = () => {
   return client;
 };
 
-// GET a path from the backend. axios turns `params` into the query string
-// (?category=mountain) and skips any that are undefined. Returns null for
-// 404 (not found) so pages can show their own message; other errors throw.
-const get = async <T>(
-  path: string,
-  params: Record<string, string | undefined> = {},
-): Promise<T | null> => {
+// GET a path from the backend. Returns null for 404 (not found) so pages
+// can show their own message; other errors throw.
+const get = async <T>(path: string): Promise<T | null> => {
   try {
-    const { data } = await api().get<T>(path, { params });
+    const { data } = await api().get<T>(path);
     return data;
   } catch (error) {
     if (axios.isAxiosError(error) && error.response?.status === 404) {
@@ -68,15 +64,17 @@ const get = async <T>(
   }
 };
 
-export const getDestinations = async (
-  filters: { category?: string; location_type?: string } = {},
-) => (await get<Destination[]>("/v1/destinations", filters)) ?? [];
+// The home page loads everything once and filters by location itself, so
+// these ask for the full lists. (The backend also accepts ?category=,
+// ?location_type= and ?type= filters if a page ever needs them.)
+export const getDestinations = async () =>
+  (await get<Destination[]>("/v1/destinations")) ?? [];
 
 export const getDestination = (id: string) =>
   get<Destination>(`/v1/destinations/${encodeURIComponent(id)}`);
 
-export const getAccommodations = async (filters: { type?: string } = {}) =>
-  (await get<Accommodation[]>("/v1/accommodations", filters)) ?? [];
+export const getAccommodations = async () =>
+  (await get<Accommodation[]>("/v1/accommodations")) ?? [];
 
 export const getAccommodation = (id: string) =>
   get<Accommodation>(`/v1/accommodations/${encodeURIComponent(id)}`);

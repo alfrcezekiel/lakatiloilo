@@ -1,8 +1,10 @@
+import { Logger } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
-import * as dotenv from 'dotenv';
 
-dotenv.config({ path: '.env' });
+// Importing AppModule runs ConfigModule.forRoot, which loads backend/.env
+// into process.env, so the variables below are available on your computer.
+// On Vercel they come from the project's Environment Variables instead.
 
 // Websites allowed to call this API from the browser (CORS), read from the
 // CORS_ORIGIN environment variable as a comma-separated list, e.g.
@@ -27,9 +29,9 @@ const bootstrap = async () => {
   // The API is read-only, so browsers only need GET.
   app.enableCors({ origin: origins, methods: ['GET'] });
   // Vercel (and most hosts) tell the app which port to use through PORT.
-  // On your computer PORT is not set, so it falls back to 5000.
-  const port = process.env.PORT;
+  // On your computer PORT may be unset, so it falls back to 5000.
+  const port = process.env.PORT ?? 5000;
   await app.listen(port);
-  console.log(`Backend is running on http://localhost:${port}`);
+  new Logger('Bootstrap').log(`Backend is listening on http://localhost:${port}`);
 };
 bootstrap();

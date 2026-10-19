@@ -53,6 +53,7 @@ Travelers planning weekend trips around Iloilo Province. No login required for b
 - photo_url — link to image stored in Supabase Storage
 - description — short text about the accommodation
 - type — accommodation type (set to "hotel" or "condominium" for MVP)
+- location_type — location type (one of: "iloilo_city", "iloilo_province"); used by the location filter, same as destinations
 - created_at — timestamp
 - updated_at — timestamp
 
@@ -94,7 +95,7 @@ PostGIS extension: Enabled on Supabase database. The `location` column stores ge
 - Hosted PostgreSQL with PostGIS extension
 - Row Level Security enabled
 - Storage for images
-- Accessed by NestJS backend using environment variables
+- Accessed by NestJS backend using environment variables, through a read-only database login (`lakat_api`, see `supabase/sql/016`)
 
 ## Login
 No login required. The MVP works as a read-only browsing platform.

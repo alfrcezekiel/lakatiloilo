@@ -1,8 +1,8 @@
-# 05 — v1 destinations API endpoints
+# 21 — v1 destinations API endpoints
 
 **What to build:** Implement the v1 destinations API endpoints to return destination data from the database.
 
-**Blocked by:** 04
+**Blocked by:** 20
 
 **Status:** completed
 

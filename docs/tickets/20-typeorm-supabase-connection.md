@@ -1,8 +1,8 @@
-# 04 — TypeORM connection to Supabase
+# 20 — TypeORM connection to Supabase
 
 **What to build:** Configure TypeORM in the NestJS backend to connect to the Supabase database and test the connection.
 
-**Blocked by:** 02, 03
+**Blocked by:** 18, 19
 
 **Status:** completed
 

@@ -1,8 +1,8 @@
-# 07 — v1 spatial query endpoints
+# 23 — v1 spatial query endpoints
 
 **What to build:** Implement the /near endpoints for both destinations and accommodations using PostGIS spatial queries to find locations within a radius.
 
-**Blocked by:** 05, 06
+**Blocked by:** 21, 22
 
 **Status:** completed
 

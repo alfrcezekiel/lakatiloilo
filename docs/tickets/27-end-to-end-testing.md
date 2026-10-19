@@ -1,8 +1,8 @@
-# 11 — End-to-end testing on live URL
+# 27 — End-to-end testing on live URL
 
 **What to build:** Verify that both the frontend and backend work together on the live URLs.
 
-**Blocked by:** 09, 10
+**Blocked by:** 25, 26
 
 **Status:** completed
 

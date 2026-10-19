@@ -1,8 +1,23 @@
 import { getDestination } from "@/lib/api";
 import type { Destination } from "@/lib/api";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
+
+// Display names for the values stored in the database.
+const categoryLabels: Record<string, string> = {
+  mountain: "Mountains & Hiking",
+  food: "Food & Dine-in",
+  walking: "Walking Area",
+  festival: "Festival",
+  nature: "Nature & Parks",
+  heritage: "Heritage Site",
+};
+
+const locationLabels: Record<string, string> = {
+  iloilo_city: "Iloilo City",
+  iloilo_province: "Iloilo Province",
+};
 
 export default async function DestinationDetailPage({
   params,
@@ -26,9 +41,7 @@ export default async function DestinationDetailPage({
             Destination not found
           </h1>
           {error && (
-            <p className="mt-2 text-sm text-white/70">
-              Error: {error.message}
-            </p>
+            <p className="mt-2 text-sm text-white/70">Error: {error.message}</p>
           )}
           <Link href="/">
             <Button className="mt-4 bg-white/20 hover:bg-white/30 backdrop-blur-md border border-white/25 text-white">
@@ -51,30 +64,15 @@ export default async function DestinationDetailPage({
         />
         <div className="absolute inset-0 bg-linear-to-t from-teal-900/80 to-transparent" />
 
-        {/* Overlay Controls */}
-        <div className="absolute top-6 left-6 right-6 flex items-center justify-between">
+        <div className="absolute top-6 left-6">
           <Link href="/">
             <Button
               variant="ghost"
               className="bg-white/20 hover:bg-white/30 backdrop-blur-md border border-white/25 text-white"
             >
-              ← Back to Mountains
+              ← Back to Home
             </Button>
           </Link>
-          <div className="flex gap-2">
-            <Button
-              variant="ghost"
-              className="bg-white/20 hover:bg-white/30 backdrop-blur-md border border-white/25 text-white"
-            >
-              ♥
-            </Button>
-            <Button
-              variant="ghost"
-              className="bg-white/20 hover:bg-white/30 backdrop-blur-md border border-white/25 text-white"
-            >
-              ⤴ Share
-            </Button>
-          </div>
         </div>
 
         {/* Glass Title Card */}
@@ -83,217 +81,49 @@ export default async function DestinationDetailPage({
             <Card className="bg-white/15 backdrop-blur-xl border border-white/25 p-6 shadow-2xl">
               <div className="flex flex-wrap gap-2 mb-3">
                 <span className="rounded-full bg-white/20 px-3 py-1 text-xs font-medium text-white">
-                  Moderate
+                  {categoryLabels[destination.category] ?? destination.category}
                 </span>
                 <span className="rounded-full bg-white/20 px-3 py-1 text-xs font-medium text-white">
-                  Day hike
+                  {locationLabels[destination.location_type] ??
+                    destination.location_type}
                 </span>
               </div>
               <h1 className="text-3xl font-bold text-white mb-2">
                 {destination.name}
               </h1>
-              <p className="text-white/90 mb-2">
-                📍 {destination.address}
-              </p>
-              <p className="text-white/90">★ 4.7 (128 reviews)</p>
+              <p className="text-white/90">📍 {destination.address}</p>
             </Card>
           </div>
         </div>
       </div>
 
-      {/* Two-column Layout */}
-      <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6">
-        <div className="grid gap-8 lg:grid-cols-3">
-          {/* Main Column */}
-          <div className="lg:col-span-2 space-y-8">
-            {/* About Section */}
-            <section>
-              <h2 className="text-2xl font-semibold text-white mb-4">About</h2>
-              <p className="text-white/90 leading-relaxed">
-                {destination.description}
-              </p>
-            </section>
+      {/* Only real data from the database is shown here. Reviews, ratings
+          and maps are out of scope for the MVP (see docs/SPEC.md). */}
+      <div className="mx-auto max-w-3xl px-4 py-12 sm:px-6 space-y-8">
+        <section>
+          <h2 className="text-2xl font-semibold text-white mb-4">About</h2>
+          <p className="text-white/90 leading-relaxed">
+            {destination.description}
+          </p>
+        </section>
 
-            {/* Quick Facts Grid */}
-            <section>
-              <h2 className="text-2xl font-semibold text-white mb-4">
-                Quick Facts
-              </h2>
-              <div className="grid grid-cols-2 gap-4">
-                <Card className="bg-white/15 backdrop-blur-md border border-white/25">
-                  <CardContent className="p-4">
-                    <p className="text-2xl mb-1">⛰</p>
-                    <p className="text-sm font-medium text-white/70">Elevation</p>
-                    <p className="text-white">1,200m</p>
-                  </CardContent>
-                </Card>
-                <Card className="bg-white/15 backdrop-blur-md border border-white/25">
-                  <CardContent className="p-4">
-                    <p className="text-2xl mb-1">⏱</p>
-                    <p className="text-sm font-medium text-white/70">Duration</p>
-                    <p className="text-white">4-6 hours</p>
-                  </CardContent>
-                </Card>
-                <Card className="bg-white/15 backdrop-blur-md border border-white/25">
-                  <CardContent className="p-4">
-                    <p className="text-2xl mb-1">📏</p>
-                    <p className="text-sm font-medium text-white/70">Distance</p>
-                    <p className="text-white">8.5 km</p>
-                  </CardContent>
-                </Card>
-                <Card className="bg-white/15 backdrop-blur-md border border-white/25">
-                  <CardContent className="p-4">
-                    <p className="text-2xl mb-1">🥾</p>
-                    <p className="text-sm font-medium text-white/70">Difficulty</p>
-                    <p className="text-white">Moderate</p>
-                  </CardContent>
-                </Card>
+        <section>
+          <h2 className="text-2xl font-semibold text-white mb-4">Location</h2>
+          <Card className="bg-white/15 backdrop-blur-md border border-white/25">
+            <CardContent className="p-6 space-y-4">
+              <div>
+                <p className="text-sm font-medium text-white/70">Address</p>
+                <p className="text-white">{destination.address}</p>
               </div>
-            </section>
-
-            {/* Location Card */}
-            <section>
-              <h2 className="text-2xl font-semibold text-white mb-4">Location</h2>
-              <Card className="bg-white/15 backdrop-blur-md border border-white/25">
-                <CardContent className="p-6 space-y-4">
-                  <div>
-                    <p className="text-sm font-medium text-white/70">Address</p>
-                    <p className="text-white">{destination.address}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-white/70">Coordinates</p>
-                    <p className="text-white">
-                      {destination.latitude}° N, {destination.longitude}° E
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-            </section>
-
-            {/* Reviews Section */}
-            <section>
-              <h2 className="text-2xl font-semibold text-white mb-4">Reviews</h2>
-              <div className="space-y-4">
-                <Card className="bg-white/15 backdrop-blur-md border border-white/25">
-                  <CardContent className="p-6">
-                    <div className="flex items-start gap-4">
-                      <div className="h-10 w-10 rounded-full bg-white/20 flex items-center justify-center text-white font-medium">
-                        JD
-                      </div>
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-1">
-                          <p className="font-medium text-white">John Doe</p>
-                          <div className="flex text-yellow-400">
-                            ★★★★★
-                          </div>
-                        </div>
-                        <p className="text-sm text-white/70 mb-2">
-                          2 days ago
-                        </p>
-                        <p className="text-white/90">
-                          Amazing hike! The trail was well-maintained and the
-                          views at the summit were breathtaking. Highly
-                          recommend for nature lovers.
-                        </p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card className="bg-white/15 backdrop-blur-md border border-white/25">
-                  <CardContent className="p-6">
-                    <div className="flex items-start gap-4">
-                      <div className="h-10 w-10 rounded-full bg-white/20 flex items-center justify-center text-white font-medium">
-                        MS
-                      </div>
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-1">
-                          <p className="font-medium text-white">Maria Santos</p>
-                          <div className="flex text-yellow-400">
-                            ★★★★☆
-                          </div>
-                        </div>
-                        <p className="text-sm text-white/70 mb-2">
-                          1 week ago
-                        </p>
-                        <p className="text-white/90">
-                          Great experience! The trail can be challenging for
-                          beginners but worth it. Bring plenty of water and
-                          wear good hiking shoes.
-                        </p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card className="bg-white/15 backdrop-blur-md border border-white/25">
-                  <CardContent className="p-6">
-                    <div className="flex items-start gap-4">
-                      <div className="h-10 w-10 rounded-full bg-white/20 flex items-center justify-center text-white font-medium">
-                        RL
-                      </div>
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-1">
-                          <p className="font-medium text-white">Roberto Lopez</p>
-                          <div className="flex text-yellow-400">
-                            ★★★★★
-                          </div>
-                        </div>
-                        <p className="text-sm text-white/70 mb-2">
-                          2 weeks ago
-                        </p>
-                        <p className="text-white/90">
-                          Perfect weekend getaway! The sunrise view from the
-                          top is absolutely stunning. Will definitely come back.
-                        </p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
+              <div>
+                <p className="text-sm font-medium text-white/70">Coordinates</p>
+                <p className="text-white">
+                  {destination.latitude}° N, {destination.longitude}° E
+                </p>
               </div>
-            </section>
-          </div>
-
-          {/* Sticky Sidebar */}
-          <div className="lg:col-span-1">
-            <div className="sticky top-6 space-y-6">
-              {/* Map Card */}
-              <Card className="bg-white/15 backdrop-blur-md border border-white/25 overflow-hidden">
-                <CardContent className="p-0">
-                  <div className="aspect-square bg-teal-800/50 flex items-center justify-center">
-                    <p className="text-white/70">Map placeholder</p>
-                  </div>
-                  <div className="p-4 space-y-2">
-                    <Button className="w-full bg-white/20 hover:bg-white/30 backdrop-blur-md border border-white/25 text-white">
-                      Expand
-                    </Button>
-                    <Button className="w-full bg-white/20 hover:bg-white/30 backdrop-blur-md border border-white/25 text-white">
-                      Directions
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Coordinates Card */}
-              <Card className="bg-white/15 backdrop-blur-md border border-white/25">
-                <CardHeader>
-                  <CardTitle className="text-white">Coordinates</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <p className="text-white">
-                    {destination.latitude}° N, {destination.longitude}° E
-                  </p>
-                  <Button className="w-full bg-white/20 hover:bg-white/30 backdrop-blur-md border border-white/25 text-white">
-                    Copy
-                  </Button>
-                  <Button className="w-full bg-white/20 hover:bg-white/30 backdrop-blur-md border border-white/25 text-white">
-                    Get directions
-                  </Button>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-        </div>
+            </CardContent>
+          </Card>
+        </section>
       </div>
     </main>
   );

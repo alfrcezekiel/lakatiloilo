@@ -1,8 +1,8 @@
-# 09 — Frontend integration with NestJS
+# 25 — Frontend integration with NestJS
 
 **What to build:** Modify the Next.js frontend to fetch data from the NestJS backend APIs instead of directly querying Supabase.
 
-**Blocked by:** 05, 06, 08
+**Blocked by:** 21, 22, 24
 
 **Status:** completed
 
@@ -12,4 +12,4 @@
 - [x] Home page displays accommodations from backend API
 - [x] Destination detail page fetches from backend API
 - [x] Accommodation detail page fetches from backend API
-- [x] All data displays correctly on frontend (tested locally; the live site needs the backend deployed in ticket 10 first)
+- [x] All data displays correctly on frontend (tested locally; the live site needs the backend deployed in ticket 26 first)
