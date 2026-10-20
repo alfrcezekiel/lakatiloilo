@@ -19,7 +19,7 @@ stays small enough to actually ship by Session 3.
 ### Other features
 - Booking/payments for accommodations
 - Map integration with directions
-- Text search functionality
+- Full search results page and searching inside descriptions
 - Admin UI for managing destinations and accommodations
 - Price range display for accommodations
 - Room type information for accommodations

@@ -20,7 +20,7 @@ Demo showing a list of 5-10 mountain spots and 5-10 accommodations in Iloilo, wi
 - Reviews and ratings for destinations
 - Booking/payments for any services
 - Map integration
-- Text search functionality
+- A full search results page (live name suggestions were moved into scope on 2026-10-20)
 - Admin UI for managing data
 
 ## Glossary

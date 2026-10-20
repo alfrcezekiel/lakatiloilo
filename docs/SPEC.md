@@ -6,24 +6,36 @@ Travelers planning weekend trips around Iloilo Province cannot easily find diver
 ## Solution
 A full-stack platform with a Next.js frontend and NestJS backend, where users can browse diverse destinations (mountains, foods & dine-ins, walking areas, festivals, nature & parks, heritage sites) and accommodations (hotels, condominiums) in Iloilo Province. The backend provides versioned APIs with spatial query capabilities for location-based searches.
 
+The home page opens on a redesigned hero where travelers can type a place name and get live suggestions as they type, and narrow everything below with category chips and a City/Province toggle.
+
 ## The user
 Travelers planning weekend trips around Iloilo Province. No login required for browsing.
 
 ## User stories
 1. As a traveler, I want to browse destinations organized by category (mountains, foods, walking areas, festivals, nature, heritage) and location (Iloilo City vs. Province), so that I can discover places to visit in the area I'm interested in.
-2. As a traveler, I want to click on a category card to scroll to that category's section, so that I can quickly navigate to specific types of places.
-3. As a traveler, I want to see a list of hotels and condominiums with photos and details, so that I can find a place to stay.
-4. As a traveler, I want to click a destination or accommodation to see its full details (name, address, photo, description, contact info), so that I can learn more about it.
-5. As a traveler, I want to browse without creating an account, so that I can quickly find information.
-6. As a developer, I want the backend to provide versioned APIs (/v1, /v2), so that future API changes don't break existing clients.
-7. As a developer, I want PostGIS spatial queries for destinations, so that we can support location-based features later.
+2. As a traveler, I want to click a category chip under the search bar and see only that category's places below, so that I can focus on the kind of trip I'm planning.
+3. As a traveler, I want to see live suggestions while I type a place name in the search bar, so that I can jump straight to a place I've heard about.
+4. As a traveler, I want to see a list of hotels and condominiums with photos and details, so that I can find a place to stay.
+5. As a traveler, I want to click a destination or accommodation to see its full details (name, address, photo, description, contact info), so that I can learn more about it.
+6. As a traveler, I want to browse without creating an account, so that I can quickly find information.
+7. As a developer, I want the backend to provide versioned APIs (/v1, /v2) with PostGIS spatial queries, so that future API changes don't break existing clients and we can support location-based features later.
 8. As a visitor, I want to see a branded footer with Lakat Iloilo name and navigation links, so that I can easily navigate to different sections and understand the platform's identity.
 
 ## Screens
-1. Home page — shows welcome text, navigation bar, About Iloilo section, Features section, category cards (mountains, food, walking, festivals, nature, heritage, hotels, condominiums) with location filter (All/Iloilo City/Iloilo Province), separate list sections for each destination category, and accommodations list. Clicking a category card scrolls to that category's section; all sections are always visible. Frontend calls NestJS API to fetch data.
-2. Destination detail page — shows destination name, address, coordinates, photo, and description. Data fetched from NestJS API.
-3. Accommodation detail page — shows accommodation name, address, phone, email, photo, and description. Data fetched from NestJS API.
-4. Footer — shows Lakat Iloilo branding with platform name, copyright information, navigation links (Home, About, Features, Explore), and legal section. Background uses teal/emerald gradient to match the overall theme.
+1. Home page hero — redesigned to match the team's mockup:
+   - A small spaced-out label "ILOILO CITY · ILOILO PROVINCE", a large serif headline "Lakat na, *Iloilo.*" with "Iloilo." in italics, and the intro paragraph.
+   - A wide rounded glass search bar with three parts:
+     - **Where to?** — a text box. As the traveler types, a dropdown shows up to 6 matching destinations and accommodations (matched on name and address), each with its name, category and area. Arrow keys and Enter pick one, Escape closes it; choosing one opens its detail page. If nothing matches, it says "No matches". Suggestions respect the chosen category and location.
+     - **Category** — shows the chosen category; always in sync with the chips.
+     - **All / Iloilo City / Province** toggle — the same location filter used further down the page.
+   - A white **Explore** button that scrolls down to the results.
+   - Category chips under the bar: All, Mountains, Food, Festivals, Hotels, Condominiums, Walking Areas, Nature & Parks, Heritage Sites. Clicking a chip filters the list sections below so only that category shows; "All" shows everything again.
+   - Two wide glass cards, **Featured** (Dinagyang Festival) and **Trending** (the first mountain in the database), each with photo, badge, name and a "View details →" link to its detail page. Both come from real data, not hard-coded examples.
+   - The navbar keeps the current Lakat Iloilo PNG logo.
+2. Home page (rest) — shows welcome text, navigation bar, About Iloilo section, Features section, category cards (mountains, food, walking, festivals, nature, heritage, hotels, condominiums) with location filter (All/Iloilo City/Iloilo Province), separate list sections for each destination category, and accommodations list. The list sections follow the category chosen in the hero; with "All" every section is visible. Frontend calls NestJS API to fetch data.
+3. Destination detail page — shows destination name, address, coordinates, photo, and description. Data fetched from NestJS API.
+4. Accommodation detail page — shows accommodation name, address, phone, email, photo, and description. Data fetched from NestJS API.
+5. Footer — shows Lakat Iloilo branding with platform name, copyright information, navigation links (Home, About, Features, Explore), and legal section. Background uses teal/emerald gradient to match the overall theme.
 
 ## Data
 
@@ -58,6 +70,8 @@ Travelers planning weekend trips around Iloilo Province. No login required for b
 - updated_at — timestamp
 
 Row Level Security policy: Anyone may read all rows in both tables. No one may write through the app (data is added via SQL scripts by the team).
+
+Live suggestions and chip filtering use columns that already exist (`name`, `address`, `category`, `type`, `location_type`) on data the home page already loads. No table changes and no new API endpoint.
 
 PostGIS extension: Enabled on Supabase database. The `location` column stores geography points for spatial queries (e.g., find destinations within X km of a point).
 
@@ -114,12 +128,20 @@ No login required. The MVP works as a read-only browsing platform.
 - [x] Both frontend and backend deployed live
 - [x] Elizabeth and Mark have tested the app
 
+**Hero redesign round (live URL):**
+- [ ] Hero matches the mockup on desktop and looks tidy on a phone
+- [ ] Typing "din" in Where to? shows Dinagyang Festival; choosing it opens its detail page
+- [ ] Suggestions work with the keyboard (arrows, Enter, Escape) and say "No matches" when empty
+- [ ] Clicking a chip shows only that category below; "All" restores everything; the Category field updates to match
+- [ ] The City/Province toggle in the search bar and the one further down stay in sync
+- [ ] Featured and Trending cards show real places and link to their detail pages
+
 ## Out of scope
 - User accounts and login system
 - Reviews and ratings for destinations
 - Booking/payments for any services
 - Map integration (PostGIS added for future use, but no map UI in MVP)
-- Text search functionality
+- A full search results page, or searching inside descriptions (live suggestions match names and addresses only)
 - Admin UI for managing data
 - Social features (sharing, favorites)
 - Advanced spatial queries beyond radius search
