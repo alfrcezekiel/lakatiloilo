@@ -38,7 +38,7 @@ export function FeaturesSection() {
               Mobile Friendly
             </h3>
             <p className="text-white/90 leading-relaxed">
-              Access the platform from any device with our responsive design, ensuring a smooth experience whether you're on a phone, tablet, or desktop.
+              Access the platform from any device with our responsive design, ensuring a smooth experience whether you&apos;re on a phone, tablet, or desktop.
             </p>
           </div>
 

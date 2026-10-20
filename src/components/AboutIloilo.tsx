@@ -7,7 +7,7 @@ export function AboutIloilo() {
             Why Iloilo?
           </h2>
           <p className="text-lg text-white/90 max-w-3xl mx-auto">
-            Iloilo City and Iloilo Province are among the Philippines' most beloved destinations, offering a unique blend of rich cultural heritage, natural beauty, and warm hospitality.
+            Iloilo City and Iloilo Province are among the Philippines&apos; most beloved destinations, offering a unique blend of rich cultural heritage, natural beauty, and warm hospitality.
           </p>
         </div>
 
@@ -17,7 +17,7 @@ export function AboutIloilo() {
               For Locals
             </h3>
             <p className="text-white/90 leading-relaxed">
-              Locals love Iloilo for its peaceful provincial charm while maintaining modern conveniences, affordable cost of living, and strong sense of community. It's a place where tradition meets progress, offering a quality of life that's hard to find elsewhere.
+              Locals love Iloilo for its peaceful provincial charm while maintaining modern conveniences, affordable cost of living, and strong sense of community. It&apos;s a place where tradition meets progress, offering a quality of life that&apos;s hard to find elsewhere.
             </p>
           </div>
 
@@ -26,7 +26,7 @@ export function AboutIloilo() {
               For Tourists
             </h3>
             <p className="text-white/90 leading-relaxed">
-              Foreign tourists are drawn to Iloilo's well-preserved heritage sites, stunning mountain landscapes like Bucari Little Baguio, pristine beaches in nearby islands, and the genuine warmth of the Ilonggo people. Unlike more commercialized destinations, Iloilo offers an authentic Filipino experience.
+              Foreign tourists are drawn to Iloilo&apos;s well-preserved heritage sites, stunning mountain landscapes like Bucari Little Baguio, pristine beaches in nearby islands, and the genuine warmth of the Ilonggo people. Unlike more commercialized destinations, Iloilo offers an authentic Filipino experience.
             </p>
           </div>
         </div>
@@ -36,7 +36,7 @@ export function AboutIloilo() {
             The Heart of the Philippines
           </h3>
           <p className="text-white/90 leading-relaxed text-center max-w-4xl mx-auto">
-            Known as the "Heart of the Philippines," Iloilo is famous for its centuries-old Spanish colonial churches, the world-renowned Dinagyang Festival, and mouthwatering local cuisine including the iconic La Paz Batchoy. Every visit to Iloilo is memorable and meaningful, making it a destination that captures the hearts of all who experience it.
+            Known as the &quot;Heart of the Philippines,&quot; Iloilo is famous for its centuries-old Spanish colonial churches, the world-renowned Dinagyang Festival, and mouthwatering local cuisine including the iconic La Paz Batchoy. Every visit to Iloilo is memorable and meaningful, making it a destination that captures the hearts of all who experience it.
           </p>
         </div>
       </div>
