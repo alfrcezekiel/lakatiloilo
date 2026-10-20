@@ -6,9 +6,9 @@
 
 **Status:** todo
 
-- [ ] Search bar layout, labels and Explore button match the mockup on desktop
-- [ ] Category field shows "All categories" at first and always matches the selected chip
-- [ ] Choosing a category from the field updates the chips and the lists below
-- [ ] The location toggle in the bar and the one further down always show the same choice
-- [ ] Explore scrolls smoothly to the results
+- [x] Search bar layout, labels and Explore button match the mockup on desktop
+- [x] Category field shows "All categories" at first and always matches the selected chip
+- [x] Choosing a category from the field updates the chips and the lists below
+- [x] The location toggle in the bar and the one further down always show the same choice
+- [x] Explore scrolls smoothly to the results
 - [ ] Works on the live URL

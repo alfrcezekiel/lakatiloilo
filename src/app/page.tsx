@@ -15,6 +15,7 @@ import { AccommodationList } from "@/components/AccommodationList";
 import { Footer } from "@/components/Footer";
 import { DockNavbar } from "@/components/DockNavbar";
 import { ScrollToTop } from "@/components/ScrollToTop";
+import { scrollToSection } from "@/lib/utils/scroll";
 
 // The destination list sections, in the order they appear on the page.
 const destinationSections = [
@@ -91,7 +92,13 @@ export default function Home() {
       <section id="explore" className="min-h-screen">
         <HeroSection>
           <div className="relative z-10 mx-auto max-w-6xl px-4 sm:px-6">
-            <SearchBar />
+            <SearchBar
+              selectedCategory={selectedCategory}
+              onCategoryChange={setSelectedCategory}
+              selectedLocation={selectedLocation}
+              onLocationChange={setSelectedLocation}
+              onExplore={() => scrollToSection("results")}
+            />
             <div id="categories">
               <CategoryChips
                 selectedCategory={selectedCategory}
@@ -119,7 +126,12 @@ export default function Home() {
         />
       </section>
 
-      <section className="bg-linear-to-br from-teal-900 to-emerald-800">
+      {/* id: where the hero's Explore button scrolls to. scroll-mt-24 keeps
+          the first heading clear of the floating navbar. */}
+      <section
+        id="results"
+        className="scroll-mt-24 bg-linear-to-br from-teal-900 to-emerald-800"
+      >
         {loadError && (
           <div className="mx-auto max-w-6xl px-4 pt-16 sm:px-6">
             <div
