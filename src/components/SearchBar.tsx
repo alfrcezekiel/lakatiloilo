@@ -6,9 +6,11 @@ import { Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { categoryChips } from "@/components/CategoryChips";
+import { categoryLabels, locationLabels } from "@/lib/labels";
 import type { Accommodation, Destination } from "@/lib/api";
 
+// Shorter than the shared location labels on purpose ("Province", not
+// "Iloilo Province"), so the toggle fits inside the bar on a phone.
 const locationOptions = [
   { id: "all", label: "All" },
   { id: "iloilo_city", label: "Iloilo City" },
@@ -16,16 +18,6 @@ const locationOptions = [
 ];
 
 const MAX_SUGGESTIONS = 6;
-
-// "mountain" -> "Mountains", "hotel" -> "Hotels", ... for the suggestion rows.
-const categoryLabels: Record<string, string> = Object.fromEntries(
-  categoryChips.map((chip) => [chip.id, chip.label]),
-);
-
-const areaLabels: Record<string, string> = {
-  iloilo_city: "Iloilo City",
-  iloilo_province: "Iloilo Province",
-};
 
 interface Suggestion {
   key: string;
@@ -114,6 +106,17 @@ export function SearchBar({
   }, [query, destinations, accommodations, selectedCategory, selectedLocation]);
 
   const showDropdown = isOpen && (query.trim() !== "" || showHint);
+  const showList = showDropdown && suggestions.length > 0;
+
+  // Read out by screen readers whenever it changes, since they cannot see
+  // the dropdown appear.
+  const statusMessage = !showDropdown
+    ? ""
+    : query.trim() === ""
+      ? "Type a place name, then pick it from the list"
+      : suggestions.length === 0
+        ? "No matches"
+        : `${suggestions.length} suggestion${suggestions.length === 1 ? "" : "s"}`;
 
   // Picking a suggestion only fills the box; Explore then opens it.
   const chooseSuggestion = (suggestion: Suggestion) => {
@@ -180,7 +183,7 @@ export function SearchBar({
       className="relative z-20 mb-6 flex flex-col gap-2 rounded-3xl border border-white/25 bg-white/10 p-2 shadow-2xl backdrop-blur-xl lg:flex-row lg:items-center lg:rounded-full"
     >
       {/* Where to? */}
-      <div className="relative flex min-w-0 items-center gap-3 rounded-2xl px-4 py-2 lg:flex-[3] lg:rounded-full lg:pl-6">
+      <div className="relative flex min-w-0 items-center gap-3 rounded-2xl px-4 py-2 lg:flex-3 lg:rounded-full lg:pl-6">
         <Search aria-hidden="true" className="size-5 shrink-0 text-white/90" />
         <div className="min-w-0 flex-1">
           <Label
@@ -210,10 +213,11 @@ export function SearchBar({
             // which suggestion is highlighted.
             role="combobox"
             aria-autocomplete="list"
-            aria-expanded={showDropdown}
-            aria-controls="search-suggestions"
+            aria-expanded={showList}
+            // Only point at the list while it is on screen.
+            aria-controls={showList ? "search-suggestions" : undefined}
             aria-activedescendant={
-              showDropdown && activeIndex >= 0
+              showList && activeIndex >= 0
                 ? `search-suggestion-${activeIndex}`
                 : undefined
             }
@@ -221,16 +225,25 @@ export function SearchBar({
           />
         </div>
 
+        {/* Always on the page (but invisible), so screen readers notice
+            when its text changes. */}
+        <p role="status" className="sr-only">
+          {statusMessage}
+        </p>
+
         {showDropdown && (
           // z-10 keeps the list above the Category field, which sits right
           // below it when the bar is stacked on a phone.
-          <div className="absolute top-full left-0 z-10 mt-3 w-full overflow-hidden rounded-2xl border border-white/20 bg-teal-950/95 shadow-2xl backdrop-blur-xl sm:w-[28rem]">
+          <div className="absolute top-full left-0 z-10 mt-3 w-full overflow-hidden rounded-2xl border border-white/20 bg-teal-950/95 shadow-2xl backdrop-blur-xl sm:w-md">
             {query.trim() === "" ? (
-              <p className="px-5 py-4 text-sm text-white/70">
+              // aria-hidden: the status line above already reads this out.
+              <p aria-hidden="true" className="px-5 py-4 text-sm text-white/70">
                 Type a place name, then pick it from the list
               </p>
             ) : suggestions.length === 0 ? (
-              <p className="px-5 py-4 text-sm text-white/70">No matches</p>
+              <p aria-hidden="true" className="px-5 py-4 text-sm text-white/70">
+                No matches
+              </p>
             ) : (
               <ul id="search-suggestions" role="listbox" className="py-2">
                 {suggestions.map((suggestion, index) => (
@@ -256,7 +269,7 @@ export function SearchBar({
                     <span className="shrink-0 text-xs text-white/60">
                       {categoryLabels[suggestion.category] ?? suggestion.category}
                       {" · "}
-                      {areaLabels[suggestion.area] ?? suggestion.area}
+                      {locationLabels[suggestion.area] ?? suggestion.area}
                     </span>
                   </li>
                 ))}
@@ -270,7 +283,7 @@ export function SearchBar({
 
       {/* Category: shows the chip chosen below the bar. Read-only on
           purpose; the chips are the one place to change it. */}
-      <div className="min-w-0 rounded-2xl px-4 py-2 lg:flex-[2] lg:rounded-full">
+      <div className="min-w-0 rounded-2xl px-4 py-2 lg:flex-2 lg:rounded-full">
         <p className="text-[11px] font-semibold uppercase tracking-widest text-white/70">
           Category
         </p>

@@ -55,6 +55,8 @@ export default function CreditsPage() {
                 by {credit.photographer}, licensed under{" "}
                 <a
                   href={credit.licenceUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="underline underline-offset-2 hover:text-white"
                 >
                   {credit.licence}

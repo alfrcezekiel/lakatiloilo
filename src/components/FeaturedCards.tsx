@@ -6,12 +6,15 @@ interface FeaturedCardsProps {
 }
 
 // The two hero cards. Both come from the real destinations the home page
-// already loaded: Featured is Dinagyang Festival, Trending is the first
-// mountain. A card is left out if its place is not in the data (or has not
+// already loaded: Featured is Dinagyang Festival, Trending is Bucari Little
+// Baguio (both have real photos), falling back to the first mountain if
+// Bucari is missing. A card is left out if its place is not in the data (or has not
 // loaded yet), so visitors never see a broken image or a made-up name.
 export function FeaturedCards({ destinations }: FeaturedCardsProps) {
   const featured = destinations.find((d) => d.name === "Dinagyang Festival");
-  const trending = destinations.find((d) => d.category === "mountain");
+  const trending =
+    destinations.find((d) => d.name === "Bucari Little Baguio") ??
+    destinations.find((d) => d.category === "mountain");
 
   const cards = [
     featured && {

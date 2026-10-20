@@ -15,16 +15,17 @@ import { AccommodationList } from "@/components/AccommodationList";
 import { Footer } from "@/components/Footer";
 import { DockNavbar } from "@/components/DockNavbar";
 import { ScrollToTop } from "@/components/ScrollToTop";
+import { sectionTitles } from "@/lib/labels";
 
 // The destination list sections, in the order they appear on the page.
 const destinationSections = [
-  { category: "mountain", title: "Mountains & Hiking Spots" },
-  { category: "food", title: "Foods & Dine-ins" },
-  { category: "walking", title: "Walking Areas" },
-  { category: "festival", title: "Festivals" },
-  { category: "nature", title: "Nature & Parks" },
-  { category: "heritage", title: "Heritage Sites" },
-];
+  "mountain",
+  "food",
+  "walking",
+  "festival",
+  "nature",
+  "heritage",
+].map((category) => ({ category, title: sectionTitles[category] }));
 
 export default function Home() {
   const [destinations, setDestinations] = useState<Destination[]>([]);
@@ -88,12 +89,10 @@ export default function Home() {
               accommodations={accommodations}
               selectedCategory={selectedCategory}
             />
-            <div id="categories">
-              <CategoryChips
-                selectedCategory={selectedCategory}
-                onCategoryChange={setSelectedCategory}
-              />
-            </div>
+            <CategoryChips
+              selectedCategory={selectedCategory}
+              onCategoryChange={setSelectedCategory}
+            />
             <FeaturedCards destinations={destinations} />
           </div>
         </HeroSection>

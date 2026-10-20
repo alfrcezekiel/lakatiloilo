@@ -3,8 +3,10 @@ import type { Destination } from "@/lib/api";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
+import { locationLabels } from "@/lib/labels";
 
-// Display names for the values stored in the database.
+// Longer names for the detail page; the short names used elsewhere live in
+// src/lib/labels.ts.
 const categoryLabels: Record<string, string> = {
   mountain: "Mountains & Hiking",
   food: "Food & Dine-in",
@@ -12,11 +14,6 @@ const categoryLabels: Record<string, string> = {
   festival: "Festival",
   nature: "Nature & Parks",
   heritage: "Heritage Site",
-};
-
-const locationLabels: Record<string, string> = {
-  iloilo_city: "Iloilo City",
-  iloilo_province: "Iloilo Province",
 };
 
 export default async function DestinationDetailPage({

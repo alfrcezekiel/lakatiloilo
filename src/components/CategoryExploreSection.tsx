@@ -2,18 +2,20 @@
 
 import { useMemo } from "react";
 import type { Accommodation, Destination } from "@/lib/api";
+import { locationFilters, sectionTitles } from "@/lib/labels";
 import { scrollToSection } from "@/lib/utils/scroll";
 
+// Card names come from src/lib/labels.ts, so they match the list headings.
 const categories = [
-  { id: "mountain", name: "Mountains & Hiking Spots", emoji: "⛰️" },
-  { id: "food", name: "Foods & Dine-ins", emoji: "🍜" },
-  { id: "walking", name: "Walking Areas", emoji: "🚶" },
-  { id: "festival", name: "Festivals", emoji: "🎉" },
-  { id: "nature", name: "Nature & Parks", emoji: "🌳" },
-  { id: "heritage", name: "Heritage Sites", emoji: "🏛️" },
-  { id: "hotel", name: "Hotels", emoji: "🏨" },
-  { id: "condominium", name: "Condominiums", emoji: "🏢" },
-];
+  { id: "mountain", emoji: "⛰️" },
+  { id: "food", emoji: "🍜" },
+  { id: "walking", emoji: "🚶" },
+  { id: "festival", emoji: "🎉" },
+  { id: "nature", emoji: "🌳" },
+  { id: "heritage", emoji: "🏛️" },
+  { id: "hotel", emoji: "🏨" },
+  { id: "condominium", emoji: "🏢" },
+].map((category) => ({ ...category, name: sectionTitles[category.id] }));
 
 // Real photos from Iloilo City and Province, from Wikimedia Commons under
 // free licences. Credits are in src/lib/photo-credits.ts.
@@ -35,12 +37,6 @@ const categoryImages = {
   condominium:
     "https://thumb.wikimedia.org/wikipedia/commons/thumb/2/21/Iloilo_Business_Park_north_condos_top_view_%28Mandurriao%2C_Iloilo_City%3B_01-26-2023%29.jpg/1280px-Iloilo_Business_Park_north_condos_top_view_%28Mandurriao%2C_Iloilo_City%3B_01-26-2023%29.jpg",
 };
-
-const locationFilters = [
-  { id: "all", label: "All" },
-  { id: "iloilo_city", label: "Iloilo City" },
-  { id: "iloilo_province", label: "Iloilo Province" },
-];
 
 interface CategoryExploreSectionProps {
   // Both lists arrive already filtered by location by the home page.

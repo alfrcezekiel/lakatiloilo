@@ -1,16 +1,4 @@
-// The chip ids match the `category` column of destinations and the `type`
-// column of accommodations, so the home page can filter with them directly.
-export const categoryChips = [
-  { id: "all", label: "All" },
-  { id: "mountain", label: "Mountains" },
-  { id: "food", label: "Food" },
-  { id: "festival", label: "Festivals" },
-  { id: "hotel", label: "Hotels" },
-  { id: "condominium", label: "Condominiums" },
-  { id: "walking", label: "Walking Areas" },
-  { id: "nature", label: "Nature & Parks" },
-  { id: "heritage", label: "Heritage Sites" },
-];
+import { categoryChips } from "@/lib/labels";
 
 interface CategoryChipsProps {
   selectedCategory: string;
