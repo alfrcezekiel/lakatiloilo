@@ -6,10 +6,10 @@
 
 **Status:** done
 
-- [x] Typing "din" shows Dinagyang Festival; choosing it opens its detail page
+- [x] ~~Typing "din" shows Dinagyang Festival; choosing it opens its detail page~~ *(superseded in ticket 32: choosing it fills the box; Explore opens the page)*
 - [x] At most 6 suggestions, each with name, category and area
 - [x] Suggestions only include places in the chosen category and location
-- [x] Arrow keys move through suggestions, Enter opens the highlighted one, Escape closes the dropdown
+- [x] ~~Arrow keys move through suggestions, Enter opens the highlighted one, Escape closes the dropdown~~ *(superseded in ticket 32: Enter now picks the highlighted one; arrows and Escape unchanged)*
 - [x] Clicking outside closes the dropdown
 - [x] When nothing matches, the dropdown says "No matches"
 - [x] Works on the live URL

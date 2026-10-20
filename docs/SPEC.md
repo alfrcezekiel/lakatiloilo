@@ -30,12 +30,13 @@ Travelers planning weekend trips around Iloilo Province. No login required for b
      - **All / Iloilo City / Province** toggle — narrows the suggestions only. It is separate from the location filter further down the page: changing one never changes the other.
    - A white **Explore** button (or Enter) that opens the detail page of the picked place, or of the best match for what was typed. With an empty box it shows a hint instead; with no matches it shows "No matches".
    - Category chips under the bar: All, Mountains, Food, Festivals, Hotels, Condominiums, Walking Areas, Nature & Parks, Heritage Sites. Clicking a chip highlights it, shows it in the search bar's Category field and narrows the suggestions to that category. It does not change the category cards or list sections further down the page, which keep their own behaviour: every section is visible, and clicking a category card scrolls to its section.
-   - Two wide glass cards, **Featured** (Dinagyang Festival) and **Trending** (the first mountain in the database), each with photo, badge, name and a "View details →" link to its detail page. Both come from real data, not hard-coded examples.
+   - Two wide glass cards, **Featured** (Dinagyang Festival) and **Trending** (Bucari Little Baguio, a mountain with a real photo), each with photo, badge, name and a "View details →" link to its detail page. Both come from real data, not hard-coded examples.
    - The navbar keeps the current Lakat Iloilo PNG logo.
-2. Home page (rest) — shows welcome text, navigation bar, About Iloilo section, Features section, category cards (mountains, food, walking, festivals, nature, heritage, hotels, condominiums) with location filter (All/Iloilo City/Iloilo Province), separate list sections for each destination category, and accommodations list. Clicking a category card scrolls to that category's section; all sections are always visible. Frontend calls NestJS API to fetch data.
+2. Home page (rest) — shows welcome text, navigation bar, About Iloilo section, Features section, category cards (mountains, food, walking, festivals, nature, heritage, hotels, condominiums) with location filter (All/Iloilo City/Iloilo Province), separate list sections for each destination category, and accommodations list. Clicking a category card scrolls to that category's section; all sections are always visible. The category cards use real photos from Iloilo City and Province. Frontend calls NestJS API to fetch data.
 3. Destination detail page — shows destination name, address, coordinates, photo, and description. Data fetched from NestJS API.
 4. Accommodation detail page — shows accommodation name, address, phone, email, photo, and description. Data fetched from NestJS API.
-5. Footer — shows Lakat Iloilo branding with platform name, copyright information, navigation links (Home, About, Features, Explore), and legal section. Background uses teal/emerald gradient to match the overall theme.
+5. Footer — shows Lakat Iloilo branding with platform name, copyright information, navigation links (Home, About, Features, Explore), and legal section with a "Photo credits" link. Background uses teal/emerald gradient to match the overall theme.
+6. Photo credits page — lists the photographer and licence of every real Iloilo photo the site uses, as their Creative Commons licences require. Reached from the footer.
 
 ## Data
 
@@ -46,7 +47,7 @@ Travelers planning weekend trips around Iloilo Province. No login required for b
 - latitude — coordinate for PostGIS spatial queries
 - longitude — coordinate for PostGIS spatial queries
 - location — PostGIS geography point (from lat/long)
-- photo_url — link to image stored in Supabase Storage
+- photo_url — link to the place's photo: a real photo from Wikimedia Commons where one exists (credited on the Photo credits page), otherwise a stock photo until the team uploads their own to Supabase Storage
 - description — short text about the destination
 - category — category type (one of: "mountain", "food", "walking", "nature", "festival", "heritage")
 - location_type — location type (one of: "iloilo_city", "iloilo_province")
@@ -62,7 +63,7 @@ Travelers planning weekend trips around Iloilo Province. No login required for b
 - latitude — coordinate for PostGIS spatial queries
 - longitude — coordinate for PostGIS spatial queries
 - location — PostGIS geography point (from lat/long)
-- photo_url — link to image stored in Supabase Storage
+- photo_url — link to the place's photo: a real photo from Wikimedia Commons where one exists (credited on the Photo credits page), otherwise a stock photo until the team uploads their own to Supabase Storage
 - description — short text about the accommodation
 - type — accommodation type (set to "hotel" or "condominium" for MVP)
 - location_type — location type (one of: "iloilo_city", "iloilo_province"); used by the location filter, same as destinations
