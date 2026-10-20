@@ -27,6 +27,8 @@ export default function CreditsPage() {
           the photographers below and shared on{" "}
           <a
             href="https://commons.wikimedia.org"
+            target="_blank"
+            rel="noopener noreferrer"
             className="underline underline-offset-2 hover:text-white"
           >
             Wikimedia Commons
@@ -44,6 +46,8 @@ export default function CreditsPage() {
               <p className="mt-1 text-sm text-white/80">
                 <a
                   href={credit.source}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="underline underline-offset-2 hover:text-white"
                 >
                   {credit.title}
@@ -63,6 +67,8 @@ export default function CreditsPage() {
         <p className="mt-10 text-sm text-white/70">
           Other photos on the site are from{" "}
           <a
+            target="_blank"
+            rel="noopener noreferrer"
             href="https://unsplash.com"
             className="underline underline-offset-2 hover:text-white"
           >
