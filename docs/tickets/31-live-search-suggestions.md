@@ -6,10 +6,10 @@
 
 **Status:** todo
 
-- [ ] Typing "din" shows Dinagyang Festival; choosing it opens its detail page
-- [ ] At most 6 suggestions, each with name, category and area
-- [ ] Suggestions only include places in the chosen category and location
-- [ ] Arrow keys move through suggestions, Enter opens the highlighted one, Escape closes the dropdown
-- [ ] Clicking outside closes the dropdown
-- [ ] When nothing matches, the dropdown says "No matches"
+- [x] Typing "din" shows Dinagyang Festival; choosing it opens its detail page
+- [x] At most 6 suggestions, each with name, category and area
+- [x] Suggestions only include places in the chosen category and location
+- [x] Arrow keys move through suggestions, Enter opens the highlighted one, Escape closes the dropdown
+- [x] Clicking outside closes the dropdown
+- [x] When nothing matches, the dropdown says "No matches"
 - [ ] Works on the live URL
