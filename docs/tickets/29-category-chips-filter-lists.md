@@ -6,10 +6,10 @@
 
 **Status:** todo
 
-- [ ] All nine chips appear, styled as in the mockup, with All selected at first
-- [ ] Clicking a destination chip (e.g. Mountains) shows only that category's section below
-- [ ] Clicking Hotels or Condominiums shows only accommodations of that type
-- [ ] Clicking All shows every section again
-- [ ] The chosen chip is clearly highlighted and can be picked with the keyboard
-- [ ] The existing City/Province filter still works together with the chosen chip
+- [x] All nine chips appear, styled as in the mockup, with All selected at first
+- [x] Clicking a destination chip (e.g. Mountains) shows only that category's section below
+- [x] Clicking Hotels or Condominiums shows only accommodations of that type
+- [x] Clicking All shows every section again
+- [x] The chosen chip is clearly highlighted and can be picked with the keyboard
+- [x] The existing City/Province filter still works together with the chosen chip
 - [ ] Works on the live URL

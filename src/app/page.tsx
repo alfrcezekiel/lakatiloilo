@@ -16,12 +16,25 @@ import { Footer } from "@/components/Footer";
 import { DockNavbar } from "@/components/DockNavbar";
 import { ScrollToTop } from "@/components/ScrollToTop";
 
+// The destination list sections, in the order they appear on the page.
+const destinationSections = [
+  { category: "mountain", title: "Mountains & Hiking Spots" },
+  { category: "food", title: "Foods & Dine-ins" },
+  { category: "walking", title: "Walking Areas" },
+  { category: "festival", title: "Festivals" },
+  { category: "nature", title: "Nature & Parks" },
+  { category: "heritage", title: "Heritage Sites" },
+];
+
 export default function Home() {
   const [destinations, setDestinations] = useState<Destination[]>([]);
   const [accommodations, setAccommodations] = useState<Accommodation[]>([]);
   // "all", "iloilo_city" or "iloilo_province", set by the filter buttons in
   // CategoryExploreSection. Kept here so the lists below use it too.
   const [selectedLocation, setSelectedLocation] = useState("all");
+  // "all" or one chip id ("mountain", "hotel", ...), set by the category
+  // chips in the hero. Decides which list sections below are shown.
+  const [selectedCategory, setSelectedCategory] = useState("all");
   // True when the backend could not be reached, so visitors see a message
   // instead of empty lists with no explanation.
   const [loadError, setLoadError] = useState(false);
@@ -62,6 +75,17 @@ export default function Home() {
     [accommodations, selectedLocation],
   );
 
+  // Accommodations follow the chips too: Hotels or Condominiums narrows the
+  // list to that type, and a destination chip (e.g. Food) hides it.
+  const listedAccommodations = useMemo(() => {
+    if (selectedCategory === "all") return visibleAccommodations;
+    return visibleAccommodations.filter((a) => a.type === selectedCategory);
+  }, [visibleAccommodations, selectedCategory]);
+
+  // A destination section shows when "All" or its own chip is selected.
+  const isShown = (category: string) =>
+    selectedCategory === "all" || selectedCategory === category;
+
   return (
     <main className="min-h-screen">
       <section id="explore" className="min-h-screen">
@@ -69,7 +93,10 @@ export default function Home() {
           <div className="relative z-10 mx-auto max-w-6xl px-4 sm:px-6">
             <SearchBar />
             <div id="categories">
-              <CategoryChips />
+              <CategoryChips
+                selectedCategory={selectedCategory}
+                onCategoryChange={setSelectedCategory}
+              />
             </div>
             <FeaturedCards destinations={destinations} />
           </div>
@@ -88,6 +115,7 @@ export default function Home() {
           accommodations={visibleAccommodations}
           selectedLocation={selectedLocation}
           onLocationChange={setSelectedLocation}
+          onCategorySelect={setSelectedCategory}
         />
       </section>
 
@@ -114,45 +142,20 @@ export default function Home() {
             </div>
           </div>
         )}
-        <CategoryList
-          destinations={visibleDestinations}
-          category="mountain"
-          title="Mountains & Hiking Spots"
-          id="mountain-list"
-        />
-        <CategoryList
-          destinations={visibleDestinations}
-          category="food"
-          title="Foods & Dine-ins"
-          id="food-list"
-        />
-        <CategoryList
-          destinations={visibleDestinations}
-          category="walking"
-          title="Walking Areas"
-          id="walking-list"
-        />
-        <CategoryList
-          destinations={visibleDestinations}
-          category="festival"
-          title="Festivals"
-          id="festival-list"
-        />
-        <CategoryList
-          destinations={visibleDestinations}
-          category="nature"
-          title="Nature & Parks"
-          id="nature-list"
-        />
-        <CategoryList
-          destinations={visibleDestinations}
-          category="heritage"
-          title="Heritage Sites"
-          id="heritage-list"
-        />
+        {destinationSections
+          .filter((section) => isShown(section.category))
+          .map((section) => (
+          <CategoryList
+            key={section.category}
+            destinations={visibleDestinations}
+            category={section.category}
+            title={section.title}
+            id={`${section.category}-list`}
+          />
+        ))}
 
         <AccommodationList
-          accommodations={visibleAccommodations}
+          accommodations={listedAccommodations}
           id="accommodation-list"
         />
       </section>

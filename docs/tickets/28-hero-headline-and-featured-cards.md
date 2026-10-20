@@ -4,11 +4,11 @@
 
 **Blocked by:** None
 
-**Status:** todo
+**Status:** done
 
 - [x] Eyebrow label, serif headline with italic "Iloilo." and intro paragraph match the mockup
 - [x] Featured card shows Dinagyang Festival with its real photo from the database
 - [x] Trending card shows the first mountain from the database with its real photo
 - [x] Each card has a coloured badge (Featured / Trending) and a "View details →" link to the right detail page
 - [x] If the data has not loaded yet or a place is missing, the cards do not show broken images or placeholder names
-- [ ] Works on the live URL
+- [x] Works on the live URL
