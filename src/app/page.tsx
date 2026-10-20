@@ -15,7 +15,6 @@ import { AccommodationList } from "@/components/AccommodationList";
 import { Footer } from "@/components/Footer";
 import { DockNavbar } from "@/components/DockNavbar";
 import { ScrollToTop } from "@/components/ScrollToTop";
-import { scrollToSection } from "@/lib/utils/scroll";
 
 // The destination list sections, in the order they appear on the page.
 const destinationSections = [
@@ -34,7 +33,8 @@ export default function Home() {
   // CategoryExploreSection. Kept here so the lists below use it too.
   const [selectedLocation, setSelectedLocation] = useState("all");
   // "all" or one chip id ("mountain", "hotel", ...), set by the category
-  // chips in the hero. Decides which list sections below are shown.
+  // chips in the hero. It only affects the search bar (its Category field
+  // and suggestions); the sections further down always show every category.
   const [selectedCategory, setSelectedCategory] = useState("all");
   // True when the backend could not be reached, so visitors see a message
   // instead of empty lists with no explanation.
@@ -76,30 +76,17 @@ export default function Home() {
     [accommodations, selectedLocation],
   );
 
-  // Accommodations follow the chips too: Hotels or Condominiums narrows the
-  // list to that type, and a destination chip (e.g. Food) hides it.
-  const listedAccommodations = useMemo(() => {
-    if (selectedCategory === "all") return visibleAccommodations;
-    return visibleAccommodations.filter((a) => a.type === selectedCategory);
-  }, [visibleAccommodations, selectedCategory]);
-
-  // A destination section shows when "All" or its own chip is selected.
-  const isShown = (category: string) =>
-    selectedCategory === "all" || selectedCategory === category;
-
   return (
     <main className="min-h-screen">
       <section id="explore" className="min-h-screen">
         <HeroSection>
-          <div className="relative z-10 mx-auto max-w-6xl px-4 sm:px-6">
+          {/* No padding here: HeroSection already sets the page width and
+              side padding, so the search bar lines up with the headline. */}
+          <div className="relative z-10">
             <SearchBar
-              destinations={visibleDestinations}
-              accommodations={visibleAccommodations}
+              destinations={destinations}
+              accommodations={accommodations}
               selectedCategory={selectedCategory}
-              onCategoryChange={setSelectedCategory}
-              selectedLocation={selectedLocation}
-              onLocationChange={setSelectedLocation}
-              onExplore={() => scrollToSection("results")}
             />
             <div id="categories">
               <CategoryChips
@@ -124,16 +111,10 @@ export default function Home() {
           accommodations={visibleAccommodations}
           selectedLocation={selectedLocation}
           onLocationChange={setSelectedLocation}
-          onCategorySelect={setSelectedCategory}
         />
       </section>
 
-      {/* id: where the hero's Explore button scrolls to. scroll-mt-24 keeps
-          the first heading clear of the floating navbar. */}
-      <section
-        id="results"
-        className="scroll-mt-24 bg-linear-to-br from-teal-900 to-emerald-800"
-      >
+      <section className="bg-linear-to-br from-teal-900 to-emerald-800">
         {loadError && (
           <div className="mx-auto max-w-6xl px-4 pt-16 sm:px-6">
             <div
@@ -156,9 +137,7 @@ export default function Home() {
             </div>
           </div>
         )}
-        {destinationSections
-          .filter((section) => isShown(section.category))
-          .map((section) => (
+        {destinationSections.map((section) => (
           <CategoryList
             key={section.category}
             destinations={visibleDestinations}
@@ -169,7 +148,7 @@ export default function Home() {
         ))}
 
         <AccommodationList
-          accommodations={listedAccommodations}
+          accommodations={visibleAccommodations}
           id="accommodation-list"
         />
       </section>

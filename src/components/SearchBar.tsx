@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ChevronDown, Search } from "lucide-react";
+import { Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -36,33 +36,33 @@ interface Suggestion {
 }
 
 interface SearchBarProps {
-  // Both lists arrive already filtered by location, so suggestions only
-  // offer places in the chosen area.
+  // Every place the home page loaded. The bar filters them itself, with
+  // its own location toggle and the category chosen with the chips.
   destinations: Destination[];
   accommodations: Accommodation[];
-  // The category and location live on the home page, so the chips, this
-  // bar and the filter further down always show the same choice.
+  // Set by the chips under the bar; only shown here, not changed.
   selectedCategory: string;
-  onCategoryChange: (category: string) => void;
-  selectedLocation: string;
-  onLocationChange: (location: string) => void;
-  onExplore: () => void;
 }
 
 export function SearchBar({
   destinations,
   accommodations,
   selectedCategory,
-  onCategoryChange,
-  selectedLocation,
-  onLocationChange,
-  onExplore,
 }: SearchBarProps) {
   const router = useRouter();
   const [query, setQuery] = useState("");
+  // The search bar's own location choice. Kept here on purpose, so it does
+  // not change the location filter further down the page (or the other way
+  // round).
+  const [selectedLocation, setSelectedLocation] = useState("all");
   const [isOpen, setIsOpen] = useState(false);
   // Which suggestion the arrow keys have highlighted; -1 means none.
   const [activeIndex, setActiveIndex] = useState(-1);
+  // The suggestion the traveler clicked (or picked with Enter). Explore
+  // opens this one.
+  const [chosenKey, setChosenKey] = useState<string | null>(null);
+  // True after Explore is pressed with an empty box, to show a hint.
+  const [showHint, setShowHint] = useState(false);
 
   // Live suggestions: matched in the browser against the places the home
   // page already loaded, so typing sends no requests to the backend.
@@ -72,13 +72,18 @@ export function SearchBar({
 
     const inCategory = (category: string) =>
       selectedCategory === "all" || selectedCategory === category;
+    const inLocation = (locationType: string) =>
+      selectedLocation === "all" || selectedLocation === locationType;
     const matches = (place: { name: string; address: string }) =>
       place.name.toLowerCase().includes(text) ||
       place.address.toLowerCase().includes(text);
 
     const all: Suggestion[] = [
       ...destinations
-        .filter((d) => inCategory(d.category) && matches(d))
+        .filter(
+          (d) =>
+            inCategory(d.category) && inLocation(d.location_type) && matches(d),
+        )
         .map((d) => ({
           key: `d-${d.id}`,
           name: d.name,
@@ -87,7 +92,9 @@ export function SearchBar({
           href: `/destinations/${d.id}`,
         })),
       ...accommodations
-        .filter((a) => inCategory(a.type) && matches(a))
+        .filter(
+          (a) => inCategory(a.type) && inLocation(a.location_type) && matches(a),
+        )
         .map((a) => ({
           key: `a-${a.id}`,
           name: a.name,
@@ -104,13 +111,38 @@ export function SearchBar({
     return all
       .sort((a, b) => startsWith(a) - startsWith(b))
       .slice(0, MAX_SUGGESTIONS);
-  }, [query, destinations, accommodations, selectedCategory]);
+  }, [query, destinations, accommodations, selectedCategory, selectedLocation]);
 
-  const showDropdown = isOpen && query.trim() !== "";
+  const showDropdown = isOpen && (query.trim() !== "" || showHint);
 
-  const openSuggestion = (suggestion: Suggestion) => {
+  // Picking a suggestion only fills the box; Explore then opens it.
+  const chooseSuggestion = (suggestion: Suggestion) => {
+    setQuery(suggestion.name);
+    setChosenKey(suggestion.key);
     setIsOpen(false);
-    router.push(suggestion.href);
+    setActiveIndex(-1);
+  };
+
+  const focusSearchBox = () => document.getElementById("search-where")?.focus();
+
+  const handleExplore = () => {
+    if (query.trim() === "") {
+      setShowHint(true);
+      setIsOpen(true);
+      focusSearchBox();
+      return;
+    }
+    // The chosen place if it still fits the filters, otherwise the best
+    // match for what was typed.
+    const target =
+      suggestions.find((s) => s.key === chosenKey) ?? suggestions[0];
+    if (target) {
+      router.push(target.href);
+    } else {
+      // Nothing matches: open the list so it can say "No matches".
+      setIsOpen(true);
+      focusSearchBox();
+    }
   };
 
   const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
@@ -124,9 +156,9 @@ export function SearchBar({
         (index) => (index + step + suggestions.length) % suggestions.length,
       );
     } else if (event.key === "Enter" && showDropdown && activeIndex >= 0) {
-      // Open the highlighted place instead of submitting the form.
+      // Pick the highlighted place instead of submitting the form.
       event.preventDefault();
-      openSuggestion(suggestions[activeIndex]);
+      chooseSuggestion(suggestions[activeIndex]);
     } else if (event.key === "Escape" && showDropdown) {
       // Only swallow Escape when it closes our list, so a second press
       // still clears the search box as browsers normally do.
@@ -142,7 +174,7 @@ export function SearchBar({
       role="search"
       onSubmit={(event) => {
         event.preventDefault();
-        onExplore();
+        handleExplore();
       }}
       // relative z-20 keeps the suggestions dropdown above the cards below.
       className="relative z-20 mb-6 flex flex-col gap-2 rounded-3xl border border-white/25 bg-white/10 p-2 shadow-2xl backdrop-blur-xl lg:flex-row lg:items-center lg:rounded-full"
@@ -167,6 +199,8 @@ export function SearchBar({
               setQuery(event.target.value);
               setIsOpen(true);
               setActiveIndex(-1);
+              setChosenKey(null);
+              setShowHint(false);
             }}
             onFocus={() => setIsOpen(true)}
             // Clicking anywhere else moves focus away, which closes the list.
@@ -188,8 +222,14 @@ export function SearchBar({
         </div>
 
         {showDropdown && (
-          <div className="absolute top-full left-0 mt-3 w-full overflow-hidden rounded-2xl border border-white/20 bg-teal-950/95 shadow-2xl backdrop-blur-xl sm:w-[28rem]">
-            {suggestions.length === 0 ? (
+          // z-10 keeps the list above the Category field, which sits right
+          // below it when the bar is stacked on a phone.
+          <div className="absolute top-full left-0 z-10 mt-3 w-full overflow-hidden rounded-2xl border border-white/20 bg-teal-950/95 shadow-2xl backdrop-blur-xl sm:w-[28rem]">
+            {query.trim() === "" ? (
+              <p className="px-5 py-4 text-sm text-white/70">
+                Type a place name, then pick it from the list
+              </p>
+            ) : suggestions.length === 0 ? (
               <p className="px-5 py-4 text-sm text-white/70">No matches</p>
             ) : (
               <ul id="search-suggestions" role="listbox" className="py-2">
@@ -202,9 +242,11 @@ export function SearchBar({
                     // preventDefault stops the box losing focus (and the list
                     // closing) before the click lands.
                     onMouseDown={(event) => event.preventDefault()}
-                    onClick={() => openSuggestion(suggestion)}
+                    onClick={() => chooseSuggestion(suggestion)}
                     onMouseEnter={() => setActiveIndex(index)}
-                    className={`flex cursor-pointer items-center justify-between gap-4 px-5 py-3 ${
+                    // On a phone the details go under the name, so long names
+                    // are not cut short.
+                    className={`flex cursor-pointer flex-col gap-0.5 px-5 py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4 ${
                       index === activeIndex ? "bg-white/15" : ""
                     }`}
                   >
@@ -226,36 +268,23 @@ export function SearchBar({
 
       <div aria-hidden="true" className="hidden h-12 w-px bg-white/25 lg:block" />
 
-      {/* Category: a plain select, so it works with keyboard and screen
-          readers for free. It uses the same list as the chips. */}
-      <div className="relative min-w-0 rounded-2xl px-4 py-2 lg:flex-[2] lg:rounded-full">
-        <Label
-          htmlFor="search-category"
-          className="text-[11px] font-semibold uppercase tracking-widest text-white/70"
-        >
+      {/* Category: shows the chip chosen below the bar. Read-only on
+          purpose; the chips are the one place to change it. */}
+      <div className="min-w-0 rounded-2xl px-4 py-2 lg:flex-[2] lg:rounded-full">
+        <p className="text-[11px] font-semibold uppercase tracking-widest text-white/70">
           Category
-        </Label>
-        <select
-          id="search-category"
-          value={selectedCategory}
-          onChange={(event) => onCategoryChange(event.target.value)}
-          className="block w-full cursor-pointer appearance-none bg-transparent pr-8 text-base text-white focus-visible:outline-none"
-        >
-          {categoryChips.map((chip) => (
-            <option key={chip.id} value={chip.id} className="text-teal-950">
-              {chip.id === "all" ? "All categories" : chip.label}
-            </option>
-          ))}
-        </select>
-        <ChevronDown
-          aria-hidden="true"
-          className="pointer-events-none absolute right-4 bottom-3 size-4 text-white/70"
-        />
+        </p>
+        <p aria-live="polite" className="truncate text-base text-white">
+          {selectedCategory === "all"
+            ? "All categories"
+            : categoryLabels[selectedCategory]}
+        </p>
       </div>
 
       <div aria-hidden="true" className="hidden h-12 w-px bg-white/25 lg:block" />
 
-      {/* Location: the same filter as the one further down the page. */}
+      {/* Location: narrows the suggestions only. Separate from the filter
+          further down the page. */}
       <div
         role="group"
         aria-label="Location"
@@ -268,7 +297,7 @@ export function SearchBar({
               key={option.id}
               type="button"
               aria-pressed={isSelected}
-              onClick={() => onLocationChange(option.id)}
+              onClick={() => setSelectedLocation(option.id)}
               className={`flex-1 whitespace-nowrap rounded-full px-4 py-2 text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-white sm:px-5 ${
                 isSelected
                   ? "bg-white text-teal-900 shadow"

@@ -6,14 +6,14 @@ Travelers planning weekend trips around Iloilo Province cannot easily find diver
 ## Solution
 A full-stack platform with a Next.js frontend and NestJS backend, where users can browse diverse destinations (mountains, foods & dine-ins, walking areas, festivals, nature & parks, heritage sites) and accommodations (hotels, condominiums) in Iloilo Province. The backend provides versioned APIs with spatial query capabilities for location-based searches.
 
-The home page opens on a redesigned hero where travelers can type a place name and get live suggestions as they type, and narrow everything below with category chips and a City/Province toggle.
+The home page opens on a redesigned hero where travelers can type a place name and get live suggestions as they type, and narrow those suggestions with category chips and a City/Province toggle.
 
 ## The user
 Travelers planning weekend trips around Iloilo Province. No login required for browsing.
 
 ## User stories
 1. As a traveler, I want to browse destinations organized by category (mountains, foods, walking areas, festivals, nature, heritage) and location (Iloilo City vs. Province), so that I can discover places to visit in the area I'm interested in.
-2. As a traveler, I want to click a category chip under the search bar and see only that category's places below, so that I can focus on the kind of trip I'm planning.
+2. As a traveler, I want to click a category chip under the search bar so that the search only suggests that kind of place, so that I can focus on the kind of trip I'm planning.
 3. As a traveler, I want to see live suggestions while I type a place name in the search bar, so that I can jump straight to a place I've heard about.
 4. As a traveler, I want to see a list of hotels and condominiums with photos and details, so that I can find a place to stay.
 5. As a traveler, I want to click a destination or accommodation to see its full details (name, address, photo, description, contact info), so that I can learn more about it.
@@ -25,14 +25,14 @@ Travelers planning weekend trips around Iloilo Province. No login required for b
 1. Home page hero — redesigned to match the team's mockup:
    - A small spaced-out label "ILOILO CITY · ILOILO PROVINCE", a large serif headline "Lakat na, *Iloilo.*" with "Iloilo." in italics, and the intro paragraph.
    - A wide rounded glass search bar with three parts:
-     - **Where to?** — a text box. As the traveler types, a dropdown shows up to 6 matching destinations and accommodations (matched on name and address), each with its name, category and area. Arrow keys and Enter pick one, Escape closes it; choosing one opens its detail page. If nothing matches, it says "No matches". Suggestions respect the chosen category and location.
-     - **Category** — shows the chosen category; always in sync with the chips.
-     - **All / Iloilo City / Province** toggle — the same location filter used further down the page.
-   - A white **Explore** button that scrolls down to the results.
-   - Category chips under the bar: All, Mountains, Food, Festivals, Hotels, Condominiums, Walking Areas, Nature & Parks, Heritage Sites. Clicking a chip filters the list sections below so only that category shows; "All" shows everything again.
+     - **Where to?** — a text box. As the traveler types, a dropdown shows up to 6 matching destinations and accommodations (matched on name and address), each with its name, category and area. Clicking a suggestion (or picking it with the arrow keys and Enter) puts that place in the box and closes the list; Escape closes it. If nothing matches, it says "No matches". Suggestions respect the chosen category and location.
+     - **Category** — shows the category chosen with the chips. Read-only: the chips are the only way to change it.
+     - **All / Iloilo City / Province** toggle — narrows the suggestions only. It is separate from the location filter further down the page: changing one never changes the other.
+   - A white **Explore** button (or Enter) that opens the detail page of the picked place, or of the best match for what was typed. With an empty box it shows a hint instead; with no matches it shows "No matches".
+   - Category chips under the bar: All, Mountains, Food, Festivals, Hotels, Condominiums, Walking Areas, Nature & Parks, Heritage Sites. Clicking a chip highlights it, shows it in the search bar's Category field and narrows the suggestions to that category. It does not change the category cards or list sections further down the page, which keep their own behaviour: every section is visible, and clicking a category card scrolls to its section.
    - Two wide glass cards, **Featured** (Dinagyang Festival) and **Trending** (the first mountain in the database), each with photo, badge, name and a "View details →" link to its detail page. Both come from real data, not hard-coded examples.
    - The navbar keeps the current Lakat Iloilo PNG logo.
-2. Home page (rest) — shows welcome text, navigation bar, About Iloilo section, Features section, category cards (mountains, food, walking, festivals, nature, heritage, hotels, condominiums) with location filter (All/Iloilo City/Iloilo Province), separate list sections for each destination category, and accommodations list. The list sections follow the category chosen in the hero; with "All" every section is visible. Frontend calls NestJS API to fetch data.
+2. Home page (rest) — shows welcome text, navigation bar, About Iloilo section, Features section, category cards (mountains, food, walking, festivals, nature, heritage, hotels, condominiums) with location filter (All/Iloilo City/Iloilo Province), separate list sections for each destination category, and accommodations list. Clicking a category card scrolls to that category's section; all sections are always visible. Frontend calls NestJS API to fetch data.
 3. Destination detail page — shows destination name, address, coordinates, photo, and description. Data fetched from NestJS API.
 4. Accommodation detail page — shows accommodation name, address, phone, email, photo, and description. Data fetched from NestJS API.
 5. Footer — shows Lakat Iloilo branding with platform name, copyright information, navigation links (Home, About, Features, Explore), and legal section. Background uses teal/emerald gradient to match the overall theme.
@@ -71,7 +71,7 @@ Travelers planning weekend trips around Iloilo Province. No login required for b
 
 Row Level Security policy: Anyone may read all rows in both tables. No one may write through the app (data is added via SQL scripts by the team).
 
-Live suggestions and chip filtering use columns that already exist (`name`, `address`, `category`, `type`, `location_type`) on data the home page already loads. No table changes and no new API endpoint.
+Live suggestions and the category chips use columns that already exist (`name`, `address`, `category`, `type`, `location_type`) on data the home page already loads. No table changes and no new API endpoint.
 
 PostGIS extension: Enabled on Supabase database. The `location` column stores geography points for spatial queries (e.g., find destinations within X km of a point).
 
@@ -130,10 +130,10 @@ No login required. The MVP works as a read-only browsing platform.
 
 **Hero redesign round (live URL):**
 - [ ] Hero matches the mockup on desktop and looks tidy on a phone
-- [ ] Typing "din" in Where to? shows Dinagyang Festival; choosing it opens its detail page
+- [ ] Typing "din" in Where to? shows Dinagyang Festival; picking it fills the box, and Explore opens its detail page
 - [ ] Suggestions work with the keyboard (arrows, Enter, Escape) and say "No matches" when empty
-- [ ] Clicking a chip shows only that category below; "All" restores everything; the Category field updates to match
-- [ ] The City/Province toggle in the search bar and the one further down stay in sync
+- [ ] Clicking a chip updates the Category field and narrows the suggestions; the sections further down stay unchanged
+- [ ] The City/Province toggle in the search bar narrows the suggestions and does not change the filter further down (and vice versa)
 - [ ] Featured and Trending cards show real places and link to their detail pages
 
 ## Out of scope

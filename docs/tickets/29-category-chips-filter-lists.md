@@ -13,3 +13,5 @@
 - [x] The chosen chip is clearly highlighted and can be picked with the keyboard
 - [x] The existing City/Province filter still works together with the chosen chip
 - [x] Works on the live URL
+
+**Changed during ticket 32 (team feedback):** the chips no longer filter the category cards or list sections further down; those keep their original behaviour (all sections visible, cards scroll to their section). The chips now only set the search bar's Category field and narrow the live suggestions.

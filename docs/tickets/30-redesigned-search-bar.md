@@ -12,3 +12,7 @@
 - [x] The location toggle in the bar and the one further down always show the same choice
 - [x] Explore scrolls smoothly to the results
 - [x] Works on the live URL
+
+**Changed during ticket 32 (team feedback):** the Category field is now read-only and only follows the chips (the dropdown was removed), and Explore opens the picked place's detail page instead of scrolling down to the results.
+
+**Changed again during ticket 32 (team feedback):** the search bar's location toggle is now separate from the location filter further down the page. It only narrows the suggestions, and neither toggle changes the other.

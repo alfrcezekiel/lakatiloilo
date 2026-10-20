@@ -38,9 +38,6 @@ interface CategoryExploreSectionProps {
   accommodations: Accommodation[];
   selectedLocation: string;
   onLocationChange: (location: string) => void;
-  // Selects the clicked card's category, so its section is shown even when
-  // a different category chip was chosen in the hero.
-  onCategorySelect: (category: string) => void;
 }
 
 export function CategoryExploreSection({
@@ -48,7 +45,6 @@ export function CategoryExploreSection({
   accommodations,
   selectedLocation,
   onLocationChange,
-  onCategorySelect,
 }: CategoryExploreSectionProps) {
 
   const categorySectionIds: Record<string, string> = {
@@ -120,10 +116,9 @@ export function CategoryExploreSection({
                 key={category.id}
                 className="relative group overflow-hidden rounded-2xl h-48 cursor-pointer"
                 onClick={() => {
-                  onCategorySelect(category.id);
-                  // Wait until React has shown the section before we
-                  // scroll to it.
-                  setTimeout(() => scrollToSection(sectionId), 0);
+                  if (sectionId) {
+                    scrollToSection(sectionId);
+                  }
                 }}
               >
                 <div

@@ -34,9 +34,9 @@ export function FeaturedCards({ destinations }: FeaturedCardsProps) {
         <Link
           key={badge}
           href={`/destinations/${place.id}`}
-          className="group flex items-center gap-5 rounded-3xl border border-white/25 bg-white/10 p-3 shadow-2xl backdrop-blur-md transition-colors hover:bg-white/20 sm:p-4"
+          className="group flex min-w-0 items-center gap-4 sm:gap-5 rounded-3xl border border-white/25 bg-white/10 p-3 shadow-2xl backdrop-blur-md transition-colors hover:bg-white/20 sm:p-4"
         >
-          <div className="aspect-[3/2] w-32 shrink-0 overflow-hidden rounded-2xl sm:w-48">
+          <div className="aspect-3/2 w-24 shrink-0 min-[400px]:w-32 overflow-hidden rounded-2xl sm:w-48">
             <img
               src={place.photo_url}
               alt={place.name}

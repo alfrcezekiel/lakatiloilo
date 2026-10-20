@@ -4,7 +4,7 @@
 
 **Blocked by:** 30
 
-**Status:** todo
+**Status:** done
 
 - [x] Typing "din" shows Dinagyang Festival; choosing it opens its detail page
 - [x] At most 6 suggestions, each with name, category and area
@@ -12,4 +12,6 @@
 - [x] Arrow keys move through suggestions, Enter opens the highlighted one, Escape closes the dropdown
 - [x] Clicking outside closes the dropdown
 - [x] When nothing matches, the dropdown says "No matches"
-- [ ] Works on the live URL
+- [x] Works on the live URL
+
+**Changed during ticket 32 (team feedback):** picking a suggestion now fills the search box instead of opening the page straight away; Explore (or Enter) then opens its detail page.

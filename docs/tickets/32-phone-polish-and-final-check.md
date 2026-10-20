@@ -6,9 +6,9 @@
 
 **Status:** todo
 
-- [ ] At phone width the search bar stacks neatly, with no sideways scrolling
-- [ ] Chips wrap or scroll sideways without overlapping
-- [ ] Suggestions dropdown is readable and tappable on a phone
-- [ ] Featured and Trending cards stack on a phone
+- [x] At phone width the search bar stacks neatly, with no sideways scrolling
+- [x] Chips wrap or scroll sideways without overlapping
+- [x] Suggestions dropdown is readable and tappable on a phone
+- [x] Featured and Trending cards stack on a phone
 - [ ] Every item in the spec's "Hero redesign round" checklist is ticked
 - [ ] Works on the live URL, opened on a real phone by the team
