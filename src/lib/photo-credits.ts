@@ -1,0 +1,252 @@
+// Credits for the real Iloilo photos used on the site. They come from
+// Wikimedia Commons under Creative Commons licences, which let us use them
+// as long as we credit the photographer and link the licence. The Photo
+// credits page shows this list.
+//
+// Adding a photo from Commons? Add an entry here. Your own photos need none.
+
+export interface PhotoCredit {
+  // Which place or card on the site shows the photo.
+  usedFor: string;
+  title: string;
+  // The photo's page on Wikimedia Commons.
+  source: string;
+  photographer: string;
+  licence: string;
+  licenceUrl: string;
+}
+
+export const photoCredits: PhotoCredit[] = [
+  {
+    usedFor: "Breakthrough Restaurant",
+    title: "Villa Beach, Iloilo City. Philippines 01",
+    source: "https://commons.wikimedia.org/wiki/File:Villa_Beach,_Iloilo_City._Philippines_01.jpg",
+    photographer: "Riyan0721",
+    licence: "CC BY-SA 4.0",
+    licenceUrl: "https://creativecommons.org/licenses/by-sa/4.0/",
+  },
+  {
+    usedFor: "Bucari Little Baguio",
+    title: "Bucari Little Baguio, Scenery",
+    source: "https://commons.wikimedia.org/wiki/File:Bucari_Little_Baguio,_Scenery.jpg",
+    photographer: "Buczaii",
+    licence: "CC BY-SA 4.0",
+    licenceUrl: "https://creativecommons.org/licenses/by-sa/4.0/",
+  },
+  {
+    usedFor: "Calle Real",
+    title: "Iloilo Calle Real JM Basa northbound (Iloilo City; 01-21-2023)",
+    source: "https://commons.wikimedia.org/wiki/File:Iloilo_Calle_Real_JM_Basa_northbound_(Iloilo_City;_01-21-2023).jpg",
+    photographer: "Patrickroque01",
+    licence: "CC BY-SA 4.0",
+    licenceUrl: "https://creativecommons.org/licenses/by-sa/4.0/",
+  },
+  {
+    usedFor: "Casa Mariquit",
+    title: "Casa Mariquit, Jaro, Iloilo City",
+    source: "https://commons.wikimedia.org/wiki/File:Casa_Mariquit,_Jaro,_Iloilo_City.jpg",
+    photographer: "A.C.T. Alejandre",
+    licence: "CC BY-SA 4.0",
+    licenceUrl: "https://creativecommons.org/licenses/by-sa/4.0/",
+  },
+  {
+    usedFor: "Courtyard by Marriott Iloilo",
+    title: "Iloilo Business Park, Megaworld Boulevard (Mandurriao, Iloilo City; 04-05-2024) (cropped)",
+    source: "https://commons.wikimedia.org/wiki/File:Iloilo_Business_Park,_Megaworld_Boulevard_(Mandurriao,_Iloilo_City;_04-05-2024)_(cropped).jpg",
+    photographer: "Patrickroque01",
+    licence: "CC BY-SA 4.0",
+    licenceUrl: "https://creativecommons.org/licenses/by-sa/4.0/",
+  },
+  {
+    usedFor: "Dinagyang Festival",
+    title: "Dinagyang 2k26 - 2",
+    source: "https://commons.wikimedia.org/wiki/File:Dinagyang_2k26_-_2.jpg",
+    photographer: "Gelo Yap",
+    licence: "CC BY-SA 4.0",
+    licenceUrl: "https://creativecommons.org/licenses/by-sa/4.0/",
+  },
+  {
+    usedFor: "Festivals category card",
+    title: "Dinagyang Festival Warrior",
+    source: "https://commons.wikimedia.org/wiki/File:Dinagyang_Festival_Warrior.jpg",
+    photographer: "Bernardo 'Berniemack' Arellano III",
+    licence: "CC BY 3.0",
+    licenceUrl: "https://creativecommons.org/licenses/by/3.0/",
+  },
+  {
+    usedFor: "Foods & Dine-ins category card",
+    title: "Iloilo Batchoy with Puto",
+    source: "https://commons.wikimedia.org/wiki/File:Iloilo_Batchoy_with_Puto.jpg",
+    photographer: "Ralff Nestor Nacor",
+    licence: "CC BY-SA 4.0",
+    licenceUrl: "https://creativecommons.org/licenses/by-sa/4.0/",
+  },
+  {
+    usedFor: "Grand Xing Imperial Hotel",
+    title: "Grand Xing Imperial Hotel, Iloilo City Proper 2026",
+    source: "https://commons.wikimedia.org/wiki/File:Grand_Xing_Imperial_Hotel,_Iloilo_City_Proper_2026.jpg",
+    photographer: "BlockatePollop2",
+    licence: "CC BY 4.0",
+    licenceUrl: "https://creativecommons.org/licenses/by/4.0/",
+  },
+  {
+    usedFor: "Heritage Sites category card",
+    title: "Molo Church and Molo Plaza with Fountain",
+    source: "https://commons.wikimedia.org/wiki/File:Molo_Church_and_Molo_Plaza_with_Fountain.jpg",
+    photographer: "Renz0903",
+    licence: "CC BY 4.0",
+    licenceUrl: "https://creativecommons.org/licenses/by/4.0/",
+  },
+  {
+    usedFor: "Iloilo Esplanade",
+    title: "Iloilo Esplanade, La Paz (Iloilo City; 10-22-2022)",
+    source: "https://commons.wikimedia.org/wiki/File:Iloilo_Esplanade,_La_Paz_(Iloilo_City;_10-22-2022).jpg",
+    photographer: "Patrickroque01",
+    licence: "CC BY-SA 4.0",
+    licenceUrl: "https://creativecommons.org/licenses/by-sa/4.0/",
+  },
+  {
+    usedFor: "Iloilo River Esplanade 1-5",
+    title: "Iloilo River Esplanade Sunrise",
+    source: "https://commons.wikimedia.org/wiki/File:Iloilo_River_Esplanade_Sunrise.jpg",
+    photographer: "Johngaje92",
+    licence: "CC BY-SA 4.0",
+    licenceUrl: "https://creativecommons.org/licenses/by-sa/4.0/",
+  },
+  {
+    usedFor: "Injap Tower Hotel",
+    title: "Injap Tower Dining Area, Iloilo City, Sep 2026",
+    source: "https://commons.wikimedia.org/wiki/File:Injap_Tower_Dining_Area,_Iloilo_City,_Sep_2026.jpg",
+    photographer: "Ralff Nestor Nacor",
+    licence: "CC BY-SA 4.0",
+    licenceUrl: "https://creativecommons.org/licenses/by-sa/4.0/",
+  },
+  {
+    usedFor: "Jaro Cathedral",
+    title: "Jaro Belfry and Cathedral",
+    source: "https://commons.wikimedia.org/wiki/File:Jaro_Belfry_and_Cathedral.jpg",
+    photographer: "Gelo Yap",
+    licence: "CC BY-SA 4.0",
+    licenceUrl: "https://creativecommons.org/licenses/by-sa/4.0/",
+  },
+  {
+    usedFor: "La Paz Batchoy",
+    title: "Batchoy from La Paz Public Market, Iloilo City",
+    source: "https://commons.wikimedia.org/wiki/File:Batchoy_from_La_Paz_Public_Market,_Iloilo_City.jpg",
+    photographer: "Ralff Nestor Nacor",
+    licence: "CC BY-SA 4.0",
+    licenceUrl: "https://creativecommons.org/licenses/by-sa/4.0/",
+  },
+  {
+    usedFor: "Miag-ao Church",
+    title: "Miagao Church (Santo Tom\u00e1s de Villanueva Parish Church)",
+    source: "https://commons.wikimedia.org/wiki/File:Miagao_Church_(Santo_Tom%C3%A1s_de_Villanueva_Parish_Church).jpg",
+    photographer: "Christopher Andres",
+    licence: "CC BY-SA 4.0",
+    licenceUrl: "https://creativecommons.org/licenses/by-sa/4.0/",
+  },
+  {
+    usedFor: "Molo Church",
+    title: "Molo Church (Molo, Iloilo City; 04-03-2024)",
+    source: "https://commons.wikimedia.org/wiki/File:Molo_Church_(Molo,_Iloilo_City;_04-03-2024).jpg",
+    photographer: "Patrickroque01",
+    licence: "CC BY-SA 4.0",
+    licenceUrl: "https://creativecommons.org/licenses/by-sa/4.0/",
+  },
+  {
+    usedFor: "Mountains category card",
+    title: "San Joaquin Pitogo mountains, terraces (San Joaquin, Iloilo; 01-24-2023)",
+    source: "https://commons.wikimedia.org/wiki/File:San_Joaquin_Pitogo_mountains,_terraces_(San_Joaquin,_Iloilo;_01-24-2023).jpg",
+    photographer: "Patrickroque01",
+    licence: "CC BY-SA 4.0",
+    licenceUrl: "https://creativecommons.org/licenses/by-sa/4.0/",
+  },
+  {
+    usedFor: "Nature & Parks category card",
+    title: "Bucari Pine Forest",
+    source: "https://commons.wikimedia.org/wiki/File:Bucari_Pine_Forest.jpg",
+    photographer: "Rodel L. Bartolome Jr.",
+    licence: "CC BY-SA 4.0",
+    licenceUrl: "https://creativecommons.org/licenses/by-sa/4.0/",
+  },
+  {
+    usedFor: "Netong's Batchoy",
+    title: "La Paz Batchoy dish inside La Paz Public market 1 (Iloilo City; 04-05-2024)",
+    source: "https://commons.wikimedia.org/wiki/File:La_Paz_Batchoy_dish_inside_La_Paz_Public_market_1_(Iloilo_City;_04-05-2024).jpg",
+    photographer: "Patrickroque01",
+    licence: "CC BY-SA 4.0",
+    licenceUrl: "https://creativecommons.org/licenses/by-sa/4.0/",
+  },
+  {
+    usedFor: "Paraw Regatta Festival",
+    title: "Paraw Regatta Sails",
+    source: "https://commons.wikimedia.org/wiki/File:Paraw_Regatta_Sails.jpg",
+    photographer: "Parizfranz",
+    licence: "CC BY-SA 4.0",
+    licenceUrl: "https://creativecommons.org/licenses/by-sa/4.0/",
+  },
+  {
+    usedFor: "San Joaquin Campo Santo",
+    title: "San Joaquin Campo Santo (Iloilo-Antique Road, San Joaquin, Iloilo; 01-26-2023)",
+    source: "https://commons.wikimedia.org/wiki/File:San_Joaquin_Campo_Santo_(Iloilo-Antique_Road,_San_Joaquin,_Iloilo;_01-26-2023).jpg",
+    photographer: "Patrickroque01",
+    licence: "CC BY-SA 4.0",
+    licenceUrl: "https://creativecommons.org/licenses/by-sa/4.0/",
+  },
+  {
+    usedFor: "Seda Atria, Hotels category card",
+    title: "Seda Hotel Iloilo",
+    source: "https://commons.wikimedia.org/wiki/File:Seda_Hotel_Iloilo.jpg",
+    photographer: "Johngaje92",
+    licence: "CC BY-SA 4.0",
+    licenceUrl: "https://creativecommons.org/licenses/by-sa/4.0/",
+  },
+  {
+    usedFor: "SM City Iloilo Rooftop Garden",
+    title: "SM City Iloilo, Aug 2024 (1)",
+    source: "https://commons.wikimedia.org/wiki/File:SM_City_Iloilo,_Aug_2024_(1).jpg",
+    photographer: "Ralff Nestor Nacor",
+    licence: "CC BY-SA 4.0",
+    licenceUrl: "https://creativecommons.org/licenses/by-sa/4.0/",
+  },
+  {
+    usedFor: "Ted's Oldtimer Batchoy",
+    title: "Batchoy at Ted's Oldtimer Lapaz Batchoy",
+    source: "https://commons.wikimedia.org/wiki/File:Batchoy_at_Ted%27s_Oldtimer_Lapaz_Batchoy.jpg",
+    photographer: "Curpharar",
+    licence: "CC BY-SA 4.0",
+    licenceUrl: "https://creativecommons.org/licenses/by-sa/4.0/",
+  },
+  {
+    usedFor: "The Belmont Hotel Iloilo, Condominiums category card",
+    title: "Iloilo Business Park north condos top view (Mandurriao, Iloilo City; 01-26-2023)",
+    source: "https://commons.wikimedia.org/wiki/File:Iloilo_Business_Park_north_condos_top_view_(Mandurriao,_Iloilo_City;_01-26-2023).jpg",
+    photographer: "Patrickroque01",
+    licence: "CC BY-SA 4.0",
+    licenceUrl: "https://creativecommons.org/licenses/by-sa/4.0/",
+  },
+  {
+    usedFor: "The Palladium",
+    title: "Condominiums in Iloilo Business Park",
+    source: "https://commons.wikimedia.org/wiki/File:Condominiums_in_Iloilo_Business_Park.jpg",
+    photographer: "Merd123",
+    licence: "CC BY-SA 4.0",
+    licenceUrl: "https://creativecommons.org/licenses/by-sa/4.0/",
+  },
+  {
+    usedFor: "Tultugan Festival",
+    title: "Tultugan Festival of Maasin, Iloilo",
+    source: "https://commons.wikimedia.org/wiki/File:Tultugan_Festival_of_Maasin,_Iloilo.jpg",
+    photographer: "Mhlayson",
+    licence: "CC BY-SA 4.0",
+    licenceUrl: "https://creativecommons.org/licenses/by-sa/4.0/",
+  },
+  {
+    usedFor: "Walking Areas category card",
+    title: "Iloilo Calle Real JM Basa, Celso Ledesma (Iloilo City; 01-21-2023)",
+    source: "https://commons.wikimedia.org/wiki/File:Iloilo_Calle_Real_JM_Basa,_Celso_Ledesma_(Iloilo_City;_01-21-2023).jpg",
+    photographer: "Patrickroque01",
+    licence: "CC BY-SA 4.0",
+    licenceUrl: "https://creativecommons.org/licenses/by-sa/4.0/",
+  },
+];

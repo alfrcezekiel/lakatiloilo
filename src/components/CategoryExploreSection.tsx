@@ -15,15 +15,25 @@ const categories = [
   { id: "condominium", name: "Condominiums", emoji: "🏢" },
 ];
 
+// Real photos from Iloilo City and Province, from Wikimedia Commons under
+// free licences. Credits are in src/lib/photo-credits.ts.
 const categoryImages = {
-  mountain: "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=800&q=80",
-  food: "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=800&q=80",
-  walking: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&q=80",
-  festival: "https://images.unsplash.com/photo-1533174072545-7a4b6ad7a6c3?w=800&q=80",
-  nature: "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=800&q=80",
-  heritage: "https://images.unsplash.com/photo-1554907984-15263bfd63bd?w=800&q=80",
-  hotel: "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800&q=80",
-  condominium: "https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=800&q=80",
+  mountain:
+    "https://thumb.wikimedia.org/wikipedia/commons/thumb/0/0d/San_Joaquin_Pitogo_mountains%2C_terraces_%28San_Joaquin%2C_Iloilo%3B_01-24-2023%29.jpg/1280px-San_Joaquin_Pitogo_mountains%2C_terraces_%28San_Joaquin%2C_Iloilo%3B_01-24-2023%29.jpg",
+  food:
+    "https://thumb.wikimedia.org/wikipedia/commons/thumb/a/a4/Iloilo_Batchoy_with_Puto.jpg/1280px-Iloilo_Batchoy_with_Puto.jpg",
+  walking:
+    "https://thumb.wikimedia.org/wikipedia/commons/thumb/3/35/Iloilo_Calle_Real_JM_Basa%2C_Celso_Ledesma_%28Iloilo_City%3B_01-21-2023%29.jpg/1280px-Iloilo_Calle_Real_JM_Basa%2C_Celso_Ledesma_%28Iloilo_City%3B_01-21-2023%29.jpg",
+  festival:
+    "https://thumb.wikimedia.org/wikipedia/commons/thumb/9/97/Dinagyang_Festival_Warrior.jpg/1280px-Dinagyang_Festival_Warrior.jpg",
+  nature:
+    "https://thumb.wikimedia.org/wikipedia/commons/thumb/a/a6/Bucari_Pine_Forest.jpg/1280px-Bucari_Pine_Forest.jpg",
+  heritage:
+    "https://thumb.wikimedia.org/wikipedia/commons/thumb/3/31/Molo_Church_and_Molo_Plaza_with_Fountain.jpg/1280px-Molo_Church_and_Molo_Plaza_with_Fountain.jpg",
+  hotel:
+    "https://thumb.wikimedia.org/wikipedia/commons/thumb/d/d4/Seda_Hotel_Iloilo.jpg/1280px-Seda_Hotel_Iloilo.jpg",
+  condominium:
+    "https://thumb.wikimedia.org/wikipedia/commons/thumb/2/21/Iloilo_Business_Park_north_condos_top_view_%28Mandurriao%2C_Iloilo_City%3B_01-26-2023%29.jpg/1280px-Iloilo_Business_Park_north_condos_top_view_%28Mandurriao%2C_Iloilo_City%3B_01-26-2023%29.jpg",
 };
 
 const locationFilters = [

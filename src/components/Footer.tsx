@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Logo } from "@/components/Logo";
 import { scrollToSection } from "@/lib/utils/scroll";
 
@@ -63,6 +64,13 @@ export function Footer() {
             <p className="text-sm text-white/80">
               © {currentYear} Lakat Iloilo. All rights reserved.
             </p>
+            {/* Our photo licences require crediting the photographers. */}
+            <Link
+              href="/credits"
+              className="mt-2 inline-block text-sm text-white/80 underline underline-offset-2 transition-colors hover:text-white"
+            >
+              Photo credits
+            </Link>
           </div>
         </div>
 
