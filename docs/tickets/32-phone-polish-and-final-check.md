@@ -4,11 +4,11 @@
 
 **Blocked by:** 28, 29, 30, 31
 
-**Status:** todo
+**Status:** done
 
 - [x] At phone width the search bar stacks neatly, with no sideways scrolling
 - [x] Chips wrap or scroll sideways without overlapping
 - [x] Suggestions dropdown is readable and tappable on a phone
 - [x] Featured and Trending cards stack on a phone
-- [ ] Every item in the spec's "Hero redesign round" checklist is ticked
-- [ ] Works on the live URL, opened on a real phone by the team
+- [x] Every item in the spec's "Hero redesign round" checklist is ticked
+- [x] Works on the live URL, opened on a real phone by the team

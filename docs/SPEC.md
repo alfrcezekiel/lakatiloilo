@@ -129,12 +129,12 @@ No login required. The MVP works as a read-only browsing platform.
 - [x] Elizabeth and Mark have tested the app
 
 **Hero redesign round (live URL):**
-- [ ] Hero matches the mockup on desktop and looks tidy on a phone
-- [ ] Typing "din" in Where to? shows Dinagyang Festival; picking it fills the box, and Explore opens its detail page
-- [ ] Suggestions work with the keyboard (arrows, Enter, Escape) and say "No matches" when empty
-- [ ] Clicking a chip updates the Category field and narrows the suggestions; the sections further down stay unchanged
-- [ ] The City/Province toggle in the search bar narrows the suggestions and does not change the filter further down (and vice versa)
-- [ ] Featured and Trending cards show real places and link to their detail pages
+- [x] Hero matches the mockup on desktop and looks tidy on a phone
+- [x] Typing "din" in Where to? shows Dinagyang Festival; picking it fills the box, and Explore opens its detail page
+- [x] Suggestions work with the keyboard (arrows, Enter, Escape) and say "No matches" when empty
+- [x] Clicking a chip updates the Category field and narrows the suggestions; the sections further down stay unchanged
+- [x] The City/Province toggle in the search bar narrows the suggestions and does not change the filter further down (and vice versa)
+- [x] Featured and Trending cards show real places and link to their detail pages
 
 ## Out of scope
 - User accounts and login system
