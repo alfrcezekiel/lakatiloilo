@@ -4,10 +4,10 @@ interface LogoProps {
   height?: number;
 }
 
-export function Logo({ className = "", width = 160, height = 52 }: LogoProps) {
+export function Logo({ className = "", width = 192, height = 40 }: LogoProps) {
   return (
     <img
-      src="/lakat-iloilo-logo.svg"
+      src="/lakat-logo-white.png"
       alt="Lakat Iloilo"
       width={width}
       height={height}

@@ -11,7 +11,7 @@ export function Footer() {
           {/* Branding */}
           <div>
             <div className="mb-3">
-              <Logo width={160} height={52} />
+              <Logo width={192} height={40} />
             </div>
             <p className="text-sm text-white/80">
               Your gateway to discovering the best of Iloilo City and Iloilo Province.

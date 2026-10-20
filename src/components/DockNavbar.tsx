@@ -31,7 +31,7 @@ export function DockNavbar() {
           <div className="fixed inset-0 z-50 sm:hidden">
             <div className="h-full bg-teal-900/95 backdrop-blur-xl p-6 flex flex-col">
               <div className="flex items-center justify-between mb-8">
-                <Logo width={140} height={46} />
+                <Logo width={163} height={34} />
                 <button
                   onClick={() => setIsOpen(false)}
                   className="text-white hover:text-white/80 transition-colors text-2xl"
@@ -58,7 +58,7 @@ export function DockNavbar() {
       <nav className={`fixed top-4 left-1/2 z-50 -translate-x-1/2 rounded-2xl px-4 py-2 sm:px-8 sm:py-3 shadow-2xl bg-teal-900/95 backdrop-blur-xl border border-white/25 w-[calc(100%-2rem)] sm:w-auto sm:min-w-96 md:min-w-md ${isOpen ? 'hidden sm:flex' : 'flex'}`}>
         <div className="flex items-center justify-between w-full">
           <Link href="/" className="hover:opacity-80 transition-opacity mr-8 sm:mr-12">
-            <Logo width={140} height={46} />
+            <Logo width={163} height={34} />
           </Link>
           <div className="flex items-center gap-2 sm:gap-4 text-xs font-medium text-white/90 sm:text-sm">
             {navLinks.map((link) => (
