@@ -4,6 +4,8 @@ import "./globals.css";
 
 const fraunces = Fraunces({
   subsets: ["latin"],
+  // Italic is loaded too, for the "Iloilo." in the hero headline.
+  style: ["normal", "italic"],
   variable: "--font-fraunces",
   display: "swap",
 });

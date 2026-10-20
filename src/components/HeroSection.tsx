@@ -20,10 +20,13 @@ export function HeroSection({ children }: HeroSectionProps) {
 
       {/* Hero Content */}
       <div className="relative z-10 mx-auto max-w-6xl px-4 pt-28 pb-12 sm:px-6 sm:pt-32 sm:pb-16">
-        <h1 className="mb-4 text-3xl font-bold tracking-tight text-white sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl">
-          Lakat na, Iloilo.
+        <p className="mb-4 text-xs font-semibold uppercase tracking-[0.25em] text-white/80 sm:text-sm">
+          Iloilo City · Iloilo Province
+        </p>
+        <h1 className="font-fraunces mb-6 text-5xl leading-[0.95] font-medium tracking-tight text-white sm:text-6xl md:text-7xl lg:text-8xl">
+          Lakat na, <em className="font-normal italic">Iloilo.</em>
         </h1>
-        <p className="mb-8 max-w-2xl text-sm text-white/90 sm:text-base md:text-lg">
+        <p className="mb-10 max-w-2xl text-base leading-relaxed text-white/85 md:text-lg">
           Discover the beauty of Iloilo City and Province. From mountain
           peaks to cultural treasures, and from cozy hotels to modern
           condominiums, your adventure awaits.

@@ -71,7 +71,7 @@ export default function Home() {
             <div id="categories">
               <CategoryChips />
             </div>
-            <FeaturedCards />
+            <FeaturedCards destinations={destinations} />
           </div>
         </HeroSection>
       </section>
