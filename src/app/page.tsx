@@ -85,7 +85,7 @@ export default function Home() {
   );
 
   return (
-    <main className="min-h-screen" aria-busy={loading}>
+    <main className="min-h-screen">
       {/* Screen readers hear "Loading places" while the skeletons show. The
           skeletons themselves are hidden from screen readers. */}
       <p role="status" className="sr-only">

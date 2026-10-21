@@ -4,6 +4,6 @@ import { DetailPageSkeleton } from "@/components/DetailPageSkeleton";
 // the backend, then swaps in the real page once it is ready.
 export default function Loading() {
   return (
-    <DetailPageSkeleton background="bg-linear-to-br from-blue-900 to-indigo-800" />
+    <DetailPageSkeleton kind="accommodation" />
   );
 }

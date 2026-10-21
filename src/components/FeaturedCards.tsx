@@ -18,8 +18,9 @@ const photoClass =
 // The two hero cards. Both come from the real destinations the home page
 // already loaded: Featured is Dinagyang Festival, Trending is Bucari Little
 // Baguio (both have real photos), falling back to the first mountain if
-// Bucari is missing. A card is left out if its place is not in the data (or has not
-// loaded yet), so visitors never see a broken image or a made-up name.
+// Bucari is missing. While the places are loading, both cards show as
+// skeletons. Once loaded, a card is left out if its place is not in the
+// data, so visitors never see a broken image or a made-up name.
 export function FeaturedCards({ destinations, loading }: FeaturedCardsProps) {
   if (loading) {
     return (

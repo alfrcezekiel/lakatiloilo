@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import Link from "next/link";
-import { PlaceCardSkeletons } from "@/components/PlaceCardSkeletons";
+import { PlaceListSkeleton } from "@/components/PlaceListSkeleton";
 
 interface Accommodation {
   id: string;
@@ -21,14 +21,7 @@ interface AccommodationListProps {
 export function AccommodationList({ accommodations, id, loading }: AccommodationListProps) {
   if (loading) {
     return (
-      <section id={id} className="py-16">
-        <div className="mx-auto max-w-6xl px-4 sm:px-6">
-          <h2 className="mb-8 text-3xl font-semibold text-white">
-            Hotels & Condominiums
-          </h2>
-          <PlaceCardSkeletons withPill />
-        </div>
-      </section>
+      <PlaceListSkeleton id={id} title="Hotels & Condominiums" withPill />
     );
   }
 
