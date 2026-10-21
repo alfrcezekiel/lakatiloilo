@@ -29,7 +29,7 @@ export default function LoginPage() {
         </Suspense>
 
         <footer className="px-4 py-6 text-center text-xs text-white/70 sm:px-8 sm:text-left">
-          © 2026 Lakat Iloilo. All rights reserved.
+          © {new Date().getFullYear()} Lakat Iloilo. All rights reserved.
         </footer>
       </div>
     </main>

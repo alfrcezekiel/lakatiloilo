@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Logo } from "@/components/Logo";
+import { Skeleton } from "@/components/ui/skeleton";
 import { createClient } from "@/lib/supabase/client";
 import { displayNameOf, safeNextPath, useCurrentUser } from "@/lib/auth";
 
@@ -50,6 +51,12 @@ export function LoginForm() {
   const [errors, setErrors] = useState<Errors>({});
   const [notice, setNotice] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  // True once this form has logged the traveler in and is sending them on.
+  // Supabase says "logged in" a moment before the next page appears; this
+  // keeps the form (with its spinner) on screen in that gap, instead of
+  // flashing the "You're logged in as …" box meant for visitors who open
+  // /login while already logged in.
+  const [leaving, setLeaving] = useState(false);
 
   const switchMode = (newMode: Mode) => {
     setMode(newMode);
@@ -108,6 +115,7 @@ export function LoginForm() {
         setNotice("Check your email for a link to confirm your account, then log in.");
         return;
       }
+      setLeaving(true);
       router.replace(next);
     } catch {
       // For example, no internet connection.
@@ -139,8 +147,20 @@ export function LoginForm() {
             <em className="font-normal italic">lakat.</em>
           </h1>
 
-          {ready && user ? (
-            // Already logged in: nothing to fill in.
+          {!ready ? (
+            // Still checking the login cookie (a split second). Showing the
+            // form here would flash it at travelers who are logged in.
+            <div className="space-y-3">
+              <p role="status" className="sr-only">
+                Checking whether you are logged in
+              </p>
+              <Skeleton className="h-11 w-full rounded-full" />
+              <Skeleton className="h-16 w-full rounded-2xl" />
+              <Skeleton className="h-16 w-full rounded-2xl" />
+              <Skeleton className="h-12 w-full rounded-full" />
+            </div>
+          ) : user && !leaving ? (
+            // Opened /login while already logged in: nothing to fill in.
             <div className="space-y-5">
               <p className="text-white/90">
                 You&apos;re logged in as <strong>{displayNameOf(user)}</strong>.
@@ -249,11 +269,17 @@ export function LoginForm() {
 
                 <Button
                   type="submit"
-                  disabled={busy}
+                  disabled={busy || leaving}
                   className="mt-3 h-12 w-full rounded-full bg-white text-base font-semibold text-teal-900 shadow-lg hover:bg-white/90 hover:opacity-100"
                 >
-                  {busy && <Spinner />}
-                  {busy ? "Please wait…" : mode === "login" ? "Log in" : "Create account"}
+                  {(busy || leaving) && <Spinner />}
+                  {leaving
+                    ? "Taking you back…"
+                    : busy
+                      ? "Please wait…"
+                      : mode === "login"
+                        ? "Log in"
+                        : "Create account"}
                 </Button>
 
                 {/* Errors that are not about one field, like a wrong password. */}
