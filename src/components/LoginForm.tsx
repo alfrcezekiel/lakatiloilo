@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { Spinner } from "@/components/ui/spinner";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Logo } from "@/components/Logo";
@@ -127,14 +128,11 @@ export function LoginForm() {
 
   return (
     <>
-      {/* Top bar: logo and a way back */}
+      {/* Top bar: the logo, which also links home */}
       <header className="flex items-center justify-between px-4 py-6 sm:px-8">
         <Link href="/" className="hover:opacity-80 transition-opacity">
           <Logo width={163} height={34} />
         </Link>
-        {/* <Link href={next} className="text-sm font-medium text-white/90 hover:text-white">
-          ← Back to explore
-        </Link> */}
       </header>
 
       <div className="flex flex-1 items-center justify-center px-4 py-6">
@@ -354,21 +352,5 @@ function GlassField({
         </p>
       )}
     </div>
-  );
-}
-
-// A small turning circle for the button while Supabase answers. It stays
-// still for visitors who turned on "reduce motion".
-function Spinner() {
-  return (
-    <svg
-      aria-hidden="true"
-      viewBox="0 0 24 24"
-      className="size-4 motion-safe:animate-spin"
-      fill="none"
-    >
-      <circle cx="12" cy="12" r="9" stroke="currentColor" strokeOpacity="0.25" strokeWidth="3" />
-      <path d="M21 12a9 9 0 0 0-9-9" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
-    </svg>
   );
 }

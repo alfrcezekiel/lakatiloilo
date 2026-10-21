@@ -8,6 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { createClient } from "@/lib/supabase/client";
 import { useCurrentUser } from "@/lib/auth";
 import { ReviewForm } from "@/components/ReviewForm";
+import { MyReviewBox } from "@/components/MyReviewBox";
 
 export type Review = {
   id: string;
@@ -37,11 +38,6 @@ export function ReviewsSection({ placeType, placeId }: ReviewsSectionProps) {
   const [loadError, setLoadError] = useState(false);
   // True right after this traveler posts, to say thank you.
   const [justPosted, setJustPosted] = useState(false);
-  // Their own review: being edited, or waiting for "are you sure?".
-  const [editing, setEditing] = useState(false);
-  const [confirmingDelete, setConfirmingDelete] = useState(false);
-  const [deleting, setDeleting] = useState(false);
-  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -77,31 +73,6 @@ export function ReviewsSection({ placeType, placeId }: ReviewsSectionProps) {
   // This traveler's own review of this place, if they wrote one.
   const myReview = user ? reviews?.find((r) => r.user_id === user.id) : undefined;
 
-  const deleteMyReview = async () => {
-    if (!myReview) return;
-    setDeleting(true);
-    setDeleteError(null);
-    try {
-      // count: "exact" tells us how many rows were really deleted. Row Level
-      // Security makes someone else's review invisible here, so 0 means
-      // "not allowed" (for example, logged out in another tab).
-      const { error, count } = await createClient()
-        .from("reviews")
-        .delete({ count: "exact" })
-        .eq("id", myReview.id);
-      if (error || count === 0) {
-        setDeleteError("We couldn't delete your review. Please log in again and try.");
-        return;
-      }
-      setReviews((current) => (current ?? []).filter((r) => r.id !== myReview.id));
-      setConfirmingDelete(false);
-      setJustPosted(false);
-    } catch {
-      setDeleteError("Something went wrong. Please try again.");
-    } finally {
-      setDeleting(false);
-    }
-  };
 
   return (
     <section aria-labelledby="reviews-heading">
@@ -136,93 +107,25 @@ export function ReviewsSection({ placeType, placeId }: ReviewsSectionProps) {
 
           {/* Logged in: the form, or a note if they already reviewed. */}
           {ready && user && (
-            myReview && editing ? (
-              // Editing: the same form, filled in with their review.
-              <ReviewForm
+            myReview ? (
+              // One review per place: their review's box with Edit and
+              // Delete, instead of the form.
+              <MyReviewBox
+                review={myReview}
                 placeType={placeType}
                 placeId={placeId}
-                existing={myReview}
-                onCancel={() => setEditing(false)}
+                justPosted={justPosted}
                 onSaved={(saved) => {
                   setReviews((current) =>
                     (current ?? []).map((r) => (r.id === saved.id ? saved : r)),
                   );
-                  setEditing(false);
+                  setJustPosted(false);
+                }}
+                onDeleted={(reviewId) => {
+                  setReviews((current) => (current ?? []).filter((r) => r.id !== reviewId));
+                  setJustPosted(false);
                 }}
               />
-            ) : myReview ? (
-              // One review per place: instead of the form, say clearly why
-              // there is no form, and offer Edit and Delete.
-              <Card className={glassCard}>
-                <CardContent className="p-5 space-y-3">
-                  {justPosted ? (
-                    <p role="status" className="font-semibold">
-                      Thanks! Your review is posted.
-                    </p>
-                  ) : (
-                    <p className="font-semibold">You&apos;ve already reviewed this place.</p>
-                  )}
-                  <p className="text-sm text-white/80">
-                    Each traveler can leave one review per place. Yours is marked
-                    &ldquo;You&rdquo; below.
-                  </p>
-
-                  {confirmingDelete ? (
-                    <div className="space-y-3 rounded-xl bg-teal-950/40 p-4">
-                      <p className="font-semibold">
-                        Delete your review? This can&apos;t be undone.
-                      </p>
-                      <div className="flex flex-wrap gap-3">
-                        <button
-                          type="button"
-                          onClick={deleteMyReview}
-                          disabled={deleting}
-                          className="h-10 rounded-full bg-red-500 px-5 text-sm font-semibold text-white hover:bg-red-600 disabled:opacity-60"
-                        >
-                          {deleting ? "Deleting…" : "Delete"}
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setConfirmingDelete(false);
-                            setDeleteError(null);
-                          }}
-                          disabled={deleting}
-                          className="h-10 rounded-full border border-white/40 px-5 text-sm font-semibold hover:bg-white/10"
-                        >
-                          Cancel
-                        </button>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="flex flex-wrap gap-3">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setEditing(true);
-                          setJustPosted(false);
-                        }}
-                        className="h-10 rounded-full bg-white px-5 text-sm font-semibold text-teal-900 hover:bg-white/90"
-                      >
-                        Edit
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setConfirmingDelete(true)}
-                        className="h-10 rounded-full border border-white/40 px-5 text-sm font-semibold hover:bg-white/10"
-                      >
-                        Delete
-                      </button>
-                    </div>
-                  )}
-
-                  {deleteError && (
-                    <p role="alert" className="text-sm text-amber-200">
-                      {deleteError}
-                    </p>
-                  )}
-                </CardContent>
-              </Card>
             ) : (
               <ReviewForm
                 placeType={placeType}
