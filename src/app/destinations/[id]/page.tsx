@@ -4,6 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { locationLabels } from "@/lib/labels";
+import { ReviewsSection } from "@/components/ReviewsSection";
 
 // Longer names for the detail page; the short names used elsewhere live in
 // src/lib/labels.ts.
@@ -121,6 +122,8 @@ export default async function DestinationDetailPage({
             </CardContent>
           </Card>
         </section>
+
+        <ReviewsSection placeType="destination" placeId={destination.id} />
       </div>
     </main>
   );

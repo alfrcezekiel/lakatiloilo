@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
+import { ReviewsSection } from "@/components/ReviewsSection";
 
 const contactButtonClass =
   "w-full bg-white/20 hover:bg-white/30 backdrop-blur-md border border-white/25 text-white";
@@ -122,6 +123,8 @@ export default async function AccommodationDetailPage({
                 </CardContent>
               </Card>
             </section>
+
+            <ReviewsSection placeType="accommodation" placeId={accommodation.id} />
           </div>
 
           {/* Sticky Sidebar */}
