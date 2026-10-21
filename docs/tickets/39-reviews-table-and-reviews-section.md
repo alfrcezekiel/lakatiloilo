@@ -4,7 +4,7 @@
 
 **Blocked by:** 38
 
-**Status:** in progress (works locally; live URL still to check)
+**Status:** done
 
 - [x] The `reviews` table exists in Supabase as a numbered SQL file, with the columns from the spec, ratings limited to 1–5, comments limited to 500 characters, and one review per account per place
 - [x] Row Level Security is on, with policies: anyone may read; only a logged-in traveler may add, and only with their own account; only the author may edit or delete
@@ -13,6 +13,6 @@
 - [x] With a test review added through the dashboard, the page shows the average, the count and the review
 - [x] Email addresses never appear on the page
 - [x] Logged out: "Log in to write a review" goes to the login page and comes back
-- [ ] Works on the live URL
+- [x] Works on the live URL
 
 **Check notes (2026-10-21):** SQL run by the team. A logged-out attempt to add a review straight through Supabase's API is refused ("permission denied for table reviews"); logged-out reading works. Public review data holds only the display name, stars, comment and dates, never an email. The "Log in to write a review" link goes to /login with this page as ?next=, which returns there after login (tested in ticket 38).
