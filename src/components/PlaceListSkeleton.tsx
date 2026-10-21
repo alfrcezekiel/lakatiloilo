@@ -23,7 +23,7 @@ export function PlaceListSkeleton({
           {[0, 1, 2].map((i) => (
             <div
               key={i}
-              className="overflow-hidden rounded-[var(--radius)] bg-white/15 backdrop-blur-md border border-white/25"
+              className="overflow-hidden rounded-(--radius) bg-white/15 backdrop-blur-md border border-white/25"
             >
               <Skeleton className="aspect-video w-full rounded-none" />
               <div className="p-6">
