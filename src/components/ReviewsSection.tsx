@@ -7,6 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { createClient } from "@/lib/supabase/client";
 import { useCurrentUser } from "@/lib/auth";
+import { ReviewForm } from "@/components/ReviewForm";
 
 export type Review = {
   id: string;
@@ -34,6 +35,8 @@ export function ReviewsSection({ placeType, placeId }: ReviewsSectionProps) {
   // null while loading.
   const [reviews, setReviews] = useState<Review[] | null>(null);
   const [loadError, setLoadError] = useState(false);
+  // True right after this traveler posts, to say thank you.
+  const [justPosted, setJustPosted] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -66,6 +69,9 @@ export function ReviewsSection({ placeType, placeId }: ReviewsSectionProps) {
       ? reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length
       : null;
 
+  // This traveler's own review of this place, if they wrote one.
+  const myReview = user && reviews?.find((r) => r.user_id === user.id);
+
   return (
     <section aria-labelledby="reviews-heading">
       <h2 id="reviews-heading" className="text-2xl font-semibold text-white mb-4">
@@ -97,6 +103,37 @@ export function ReviewsSection({ placeType, placeId }: ReviewsSectionProps) {
             </p>
           )}
 
+          {/* Logged in: the form, or a note if they already reviewed. */}
+          {ready && user && (
+            justPosted ? (
+              <p role="status" className="text-white/90">
+                Thanks! Your review is posted.
+              </p>
+            ) : myReview ? (
+              // One review per place: instead of the form, say clearly why
+              // there is no form and point at their review in the list.
+              <Card className={glassCard}>
+                <CardContent className="p-5">
+                  <p className="font-semibold">You&apos;ve already reviewed this place.</p>
+                  <p className="mt-1 text-sm text-white/80">
+                    Each traveler can leave one review per place. Yours is marked
+                    &ldquo;You&rdquo; below.
+                  </p>
+                </CardContent>
+              </Card>
+            ) : (
+              <ReviewForm
+                placeType={placeType}
+                placeId={placeId}
+                onPosted={(review) => {
+                  // Newest first, so the new review goes on top.
+                  setReviews((current) => [review, ...(current ?? [])]);
+                  setJustPosted(true);
+                }}
+              />
+            )
+          )}
+
           {/* Logged out: invite them to log in and come back here. */}
           {ready && !user && (
             <p className="text-white/90">
@@ -116,7 +153,14 @@ export function ReviewsSection({ placeType, placeId }: ReviewsSectionProps) {
                   <Card className={glassCard}>
                     <CardContent className="p-5 space-y-2">
                       <div className="flex flex-wrap items-center justify-between gap-2">
-                        <span className="font-semibold">{review.reviewer_name}</span>
+                        <span className="flex items-center gap-2 font-semibold">
+                          {review.reviewer_name}
+                          {user && review.user_id === user.id && (
+                            <span className="rounded-full bg-white/20 px-2 py-0.5 text-xs font-medium">
+                              You
+                            </span>
+                          )}
+                        </span>
                         <time dateTime={review.created_at} className="text-sm text-white/70">
                           {formatDate(review.created_at)}
                         </time>
