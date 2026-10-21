@@ -4,9 +4,44 @@ import { useState } from "react";
 import Link from "next/link";
 import { Logo } from "@/components/Logo";
 import { scrollToSection } from "@/lib/utils/scroll";
+import { createClient } from "@/lib/supabase/client";
+import { displayNameOf, useCurrentUser } from "@/lib/auth";
 
 export function DockNavbar() {
   const [isOpen, setIsOpen] = useState(false);
+  const { user, ready } = useCurrentUser();
+
+  const logOut = async () => {
+    setIsOpen(false);
+    // The navbar updates by itself: useCurrentUser hears about the logout.
+    await createClient().auth.signOut();
+  };
+
+  // "Log in", or the traveler's name with "Log out". Shown in the bar on
+  // wider screens and in the slide-out menu on phones. Nothing shows for
+  // the split second while the login is being checked.
+  const accountItem = !ready ? null : user ? (
+    <span className="flex items-center gap-2 whitespace-nowrap">
+      <span className="max-w-32 truncate text-white/80">
+        Hi, {displayNameOf(user)}
+      </span>
+      <button
+        type="button"
+        onClick={logOut}
+        className="cursor-pointer font-semibold text-white hover:text-white/80"
+      >
+        Log out
+      </button>
+    </span>
+  ) : (
+    <Link
+      href="/login"
+      onClick={() => setIsOpen(false)}
+      className="whitespace-nowrap font-semibold text-white hover:text-white/80"
+    >
+      Log in
+    </Link>
+  );
 
   const handleScrollToSection = (sectionId: string) => {
     setIsOpen(false);
@@ -49,6 +84,7 @@ export function DockNavbar() {
                     {link.label}
                   </span>
                 ))}
+                {accountItem && <div className="py-3">{accountItem}</div>}
               </div>
             </div>
           </div>
@@ -70,6 +106,11 @@ export function DockNavbar() {
                 {link.label}
               </span>
             ))}
+            {accountItem && (
+              <span className="hidden sm:flex items-center border-l border-white/25 pl-4">
+                {accountItem}
+              </span>
+            )}
           </div>
           <button
             onClick={() => setIsOpen(!isOpen)}

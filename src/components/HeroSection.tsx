@@ -1,5 +1,10 @@
 import { ReactNode } from "react";
 
+// The misty mountain photo behind the hero. The login page uses it too,
+// so both pages share one background.
+export const heroBackgroundUrl =
+  "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1920&q=80";
+
 interface HeroSectionProps {
   children?: ReactNode;
 }
@@ -10,7 +15,7 @@ export function HeroSection({ children }: HeroSectionProps) {
       {/* Background Image */}
       <div className="absolute inset-0">
         <img
-          src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1920&q=80"
+          src={heroBackgroundUrl}
           alt="Iloilo sunset"
           className="h-full w-full object-cover opacity-40"
         />
