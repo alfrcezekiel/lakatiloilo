@@ -17,29 +17,38 @@ const dbErrors: Record<string, string> = {
   // The one-review-per-place rule (the "unique" line in supabase/sql/020).
   "23505": "You've already reviewed this place.",
   // Not logged in any more (for example, logged out in another tab).
-  "42501": "Please log in again to post your review.",
-  PGRST301: "Please log in again to post your review.",
+  "42501": "Please log in again, then try again.",
+  PGRST301: "Please log in again, then try again.",
   // A rating or comment outside the limits.
   "23514": "Please pick 1 to 5 stars and write 1 to 500 characters.",
+  // Editing found no review this account may change (Row Level Security),
+  // for example after logging out in another tab.
+  PGRST116: "We couldn't save your changes. Please log in again and try.",
 };
-const fallbackError = "We couldn't post your review. Please try again.";
+const fallbackError = "Something went wrong. Please try again.";
 
 interface ReviewFormProps {
   placeType: "destination" | "accommodation";
   placeId: string;
   // Called with the saved review, so the list can show it straight away.
-  onPosted: (review: Review) => void;
+  onSaved: (review: Review) => void;
+  // Editing: the traveler's own review, to fill the form in. Leave it out
+  // to write a new review.
+  existing?: Review;
+  // Editing: called when the traveler clicks Cancel.
+  onCancel?: () => void;
 }
 
-// The "write a review" form: 1 to 5 stars and up to 500 characters. Only
-// shown to logged-in travelers who have not reviewed this place yet. The
+// The review form: 1 to 5 stars and up to 500 characters. Writes a new
+// review, or edits the traveler's own one when `existing` is given. The
 // database checks everything again (see supabase/sql/020), so this form
 // is about friendly messages, not about security.
-export function ReviewForm({ placeType, placeId, onPosted }: ReviewFormProps) {
-  const [rating, setRating] = useState(0);
+export function ReviewForm({ placeType, placeId, onSaved, existing, onCancel }: ReviewFormProps) {
+  const isEdit = !!existing;
+  const [rating, setRating] = useState(existing?.rating ?? 0);
   // The star under the mouse, so the stars light up before clicking.
   const [hovered, setHovered] = useState(0);
-  const [comment, setComment] = useState("");
+  const [comment, setComment] = useState(existing?.comment ?? "");
   const [ratingError, setRatingError] = useState<string | null>(null);
   const [commentError, setCommentError] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
@@ -65,18 +74,24 @@ export function ReviewForm({ placeType, placeId, onPosted }: ReviewFormProps) {
 
     setBusy(true);
     try {
-      // Only the place, stars and comment are sent. The database fills in
-      // who wrote it, their display name and the dates.
-      const { data, error } = await createClient()
-        .from("reviews")
-        .insert({ place_type: placeType, place_id: placeId, rating, comment: comment.trim() })
-        .select("id, user_id, reviewer_name, rating, comment, created_at")
-        .single();
+      const reviews = createClient().from("reviews");
+      const columns = "id, user_id, reviewer_name, rating, comment, created_at";
+      const fields = { rating, comment: comment.trim() };
+      // New review: only the place, stars and comment are sent; the
+      // database fills in who wrote it, their name and the dates.
+      // Editing: only the stars and comment can change (see the "grant
+      // update" line in supabase/sql/020).
+      const { data, error } = isEdit
+        ? await reviews.update(fields).eq("id", existing.id).select(columns).single()
+        : await reviews
+            .insert({ place_type: placeType, place_id: placeId, ...fields })
+            .select(columns)
+            .single();
       if (error) {
         setFormError(dbErrors[error.code] ?? fallbackError);
         return;
       }
-      onPosted(data);
+      onSaved(data);
     } catch {
       setFormError(fallbackError);
     } finally {
@@ -169,14 +184,32 @@ export function ReviewForm({ placeType, placeId, onPosted }: ReviewFormProps) {
             </div>
           </div>
 
-          <Button
-            type="submit"
-            disabled={busy}
-            className="h-11 rounded-full bg-white px-6 font-semibold text-teal-900 hover:bg-white/90 hover:opacity-100"
-          >
-            {busy && <Spinner />}
-            {busy ? "Posting…" : "Post review"}
-          </Button>
+          <div className="flex flex-wrap items-center gap-3">
+            <Button
+              type="submit"
+              disabled={busy}
+              className="h-11 rounded-full bg-white px-6 font-semibold text-teal-900 hover:bg-white/90 hover:opacity-100"
+            >
+              {busy && <Spinner />}
+              {busy
+                ? isEdit
+                  ? "Saving…"
+                  : "Posting…"
+                : isEdit
+                  ? "Save changes"
+                  : "Post review"}
+            </Button>
+            {isEdit && (
+              <button
+                type="button"
+                onClick={onCancel}
+                disabled={busy}
+                className="h-11 rounded-full border border-white/40 px-6 text-sm font-semibold text-white hover:bg-white/10"
+              >
+                Cancel
+              </button>
+            )}
+          </div>
 
           {formError && (
             <p role="alert" className="text-sm text-amber-200">
