@@ -183,12 +183,12 @@ Browsing needs no login. Writing, editing or deleting a review needs an account:
 - [x] With the backend unreachable, skeletons disappear and the error message shows
 
 **Reviews and ratings round (live URL):**
-- [ ] A new traveler can sign up with a display name, email and password, then log in and log out
-- [ ] A logged-in traveler can rate a destination and an accommodation 1–5 stars with a short review, and sees it appear straight away
-- [ ] The same traveler can edit and delete their own review, and cannot leave a second review for the same place
-- [ ] A logged-out visitor sees the average rating and reviews, plus "Log in to write a review"
-- [ ] Trying to change someone else's review is refused by the database (Row Level Security), not just hidden in the page
-- [ ] The Features section shows the "Reviews & ratings" card
+- [x] A new traveler can sign up with a display name, email and password, then log in and log out
+- [x] A logged-in traveler can rate a destination and an accommodation 1–5 stars with a short review, and sees it appear straight away
+- [x] The same traveler can edit and delete their own review, and cannot leave a second review for the same place
+- [x] A logged-out visitor sees the average rating and reviews, plus "Log in to write a review"
+- [x] Trying to change someone else's review is refused by the database (Row Level Security), not just hidden in the page
+- [x] The Features section shows the "Reviews & ratings" card
 
 ## Out of scope
 - Login for anything other than reviews (browsing stays open to everyone)
