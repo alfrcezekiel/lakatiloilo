@@ -1,5 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import Link from "next/link";
+import { PlaceCardSkeletons } from "@/components/PlaceCardSkeletons";
 
 interface Accommodation {
   id: string;
@@ -13,9 +14,24 @@ interface Accommodation {
 interface AccommodationListProps {
   accommodations: Accommodation[];
   id?: string;
+  // True while the home page is still waiting for the backend.
+  loading: boolean;
 }
 
-export function AccommodationList({ accommodations, id }: AccommodationListProps) {
+export function AccommodationList({ accommodations, id, loading }: AccommodationListProps) {
+  if (loading) {
+    return (
+      <section id={id} className="py-16">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6">
+          <h2 className="mb-8 text-3xl font-semibold text-white">
+            Hotels & Condominiums
+          </h2>
+          <PlaceCardSkeletons withPill />
+        </div>
+      </section>
+    );
+  }
+
   // Same as the destination lists: hide the section when the filter leaves
   // nothing to show. The id goes with it, so the Hotels and Condominiums
   // cards have nothing to scroll to when they show 0 places.

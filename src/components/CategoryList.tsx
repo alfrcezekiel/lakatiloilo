@@ -1,5 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import Link from "next/link";
+import { PlaceCardSkeletons } from "@/components/PlaceCardSkeletons";
 
 interface Destination {
   id: string;
@@ -15,12 +16,27 @@ interface CategoryListProps {
   category: string;
   title: string;
   id?: string;
+  // True while the home page is still waiting for the backend.
+  loading: boolean;
 }
 
-export function CategoryList({ destinations, category, title, id }: CategoryListProps) {
+export function CategoryList({ destinations, category, title, id, loading }: CategoryListProps) {
   const filteredDestinations = destinations
     .filter((dest) => dest.category === category)
     .slice(0, 6);
+
+  // While loading, show the title and skeleton cards. After loading, a
+  // section with no places is hidden, as before.
+  if (loading) {
+    return (
+      <section id={id} className="py-16">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6">
+          <h2 className="mb-8 text-3xl font-semibold text-white">{title}</h2>
+          <PlaceCardSkeletons />
+        </div>
+      </section>
+    );
+  }
 
   if (filteredDestinations.length === 0) return null;
 

@@ -8,6 +8,8 @@ A full-stack platform with a Next.js frontend and NestJS backend, where users ca
 
 The home page opens on a redesigned hero where travelers can type a place name and get live suggestions as they type, and narrow those suggestions with category chips and a City/Province toggle.
 
+While places are still being fetched from the NestJS backend, the site shows skeletons — grey, gently pulsing placeholders shaped like the real cards — so travelers can see the page is working and nothing jumps when the real content arrives.
+
 ## The user
 Travelers planning weekend trips around Iloilo Province. No login required for browsing.
 
@@ -20,6 +22,7 @@ Travelers planning weekend trips around Iloilo Province. No login required for b
 6. As a traveler, I want to browse without creating an account, so that I can quickly find information.
 7. As a developer, I want the backend to provide versioned APIs (/v1, /v2) with PostGIS spatial queries, so that future API changes don't break existing clients and we can support location-based features later.
 8. As a visitor, I want to see a branded footer with Lakat Iloilo name and navigation links, so that I can easily navigate to different sections and understand the platform's identity.
+9. As a traveler on a slow phone connection, I want to see the shape of the page while places load from the backend, so that I know the site is working and the page doesn't jump around.
 
 ## Screens
 1. Home page hero — redesigned to match the team's mockup:
@@ -37,6 +40,11 @@ Travelers planning weekend trips around Iloilo Province. No login required for b
 4. Accommodation detail page — shows accommodation name, address, phone, email, photo, and description. Data fetched from NestJS API.
 5. Footer — shows Lakat Iloilo branding with platform name, copyright information, navigation links (Home, About, Features, Explore), and legal section with a "Photo credits" link. Background uses teal/emerald gradient to match the overall theme.
 6. Photo credits page — lists the photographer and licence of every real Iloilo photo the site uses, as their Creative Commons licences require. Reached from the footer.
+7. Loading skeletons — shown only while the NestJS backend requests are still in flight:
+   - **Home page:** the hero text, chips, About and Features sections appear straight away (they need no data). The Featured and Trending cards each show a skeleton card the same size as the real one. Every list section (the six destination categories and Accommodations) shows its title and 3 skeleton cards. The category cards show a placeholder instead of their place count, never "0". Typing in Where to? says "Loading places…" instead of "No matches".
+   - When the data arrives, each skeleton is replaced by the real card in the same spot. If loading fails, the skeletons disappear and the existing "We couldn't load places" message shows. A section that turns out to have no places stays hidden, as today.
+   - **Destination and Accommodation detail pages:** while the page loads, a skeleton laid out like the real page — photo block, title bar, a few text lines and the back button.
+   - Screen readers announce "Loading places". For visitors with "reduce motion" turned on, the skeletons stay still instead of pulsing.
 
 ## Data
 
@@ -73,6 +81,8 @@ Travelers planning weekend trips around Iloilo Province. No login required for b
 Row Level Security policy: Anyone may read all rows in both tables. No one may write through the app (data is added via SQL scripts by the team).
 
 Live suggestions and the category chips use columns that already exist (`name`, `address`, `category`, `type`, `location_type`) on data the home page already loads. No table changes and no new API endpoint.
+
+Loading skeletons need no data changes either: no new tables, columns or API endpoints, and the Row Level Security policy is unchanged. They use the same backend requests the pages already make.
 
 PostGIS extension: Enabled on Supabase database. The `location` column stores geography points for spatial queries (e.g., find destinations within X km of a point).
 
@@ -137,6 +147,13 @@ No login required. The MVP works as a read-only browsing platform.
 - [x] The City/Province toggle in the search bar narrows the suggestions and does not change the filter further down (and vice versa)
 - [x] Featured and Trending cards show real places and link to their detail pages
 
+**Loading skeletons round (live URL):**
+- [ ] With the browser set to "Slow 4G", the home page shows skeletons, then real cards, with no layout jump
+- [ ] Category cards never show "0" while places are loading
+- [ ] Where to? says "Loading places…", not "No matches", while places are loading
+- [ ] Destination and accommodation detail pages show their skeleton before the content
+- [ ] With the backend unreachable, skeletons disappear and the error message shows
+
 ## Out of scope
 - User accounts and login system
 - Reviews and ratings for destinations
@@ -146,3 +163,4 @@ No login required. The MVP works as a read-only browsing platform.
 - Admin UI for managing data
 - Social features (sharing, favorites)
 - Advanced spatial queries beyond radius search
+- Blurred photo previews, speeding up the backend, and skeletons on the Photo credits page (it has no data to wait for)

@@ -34,12 +34,17 @@ interface SearchBarProps {
   accommodations: Accommodation[];
   // Set by the chips under the bar; only shown here, not changed.
   selectedCategory: string;
+  // True while the home page is still waiting for the backend. Until then
+  // the bar says "Loading places…" instead of "No matches", because no
+  // places have arrived yet to match against.
+  loading: boolean;
 }
 
 export function SearchBar({
   destinations,
   accommodations,
   selectedCategory,
+  loading,
 }: SearchBarProps) {
   const router = useRouter();
   const [query, setQuery] = useState("");
@@ -115,7 +120,9 @@ export function SearchBar({
     : query.trim() === ""
       ? "Type a place name, then pick it from the list"
       : suggestions.length === 0
-        ? "No matches"
+        ? loading
+          ? "Loading places…"
+          : "No matches"
         : `${suggestions.length} suggestion${suggestions.length === 1 ? "" : "s"}`;
 
   // Picking a suggestion only fills the box; Explore then opens it.
@@ -142,7 +149,8 @@ export function SearchBar({
     if (target) {
       router.push(target.href);
     } else {
-      // Nothing matches: open the list so it can say "No matches".
+      // Nothing matches (or places are still loading): open the list so it
+      // can say "No matches" or "Loading places…".
       setIsOpen(true);
       focusSearchBox();
     }
@@ -242,7 +250,7 @@ export function SearchBar({
               </p>
             ) : suggestions.length === 0 ? (
               <p aria-hidden="true" className="px-5 py-4 text-sm text-white/70">
-                No matches
+                {loading ? "Loading places…" : "No matches"}
               </p>
             ) : (
               <ul id="search-suggestions" role="listbox" className="py-2">

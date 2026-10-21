@@ -40,6 +40,9 @@ export default function Home() {
   // True when the backend could not be reached, so visitors see a message
   // instead of empty lists with no explanation.
   const [loadError, setLoadError] = useState(false);
+  // True until both backend requests have finished (worked or failed).
+  // While it is true, sections show skeletons instead of hiding.
+  const [loading, setLoading] = useState(true);
 
   // The only place the home page loads data: one request per endpoint.
   // Child components get the lists as props instead of fetching again.
@@ -51,12 +54,16 @@ export default function Home() {
     if (hasFetched.current) return;
     hasFetched.current = true;
 
-    getDestinations()
-      .then(setDestinations)
-      .catch(() => setLoadError(true));
-    getAccommodations()
-      .then(setAccommodations)
-      .catch(() => setLoadError(true));
+    // Both requests run at the same time. allSettled waits for both to
+    // finish, even if one fails, before turning the skeletons off.
+    Promise.allSettled([
+      getDestinations()
+        .then(setDestinations)
+        .catch(() => setLoadError(true)),
+      getAccommodations()
+        .then(setAccommodations)
+        .catch(() => setLoadError(true)),
+    ]).then(() => setLoading(false));
   }, []);
 
   // What every section shows: the category cards count these and the lists
@@ -78,7 +85,12 @@ export default function Home() {
   );
 
   return (
-    <main className="min-h-screen">
+    <main className="min-h-screen" aria-busy={loading}>
+      {/* Screen readers hear "Loading places" while the skeletons show. The
+          skeletons themselves are hidden from screen readers. */}
+      <p role="status" className="sr-only">
+        {loading ? "Loading places" : ""}
+      </p>
       <section id="explore" className="min-h-screen">
         <HeroSection>
           {/* No padding here: HeroSection already sets the page width and
@@ -88,12 +100,13 @@ export default function Home() {
               destinations={destinations}
               accommodations={accommodations}
               selectedCategory={selectedCategory}
+              loading={loading}
             />
             <CategoryChips
               selectedCategory={selectedCategory}
               onCategoryChange={setSelectedCategory}
             />
-            <FeaturedCards destinations={destinations} />
+            <FeaturedCards destinations={destinations} loading={loading} />
           </div>
         </HeroSection>
       </section>
@@ -110,6 +123,7 @@ export default function Home() {
           accommodations={visibleAccommodations}
           selectedLocation={selectedLocation}
           onLocationChange={setSelectedLocation}
+          loading={loading}
         />
       </section>
 
@@ -143,12 +157,14 @@ export default function Home() {
             category={section.category}
             title={section.title}
             id={`${section.category}-list`}
+            loading={loading}
           />
         ))}
 
         <AccommodationList
           accommodations={visibleAccommodations}
           id="accommodation-list"
+          loading={loading}
         />
       </section>
 

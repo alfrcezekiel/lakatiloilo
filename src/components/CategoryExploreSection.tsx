@@ -4,6 +4,7 @@ import { useMemo } from "react";
 import type { Accommodation, Destination } from "@/lib/api";
 import { locationFilters, sectionTitles } from "@/lib/labels";
 import { scrollToSection } from "@/lib/utils/scroll";
+import { Skeleton } from "@/components/ui/skeleton";
 
 // Card names come from src/lib/labels.ts, so they match the list headings.
 const categories = [
@@ -44,6 +45,9 @@ interface CategoryExploreSectionProps {
   accommodations: Accommodation[];
   selectedLocation: string;
   onLocationChange: (location: string) => void;
+  // True while the home page is still waiting for the backend. The counts
+  // show a skeleton instead of "0 places" until the real numbers arrive.
+  loading: boolean;
 }
 
 export function CategoryExploreSection({
@@ -51,6 +55,7 @@ export function CategoryExploreSection({
   accommodations,
   selectedLocation,
   onLocationChange,
+  loading,
 }: CategoryExploreSectionProps) {
 
   const categorySectionIds: Record<string, string> = {
@@ -137,9 +142,13 @@ export function CategoryExploreSection({
                   <h3 className="text-xl font-semibold text-white mb-1">
                     {category.name}
                   </h3>
-                  <p className="text-white/90 text-sm">
-                    {count} place{count !== 1 ? "s" : ""} →
-                  </p>
+                  {loading ? (
+                    <Skeleton className="h-5 w-20" />
+                  ) : (
+                    <p className="text-white/90 text-sm">
+                      {count} place{count !== 1 ? "s" : ""} →
+                    </p>
+                  )}
                 </div>
               </div>
             );
