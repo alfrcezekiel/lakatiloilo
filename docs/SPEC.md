@@ -10,8 +10,10 @@ The home page opens on a redesigned hero where travelers can type a place name a
 
 While places are still being fetched from the NestJS backend, the site shows skeletons — grey, gently pulsing placeholders shaped like the real cards — so travelers can see the page is working and nothing jumps when the real content arrives.
 
+Travelers who create an account can rate any destination or accommodation from 1 to 5 stars and write a short review. Everyone, with or without an account, can read the reviews and see each place's average rating on its detail page.
+
 ## The user
-Travelers planning weekend trips around Iloilo Province. No login required for browsing.
+Travelers planning weekend trips around Iloilo Province. No login required for browsing; an account is needed only to write a review.
 
 ## User stories
 1. As a traveler, I want to browse destinations organized by category (mountains, foods, walking areas, festivals, nature, heritage) and location (Iloilo City vs. Province), so that I can discover places to visit in the area I'm interested in.
@@ -23,6 +25,9 @@ Travelers planning weekend trips around Iloilo Province. No login required for b
 7. As a developer, I want the backend to provide versioned APIs (/v1, /v2) with PostGIS spatial queries, so that future API changes don't break existing clients and we can support location-based features later.
 8. As a visitor, I want to see a branded footer with Lakat Iloilo name and navigation links, so that I can easily navigate to different sections and understand the platform's identity.
 9. As a traveler on a slow phone connection, I want to see the shape of the page while places load from the backend, so that I know the site is working and the page doesn't jump around.
+10. As a traveler, I want to create an account with my email and a password, so that I can write reviews.
+11. As a logged-in traveler, I want to give a destination or accommodation 1 to 5 stars and a short review, so that other travelers know what it is like.
+12. As any visitor, I want to see a place's average rating and its reviews on its detail page without logging in, so that I can decide whether to go.
 
 ## Screens
 1. Home page hero — redesigned to match the team's mockup:
@@ -45,6 +50,13 @@ Travelers planning weekend trips around Iloilo Province. No login required for b
    - When the data arrives, each skeleton is replaced by the real card in the same spot. If loading fails, the skeletons disappear and the existing "We couldn't load places" message shows. A section that turns out to have no places stays hidden, as today.
    - **Destination and Accommodation detail pages:** while the page loads, a skeleton laid out like the real page — photo block, title bar, a few text lines and the back button.
    - Screen readers announce "Loading places". For visitors with "reduce motion" turned on, the skeletons stay still instead of pulsing.
+8. Sign up / Log in page — one page with two modes. Sign up asks for a display name, email and password; Log in asks for email and password. After logging in, the traveler goes back to the page they came from. The navbar shows "Log in" when logged out, and the display name with "Log out" when logged in. Browsing never asks anyone to log in.
+9. Reviews section — on every destination detail page (including Foods & Dine-ins) and every accommodation detail page, below the existing details:
+   - The average rating as stars (for example "★ 4.3") and the number of reviews, or "No reviews yet".
+   - The reviews, newest first: reviewer's display name, stars, text and date. Email addresses are never shown.
+   - Logged in: a form to pick 1–5 stars and write up to 500 characters. One review per traveler per place; a traveler who already reviewed sees their review with Edit and Delete instead of the form.
+   - Logged out: a "Log in to write a review" link that comes back to this page after login.
+10. Features section — gains a "Reviews & ratings" card, and the "No Login Required" card becomes "Browse freely, log in only to review", so the section describes what the site really does.
 
 ## Data
 
@@ -83,6 +95,22 @@ Row Level Security policy: Anyone may read all rows in both tables. No one may w
 Live suggestions and the category chips use columns that already exist (`name`, `address`, `category`, `type`, `location_type`) on data the home page already loads. No table changes and no new API endpoint.
 
 Loading skeletons need no data changes either: no new tables, columns or API endpoints, and the Row Level Security policy is unchanged. They use the same backend requests the pages already make.
+
+**reviews table:**
+- id — unique identifier for each review
+- place_type — which kind of place is reviewed (one of: "destination", "accommodation")
+- place_id — the id of that destination or accommodation
+- user_id — the account that wrote the review (from Supabase Auth)
+- reviewer_name — the display name shown on the review, taken from the account
+- rating — a whole number from 1 to 5
+- comment — the review text, up to 500 characters
+- created_at — timestamp
+- updated_at — timestamp
+- One review per account per place (user_id, place_type and place_id together are unique).
+
+Row Level Security policy for reviews: anyone may read every review. Only a logged-in traveler may add a review, and only with their own user_id. Only the traveler who wrote a review may edit or delete it. No one else can change it.
+
+The browser reads and writes reviews directly through Supabase with the publishable (anon) key and the traveler's login session; the Row Level Security policy above is what keeps this safe. The NestJS backend stays read-only and is not changed. Account details (email, password) live in Supabase Auth and are never stored in the reviews table.
 
 PostGIS extension: Enabled on Supabase database. The `location` column stores geography points for spatial queries (e.g., find destinations within X km of a point).
 
@@ -123,7 +151,7 @@ PostGIS extension: Enabled on Supabase database. The `location` column stores ge
 - Accessed by NestJS backend using environment variables, through a read-only database login (`lakat_api`, see `supabase/sql/016`)
 
 ## Login
-No login required. The MVP works as a read-only browsing platform.
+Browsing needs no login. Writing, editing or deleting a review needs an account: Supabase Auth with email and password, plus a display name chosen at sign-up. No social logins, no password-reset flow beyond what Supabase provides by default.
 
 ## Done for the demo
 - [x] NestJS backend project structure created in `backend/` directory
@@ -154,12 +182,21 @@ No login required. The MVP works as a read-only browsing platform.
 - [x] Destination and accommodation detail pages show their skeleton before the content
 - [x] With the backend unreachable, skeletons disappear and the error message shows
 
+**Reviews and ratings round (live URL):**
+- [ ] A new traveler can sign up with a display name, email and password, then log in and log out
+- [ ] A logged-in traveler can rate a destination and an accommodation 1–5 stars with a short review, and sees it appear straight away
+- [ ] The same traveler can edit and delete their own review, and cannot leave a second review for the same place
+- [ ] A logged-out visitor sees the average rating and reviews, plus "Log in to write a review"
+- [ ] Trying to change someone else's review is refused by the database (Row Level Security), not just hidden in the page
+- [ ] The Features section shows the "Reviews & ratings" card
+
 ## Out of scope
-- User accounts and login system
-- Reviews and ratings for destinations
+- Login for anything other than reviews (browsing stays open to everyone)
+- Social logins, profile pages, photos in reviews, replies, likes or reporting reviews
+- Star ratings on the home page cards, and filtering or sorting by rating
 - Booking/payments for any services
-- Map integration (PostGIS added for future use, but no map UI in MVP)
-- A full search results page, or searching inside descriptions (live suggestions match names and addresses only)
+- Map integration (PostGIS added for future use, but no map UI in MVP). A Mapbox map is parked in docs/LATER.md until the team decides on it
+- A full search results page, advanced filters, or searching inside descriptions (live suggestions match names and addresses only)
 - Admin UI for managing data
 - Social features (sharing, favorites)
 - Advanced spatial queries beyond radius search

@@ -16,8 +16,7 @@ A centralized web platform where users can browse and discover diverse destinati
 Demo showing a list of 5-10 mountain spots and 5-10 accommodations in Iloilo, with the ability to click each and see details. Elizabeth and Mark will test the app before Session 3.
 
 ## Out of scope
-- User accounts and login system
-- Reviews and ratings for destinations
+- User accounts and login for browsing (accounts for writing reviews were moved into scope on 2026-10-21)
 - Booking/payments for any services
 - Map integration
 - A full search results page (live name suggestions were moved into scope on 2026-10-20)
