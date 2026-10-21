@@ -9,4 +9,4 @@
 - [x] Typing in Where to? during loading shows "Loading places…"
 - [x] Pressing Explore during loading shows "Loading places…"
 - [x] Once loaded, suggestions, keyboard controls (arrows, Enter, Escape) and "No matches" behave exactly as before
-- [ ] Works on the live URL
+- [x] Works on the live URL

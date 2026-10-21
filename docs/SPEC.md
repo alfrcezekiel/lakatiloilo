@@ -148,11 +148,11 @@ No login required. The MVP works as a read-only browsing platform.
 - [x] Featured and Trending cards show real places and link to their detail pages
 
 **Loading skeletons round (live URL):**
-- [ ] With the browser set to "Slow 4G", the home page shows skeletons, then real cards, with no layout jump
-- [ ] Category cards never show "0" while places are loading
-- [ ] Where to? says "Loading places…", not "No matches", while places are loading
-- [ ] Destination and accommodation detail pages show their skeleton before the content
-- [ ] With the backend unreachable, skeletons disappear and the error message shows
+- [x] With the browser set to "Slow 4G", the home page shows skeletons, then real cards, with no layout jump
+- [x] Category cards never show "0" while places are loading
+- [x] Where to? says "Loading places…", not "No matches", while places are loading
+- [x] Destination and accommodation detail pages show their skeleton before the content
+- [x] With the backend unreachable, skeletons disappear and the error message shows
 
 ## Out of scope
 - User accounts and login system

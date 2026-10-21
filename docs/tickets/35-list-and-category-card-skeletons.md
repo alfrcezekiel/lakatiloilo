@@ -11,4 +11,4 @@
 - [x] Real cards replace the skeletons in the same spot, with no jump
 - [x] Sections with no places are still hidden after loading
 - [x] The location filter works as before once loaded
-- [ ] Works on the live URL
+- [x] Works on the live URL

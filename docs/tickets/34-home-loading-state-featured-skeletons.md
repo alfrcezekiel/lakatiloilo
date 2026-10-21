@@ -11,4 +11,4 @@
 - [x] The hero text and chips appear before the places arrive
 - [x] Featured and Trending show skeleton cards while loading, then the real cards with no layout jump
 - [x] With the backend unreachable, the skeletons disappear and the error message shows
-- [ ] Works on the live URL
+- [x] Works on the live URL
