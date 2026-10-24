@@ -12,6 +12,10 @@ const nextConfig: NextConfig = {
   //
   // Turn them back on later if you want them, and read:
   // https://nextjs.org/docs/messages/blocking-prerender-dynamic
+  experimental: {
+    // Lets `next upgrade` focus on security fixes for this project.
+    agentUpgrade: "security",
+  },
   turbopack: {
     rules: {
       "*.css": {
