@@ -66,7 +66,7 @@ Travelers planning weekend trips around Iloilo Province. No login required for b
 11. Sign up / Log in page, login extras round — the page gains:
    - **Sign up – "I'm traveling as":** three choices, Local Ilonggo, Visitor from PH and Foreign tourist. Picking one is required.
    - **Sign up – password strength bar:** under the password field, a bar showing Weak, Okay or Strong, based on length and on mixing letters, numbers and symbols. It is only a hint; the 8-character minimum stays the real rule.
-   - **Log in – "Keep me logged in":** a checkbox, unticked by default. Unticked, the traveler is logged out when they close the browser; ticked, they stay logged in, and this browser remembers their email (never the password), so after logging out the login page comes back with the email filled in and the box ticked. Signing up follows the default, so a new account is logged out when the browser closes. (Changed from "ticked by default" on 2026-10-23, at the team's request.)
+   - **Log in – "Keep me logged in":** a checkbox, unticked by default. Unticked, the traveler is logged out when they close the browser and open the site again (also in browsers that reopen old tabs); ticked, they stay logged in, and this browser remembers their email (never the password), so after logging out the login page comes back with the email filled in and the box ticked. Signing up follows the default, so a new account is logged out when the browser closes. (Changed from "ticked by default" on 2026-10-23, at the team's request.)
    - **Log in – "Forgot password?":** a link to the Forgot password page.
 12. Forgot password page — the traveler types their email and presses "Send reset link". The page always answers "If that email has an account, we've sent a link", so it never reveals who has an account.
 13. Set new password page — opened from the link in the email. The traveler chooses a new password (with the strength bar), is logged in and taken home. An expired or already-used link shows a clear message and a way to ask for a new one.
@@ -210,11 +210,11 @@ Login extras round: travelers can reset a forgotten password through Supabase's 
 - [x] The Features section shows the "Reviews & ratings" card
 
 **Login extras round (live URL):**
-- [ ] Typing a password at sign-up moves the strength bar from Weak to Strong
-- [ ] A new traveler picks "I'm traveling as", and their review shows that tag
+- [x] Typing a password at sign-up moves the strength bar from Weak to Strong
+- [x] A new traveler picks "I'm traveling as", and their review shows that tag
 - [ ] "Keep me logged in" starts unticked; logging in that way, then closing and reopening the browser, shows the traveler logged out; ticked, they stay logged in
-- [ ] "Forgot password?" sends an email; its link opens the Set new password page, and the new password works for logging in
-- [ ] An expired or used reset link shows a clear message, not a crash
+- [x] "Forgot password?" sends an email; its link opens the Set new password page, and the new password works for logging in
+- [x] An expired or used reset link shows a clear message, not a crash
 
 ## Out of scope
 - Login for anything other than reviews (browsing stays open to everyone)

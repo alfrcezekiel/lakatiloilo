@@ -4,11 +4,11 @@
 
 **Blocked by:** None
 
-**Status:** in progress (022 ran in Supabase on 2026-10-23; tested by the team on localhost; not pushed yet)
+**Status:** done (tested by the team on the live URL, 2026-10-24)
 
 - [x] Sign up mode shows the three "I'm traveling as" choices; signing up without picking one shows a clear message
-- [ ] The choice is saved on the Supabase account, next to the display name
+- [x] The choice is saved on the Supabase account, next to the display name
 - [x] The reviews table gains a traveler_type column ("local", "domestic", "foreign" or empty), filled in by the database from the account, never from the browser. The change is a new numbered file in the SQL folder
-- [ ] Reviews show the tag after the reviewer's name; reviews from older accounts without a traveler type show no tag
+- [x] Reviews show the tag after the reviewer's name; reviews from older accounts without a traveler type show no tag
 - [x] Row Level Security on reviews is unchanged and still on
-- [ ] Works on the live URL
+- [x] Works on the live URL

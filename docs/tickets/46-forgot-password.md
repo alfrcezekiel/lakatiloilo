@@ -4,7 +4,7 @@
 
 **Blocked by:** 43
 
-**Status:** in progress (Redirect URLs added and a real reset email tested by the team on 2026-10-24; not pushed yet)
+**Status:** done (tested by the team on the live URL, 2026-10-24)
 
 **Checked on localhost (2026-10-24):** the "Forgot password?" link, the empty-email message, and the Set new password page's three error views (opened without a link, an expired link, a code that does not work) all show the right message. Sending a real email was left for the team.
 
@@ -15,7 +15,7 @@
 - [x] An expired or already-used link shows a clear message and a link to ask for a new one
 - [x] The new password works for logging in; the old one no longer does
 - [x] Opening a reset link and then leaving without saving a new password (or opening the same link a second time) does not leave the traveler logged in
-- [ ] Works on the live URL
+- [x] Works on the live URL
 
 **Bug fix (2026-10-24):** the team opened a reset link, then opened it a second time (it said "expired"), went back to log in, and found themselves logged in without typing a password. Cause: opening a reset link logs the traveler in so the Set new password page can change the password, and nothing removed that login if they did not save. Fix: while a reset is in progress the site remembers it, and any other page (or the reset page itself, when the link fails) logs that login out. It only becomes a real login once the new password is saved. This also fixes the code review's S1.
 
