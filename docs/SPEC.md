@@ -12,7 +12,7 @@ While places are still being fetched from the NestJS backend, the site shows ske
 
 Travelers who create an account can rate any destination or accommodation from 1 to 5 stars and write a short review. Everyone, with or without an account, can read the reviews and see each place's average rating on its detail page.
 
-The login page also helps travelers look after their account: a password strength bar, a "Forgot password?" email link, and a "Keep me logged in" choice. At sign-up, travelers say whether they are a local, a visitor from the Philippines or a foreign tourist, and their reviews show it.
+The login page also helps travelers look after their account: a password strength bar, a "Forgot password?" email link, and a "Remember my email" choice. At sign-up, travelers say whether they are a local, a visitor from the Philippines or a foreign tourist, and their reviews show it.
 
 ## The user
 Travelers planning weekend trips around Iloilo Province. No login required for browsing; an account is needed only to write a review.
@@ -32,7 +32,7 @@ Travelers planning weekend trips around Iloilo Province. No login required for b
 12. As any visitor, I want to see a place's average rating and its reviews on its detail page without logging in, so that I can decide whether to go.
 13. As a traveler signing up, I want to see how strong my password is, so that I choose one that keeps my account safe.
 14. As a traveler signing up, I want to say whether I'm a local, a visitor from the Philippines or a foreign tourist, so that people reading my reviews know where I'm coming from.
-15. As a traveler on a shared computer, I want to untick "Keep me logged in", so that I am logged out when I close the browser.
+15. As a returning traveler, I want the login page to remember my email, so that logging in again is quicker.
 16. As a traveler who forgot my password, I want to get a reset link by email and choose a new password, so that I can get back into my account.
 
 ## Screens
@@ -66,10 +66,10 @@ Travelers planning weekend trips around Iloilo Province. No login required for b
 11. Sign up / Log in page, login extras round — the page gains:
    - **Sign up – "I'm traveling as":** three choices, Local Ilonggo, Visitor from PH and Foreign tourist. Picking one is required.
    - **Sign up – password strength bar:** under the password field, a bar showing Weak, Okay or Strong, based on length and on mixing letters, numbers and symbols. It is only a hint; the 8-character minimum stays the real rule.
-   - **Log in – "Keep me logged in":** a checkbox, unticked by default. Unticked, the traveler is logged out when they close the browser and open the site again (also in browsers that reopen old tabs); ticked, they stay logged in, and this browser remembers their email (never the password), so after logging out the login page comes back with the email filled in and the box ticked. Signing up follows the default, so a new account is logged out when the browser closes. (Changed from "ticked by default" on 2026-10-23, at the team's request.)
+   - **Log in – "Remember my email":** a checkbox, unticked by default. Travelers always stay logged in until they log out, whether or not they tick it. Ticked, this browser remembers their email (never the password), so after logging out the login page comes back with the email filled in and the box ticked; unticked, any remembered email is forgotten. (Was "Keep me logged in", which logged unticked travelers out when the browser closed; renamed and changed on 2026-10-24 at the team's request.)
    - **Log in – "Forgot password?":** a link to the Forgot password page.
 12. Forgot password page — the traveler types their email and presses "Send reset link". The page always answers "If that email has an account, we've sent a link", so it never reveals who has an account.
-13. Set new password page — opened from the link in the email. The traveler chooses a new password (with the strength bar), is logged in and taken home. An expired or already-used link shows a clear message and a way to ask for a new one.
+13. Set new password page — opened from the link in the email. The traveler chooses a new password (with the strength bar) and presses "Save new password". A pop-up then says whether it worked: "Password changed" with a "Go to log in" button, or "Password not changed" with the reason and "Try again" (or "Send me a new link" when the link has expired). Opening the link or saving never logs anyone in, in this tab or any other; the traveler logs in with the new password on the log-in page. (Changed on 2026-10-24: it used to log the traveler in and take them home.) An expired or already-used link shows a clear message and a way to ask for a new one.
 14. Reviews section, login extras round — each review shows the reviewer's traveler type as a small tag after their name, for example "Juan · Local Ilonggo". Reviews from accounts without a traveler type show no tag.
 
 ## Data
@@ -170,7 +170,7 @@ PostGIS extension: Enabled on Supabase database. The `location` column stores ge
 ## Login
 Browsing needs no login. Writing, editing or deleting a review needs an account: Supabase Auth with email and password, plus a display name chosen at sign-up. No social logins.
 
-Login extras round: travelers can reset a forgotten password through Supabase's reset email (the built-in email sender, which allows only a few emails an hour; fine for the demo). The Forgot password and Set new password pages' addresses, on localhost and on the live URL, are added to Supabase's allowed redirect URLs. "Keep me logged in" unticked means the login lasts only until the browser closes.
+Login extras round: travelers can reset a forgotten password through Supabase's reset email (the built-in email sender, which allows only a few emails an hour; fine for the demo). The Forgot password and Set new password pages' addresses, on localhost and on the live URL, are added to Supabase's allowed redirect URLs. Travelers stay logged in until they log out; "Remember my email" only fills in the email on the login page.
 
 ## Done for the demo
 - [x] NestJS backend project structure created in `backend/` directory
@@ -212,7 +212,7 @@ Login extras round: travelers can reset a forgotten password through Supabase's 
 **Login extras round (live URL):**
 - [x] Typing a password at sign-up moves the strength bar from Weak to Strong
 - [x] A new traveler picks "I'm traveling as", and their review shows that tag
-- [ ] "Keep me logged in" starts unticked; logging in that way, then closing and reopening the browser, shows the traveler logged out; ticked, they stay logged in
+- [ ] "Remember my email" starts unticked; ticked, the login page shows the email after logging out; either way, the traveler stays logged in after closing and reopening the browser
 - [x] "Forgot password?" sends an email; its link opens the Set new password page, and the new password works for logging in
 - [x] An expired or used reset link shows a clear message, not a crash
 

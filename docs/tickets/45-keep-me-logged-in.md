@@ -1,36 +1,28 @@
-# 45 — "Keep me logged in" checkbox
+# 45 — "Remember my email" checkbox
 
-**What to build:** Log in mode gains a "Keep me logged in" checkbox, unticked by default.
+**What to build:** Log in mode gains a "Remember my email" checkbox, unticked by default.
 
-- **Unticked:** when the traveler closes the browser and opens the site again, they are logged out. Useful on shared computers.
-- **Ticked:** they stay logged in after closing the browser, and this browser remembers their email (never the password), so after logging out the login page comes back with the email filled in and the box ticked.
-- Signing up has no checkbox and follows the default: a new account is logged out when the browser closes.
+- Travelers always stay logged in until they press Log out, including after closing and reopening the browser, whether or not they tick the box.
+- **Ticked:** this browser remembers their email (never the password). After logging out, the login page comes back with the email filled in and the box ticked.
+- **Unticked:** any remembered email is forgotten.
+- Signing up has no checkbox and leaves any remembered email alone.
 
 **Blocked by:** None
 
-**Status:** in progress (code rewritten and checked on localhost 2026-10-24; not pushed yet, so the unticked case still needs testing on the live URL)
+**Status:** in progress (changed and checked on localhost 2026-10-24; not pushed yet, so it still needs testing on the live URL)
 
 **Decisions:**
-- 2026-10-23: the default is unticked, so staying logged in is something the traveler chooses.
+- 2026-10-23: the box starts unticked.
 - 2026-10-24: a ticked login remembers the email; an unticked login forgets it.
-- 2026-10-24: no timers ("heartbeat") running in open tabs. The site works out that the browser was closed only when a page opens.
+- 2026-10-24: unticked travelers also stay logged in after closing the browser. Since the box no longer decides whether anyone is logged out, it was renamed from "Keep me logged in" to "Remember my email", so the label says what it does.
 
-**How it works:** a website is never told "the browser closed", so the site works it out the next time a Lakat Iloilo page opens. An unticked login counts as over, and the traveler is logged out before the page shows them as logged in, when either:
+**How it works:** Supabase keeps travelers logged in until they log out. The box only saves or forgets the email in this browser's storage, and the login page reads it back when it opens.
 
-1. the browser deleted the site's "browser is open" cookie, which browsers do when they close; or
-2. the last Lakat Iloilo page was closed more than 10 seconds ago, and no other Lakat Iloilo tab is still open. Each page notes the time as it closes, and answers when a new page asks "anyone still open?". This catches Brave, Chrome and Edge set to "Continue where you left off", which keep that cookie after closing.
-
-Refreshing comes back within 10 seconds, and moving between pages does not close anything, so neither logs anyone out.
-
-**Known limit:** closing the last Lakat Iloilo tab while the browser stays open, then opening the site again more than 10 seconds later, also counts as closing and logs an unticked traveler out.
-
-- [x] The checkbox shows in Log in mode, unticked by default
-- [x] Ticked: after closing and reopening the browser, the traveler is still logged in
-- [ ] Unticked: after closing and reopening the browser, the traveler is logged out
-- [x] After logging out from a ticked login, the login page shows the email filled in and the box ticked
+- [x] The checkbox shows in Log in mode, unticked by default, labelled "Remember my email"
+- [ ] Ticked or unticked: after closing and reopening the browser, the traveler is still logged in
+- [ ] Ticked: after logging out, the login page shows the email filled in and the box ticked
+- [ ] Unticked: after logging out, the login page shows an empty email field
 - [x] Refreshing the page or moving between pages never logs anyone out
 - [ ] Works on the live URL
 
-**History (2026-10-24):** the first version relied only on the "browser is open" cookie. On the live URL, Brave kept that cookie after closing, so an unticked traveler stayed logged in. A 2-minute heartbeat (open tabs noting the time every 20 seconds) was tried next and removed at the team's request, in favour of the rule above.
-
-**Checked on localhost (2026-10-24):** with fake markers instead of a real login. A page closed 60 seconds earlier with no other Lakat tab open: logged out. A refresh: still logged in. A page closed 60 seconds earlier but another Lakat tab open: still logged in. The "browser is open" cookie gone: logged out.
+**History (2026-10-24):** this ticket started as "Keep me logged in", where unticked travelers were logged out when they closed the browser. A cookie-only check did not work in Brave (it keeps such cookies when it reopens old tabs); a 2-minute heartbeat was tried and removed; a check when pages open worked on the live URL. The team then decided unticked travelers should stay logged in too, so all of that was removed and the box renamed.
