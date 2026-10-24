@@ -12,6 +12,8 @@ While places are still being fetched from the NestJS backend, the site shows ske
 
 Travelers who create an account can rate any destination or accommodation from 1 to 5 stars and write a short review. Everyone, with or without an account, can read the reviews and see each place's average rating on its detail page.
 
+The login page also helps travelers look after their account: a password strength bar, a "Forgot password?" email link, and a "Keep me logged in" choice. At sign-up, travelers say whether they are a local, a visitor from the Philippines or a foreign tourist, and their reviews show it.
+
 ## The user
 Travelers planning weekend trips around Iloilo Province. No login required for browsing; an account is needed only to write a review.
 
@@ -28,6 +30,10 @@ Travelers planning weekend trips around Iloilo Province. No login required for b
 10. As a traveler, I want to create an account with my email and a password, so that I can write reviews.
 11. As a logged-in traveler, I want to give a destination or accommodation 1 to 5 stars and a short review, so that other travelers know what it is like.
 12. As any visitor, I want to see a place's average rating and its reviews on its detail page without logging in, so that I can decide whether to go.
+13. As a traveler signing up, I want to see how strong my password is, so that I choose one that keeps my account safe.
+14. As a traveler signing up, I want to say whether I'm a local, a visitor from the Philippines or a foreign tourist, so that people reading my reviews know where I'm coming from.
+15. As a traveler on a shared computer, I want to untick "Keep me logged in", so that I am logged out when I close the browser.
+16. As a traveler who forgot my password, I want to get a reset link by email and choose a new password, so that I can get back into my account.
 
 ## Screens
 1. Home page hero — redesigned to match the team's mockup:
@@ -57,6 +63,14 @@ Travelers planning weekend trips around Iloilo Province. No login required for b
    - Logged in: a form to pick 1–5 stars and write up to 500 characters. One review per traveler per place; a traveler who already reviewed sees their review with Edit and Delete instead of the form.
    - Logged out: a "Log in to write a review" link that comes back to this page after login.
 10. Features section — gains a "Reviews & ratings" card, and the "No Login Required" card becomes "Browse freely, log in only to review", so the section describes what the site really does.
+11. Sign up / Log in page, login extras round — the page gains:
+   - **Sign up – "I'm traveling as":** three choices, Local Ilonggo, Visitor from PH and Foreign tourist. Picking one is required.
+   - **Sign up – password strength bar:** under the password field, a bar showing Weak, Okay or Strong, based on length and on mixing letters, numbers and symbols. It is only a hint; the 8-character minimum stays the real rule.
+   - **Log in – "Keep me logged in":** a checkbox, unticked by default. Unticked, the traveler is logged out when they close the browser; ticked, they stay logged in, and this browser remembers their email (never the password), so after logging out the login page comes back with the email filled in and the box ticked. Signing up follows the default, so a new account is logged out when the browser closes. (Changed from "ticked by default" on 2026-10-23, at the team's request.)
+   - **Log in – "Forgot password?":** a link to the Forgot password page.
+12. Forgot password page — the traveler types their email and presses "Send reset link". The page always answers "If that email has an account, we've sent a link", so it never reveals who has an account.
+13. Set new password page — opened from the link in the email. The traveler chooses a new password (with the strength bar), is logged in and taken home. An expired or already-used link shows a clear message and a way to ask for a new one.
+14. Reviews section, login extras round — each review shows the reviewer's traveler type as a small tag after their name, for example "Juan · Local Ilonggo". Reviews from accounts without a traveler type show no tag.
 
 ## Data
 
@@ -102,6 +116,7 @@ Loading skeletons need no data changes either: no new tables, columns or API end
 - place_id — the id of that destination or accommodation
 - user_id — the account that wrote the review (from Supabase Auth)
 - reviewer_name — the display name shown on the review, taken from the account
+- traveler_type — the reviewer's traveler type, taken from the account (one of: "local", "domestic", "foreign"), or empty for accounts that have none. Added in the login extras round.
 - rating — a whole number from 1 to 5
 - comment — the review text, up to 500 characters
 - created_at — timestamp
@@ -111,6 +126,8 @@ Loading skeletons need no data changes either: no new tables, columns or API end
 Row Level Security policy for reviews: anyone may read every review. Only a logged-in traveler may add a review, and only with their own user_id. Only the traveler who wrote a review may edit or delete it. No one else can change it.
 
 The browser reads and writes reviews directly through Supabase with the publishable (anon) key and the traveler's login session; the Row Level Security policy above is what keeps this safe. The NestJS backend stays read-only and is not changed. Account details (email, password) live in Supabase Auth and are never stored in the reviews table.
+
+The traveler type is saved on the Supabase Auth account, next to the display name. The database copies it onto each review, the same way it copies reviewer_name, so it can never be typed in from the browser. The reviews Row Level Security policy is unchanged.
 
 PostGIS extension: Enabled on Supabase database. The `location` column stores geography points for spatial queries (e.g., find destinations within X km of a point).
 
@@ -151,7 +168,9 @@ PostGIS extension: Enabled on Supabase database. The `location` column stores ge
 - Accessed by NestJS backend using environment variables, through a read-only database login (`lakat_api`, see `supabase/sql/016`)
 
 ## Login
-Browsing needs no login. Writing, editing or deleting a review needs an account: Supabase Auth with email and password, plus a display name chosen at sign-up. No social logins, no password-reset flow beyond what Supabase provides by default.
+Browsing needs no login. Writing, editing or deleting a review needs an account: Supabase Auth with email and password, plus a display name chosen at sign-up. No social logins.
+
+Login extras round: travelers can reset a forgotten password through Supabase's reset email (the built-in email sender, which allows only a few emails an hour; fine for the demo). The Forgot password and Set new password pages' addresses, on localhost and on the live URL, are added to Supabase's allowed redirect URLs. "Keep me logged in" unticked means the login lasts only until the browser closes.
 
 ## Done for the demo
 - [x] NestJS backend project structure created in `backend/` directory
@@ -190,8 +209,16 @@ Browsing needs no login. Writing, editing or deleting a review needs an account:
 - [x] Trying to change someone else's review is refused by the database (Row Level Security), not just hidden in the page
 - [x] The Features section shows the "Reviews & ratings" card
 
+**Login extras round (live URL):**
+- [ ] Typing a password at sign-up moves the strength bar from Weak to Strong
+- [ ] A new traveler picks "I'm traveling as", and their review shows that tag
+- [ ] "Keep me logged in" starts unticked; logging in that way, then closing and reopening the browser, shows the traveler logged out; ticked, they stay logged in
+- [ ] "Forgot password?" sends an email; its link opens the Set new password page, and the new password works for logging in
+- [ ] An expired or used reset link shows a clear message, not a crash
+
 ## Out of scope
 - Login for anything other than reviews (browsing stays open to everyone)
+- Changing the traveler type after sign-up (needs a profile page), and a custom email sender for reset emails
 - Social logins, profile pages, photos in reviews, replies, likes or reporting reviews
 - Star ratings on the home page cards, and filtering or sorting by rating
 - Booking/payments for any services

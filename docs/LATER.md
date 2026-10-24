@@ -21,15 +21,15 @@ that handles the confirmation link.
 
 ### Extras from the login design (option 1a)
 The login page uses the look of option 1a from the "Lakat Auth" design
-(2026-10-21). These parts of that design were parked:
+(2026-10-21). On 2026-10-23 the password strength bar, "I'm traveling
+as", "Keep me logged in" and Forgot password moved into the spec as the
+login extras round (tickets 43–47). Still parked:
 - "Continue with Google" and "Continue with Facebook" (social logins)
-- Forgot password (needs a reset page and working emails)
-- "Keep me logged in" (Supabase always keeps people logged in today)
-- "I'm traveling as: Local Ilonggo / Visitor from PH / Foreign tourist"
 - "By creating an account you agree to the Terms and Privacy Policy"
   (needs those pages first)
 - Language switch: English / Hiligaynon / Filipino
-- Password strength bar
+- Changing the traveler type after sign-up (needs a profile page)
+- A custom email sender, so reset emails are not limited to a few an hour
 
 ### Interactive map (Mapbox GL) — needs a team decision
 Proposed 2026-10-21. Mapbox GL is outside the pinned stack: it adds a new
