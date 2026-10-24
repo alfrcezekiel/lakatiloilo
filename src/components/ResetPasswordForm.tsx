@@ -10,15 +10,9 @@ import { Spinner } from "@/components/ui/spinner";
 import { GlassField, fieldInputClass } from "@/components/GlassField";
 import { MIN_PASSWORD_LENGTH, PasswordStrength } from "@/components/PasswordStrength";
 import { authButtonClass } from "@/components/AuthShell";
+import { StatusModal } from "@/components/StatusModal";
 import { createClient } from "@/lib/supabase/client";
-import {
-  endPasswordReset,
-  rememberedEmail,
-  rememberLoginChoice,
-  resetIsPending,
-  startPasswordReset,
-  watchLakatTabs,
-} from "@/lib/auth";
+import { endPasswordReset, resetIsPending, startPasswordReset } from "@/lib/auth";
 
 // What the page shows:
 //   checking - reading the link from the email (a split second)
@@ -28,20 +22,25 @@ import {
 //   no-link  - someone opened this page without a link
 type View = "checking" | "ready" | "bad-link" | "no-link";
 
+// The pop-up shown after "Save new password":
+//   saved    - the password changed
+//   retry    - it did not change, but trying again may work
+//   new-link - it did not change because the link has run out
+type Result =
+  | { kind: "saved" }
+  | { kind: "retry"; message: string }
+  | { kind: "new-link" };
+
 export function ResetPasswordForm() {
   const router = useRouter();
   const [view, setView] = useState<View>("checking");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [passwordError, setPasswordError] = useState<string | null>(null);
-  const [formError, setFormError] = useState<string | null>(null);
+  const [result, setResult] = useState<Result | null>(null);
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
-    // Count this page as an open Lakat tab for "Keep me logged in". (It
-    // does not run the logout check itself: that could end the login the
-    // reset link has just made.)
-    watchLakatTabs();
     let cancelled = false;
 
     async function readLink() {
@@ -93,7 +92,6 @@ export function ResetPasswordForm() {
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    setFormError(null);
     if (password.length < MIN_PASSWORD_LENGTH) {
       setPasswordError(`Use at least ${MIN_PASSWORD_LENGTH} characters.`);
       return;
@@ -103,31 +101,32 @@ export function ResetPasswordForm() {
     setBusy(true);
     try {
       const supabase = createClient();
-      const { data, error } = await supabase.auth.updateUser({ password });
+      const { error } = await supabase.auth.updateUser({ password });
       if (error) {
         if (error.code === "same_password") {
-          setPasswordError("Your new password must be different from your old one.");
+          setResult({ kind: "retry", message: "Your new password must be different from your old one." });
         } else if (error.code === "weak_password") {
-          setPasswordError(`That password is too weak. Use at least ${MIN_PASSWORD_LENGTH} characters.`);
+          setResult({
+            kind: "retry",
+            message: `That password is too weak. Use at least ${MIN_PASSWORD_LENGTH} characters, with numbers and symbols.`,
+          });
         } else if (error.code === "session_not_found" || error.code === "session_expired") {
           await supabase.auth.signOut({ scope: "local" });
           endPasswordReset();
-          setView("bad-link");
+          setResult({ kind: "new-link" });
         } else {
-          setFormError("Something went wrong. Please try again.");
+          setResult({ kind: "retry", message: "Something went wrong. Please try again." });
         }
         return;
       }
-      // The new password is saved, so this is now a real login.
+      // The new password is saved. The reset link's login was only for
+      // this page, so end it: the traveler logs in with the new password.
+      await supabase.auth.signOut({ scope: "local" });
       endPasswordReset();
-      // Keep "Keep me logged in" as they last chose it:
-      // stay logged in only if this browser remembered their email.
-      const email = data.user.email ?? "";
-      rememberLoginChoice(email !== "" && rememberedEmail() === email, email);
-      router.replace("/");
+      setResult({ kind: "saved" });
     } catch {
       // For example, no internet connection.
-      setFormError("Something went wrong. Please try again.");
+      setResult({ kind: "retry", message: "Something went wrong. Please check your connection and try again." });
     } finally {
       setBusy(false);
     }
@@ -201,10 +200,41 @@ export function ResetPasswordForm() {
         {busy ? "Please wait…" : "Save new password"}
       </Button>
 
-      {formError && (
-        <p role="alert" className="text-center text-sm text-amber-200">
-          {formError}
-        </p>
+      {result?.kind === "saved" && (
+        <StatusModal
+          open
+          tone="success"
+          title="Password changed"
+          message="Your new password is saved. Log in with it to continue."
+          actionLabel="Go to log in"
+          onAction={() => router.replace("/login")}
+          onClose={() => router.replace("/login")}
+        />
+      )}
+      {result?.kind === "retry" && (
+        <StatusModal
+          open
+          tone="error"
+          title="Password not changed"
+          message={result.message}
+          actionLabel="Try again"
+          onAction={() => setResult(null)}
+          onClose={() => setResult(null)}
+        />
+      )}
+      {result?.kind === "new-link" && (
+        <StatusModal
+          open
+          tone="error"
+          title="Password not changed"
+          message="This reset link has expired. Ask for a new link and try again."
+          actionLabel="Send me a new link"
+          onAction={() => router.push("/forgot-password")}
+          onClose={() => {
+            setResult(null);
+            setView("bad-link");
+          }}
+        />
       )}
     </form>
   );

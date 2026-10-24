@@ -14,7 +14,7 @@ import { createClient } from "@/lib/supabase/client";
 import {
   displayNameOf,
   rememberedEmail,
-  rememberLoginChoice,
+  rememberEmail,
   safeNextPath,
   useCurrentUser,
 } from "@/lib/auth";
@@ -54,16 +54,15 @@ export function LoginForm() {
   const [displayName, setDisplayName] = useState("");
   // "I'm traveling as" (sign-up only). null until the traveler picks one.
   const [travelerType, setTravelerType] = useState<TravelerType | null>(null);
-  // Log in mode starts with the email from a "Keep me logged in" login,
-  // if there was one. (The form only appears after the page has loaded in
+  // Log in mode starts with the email saved by "Remember my email", if
+  // there is one. (The form only appears after the page has loaded in
   // the browser, so reading browser storage here is safe.)
   const [email, setEmail] = useState(() => (mode === "login" ? rememberedEmail() : ""));
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  // "Keep me logged in" (log-in only). Unticked by default: the login
-  // ends when the browser closes unless the traveler ticks it. Starts
-  // ticked if they ticked it last time (their email was remembered).
-  const [keepLoggedIn, setKeepLoggedIn] = useState(() => rememberedEmail() !== "");
+  // "Remember my email" (log-in only). Unticked by default; starts ticked
+  // if they ticked it last time (their email was remembered).
+  const [rememberMyEmail, setRememberMyEmail] = useState(() => rememberedEmail() !== "");
   const [errors, setErrors] = useState<Errors>({});
   const [notice, setNotice] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -83,7 +82,7 @@ export function LoginForm() {
     // Back to Log in: bring back the remembered email and ticked box.
     const remembered = newMode === "login" ? rememberedEmail() : "";
     setEmail(remembered);
-    setKeepLoggedIn(remembered !== "");
+    setRememberMyEmail(remembered !== "");
     setPassword("");
     setShowPassword(false);
     setErrors({});
@@ -154,9 +153,8 @@ export function LoginForm() {
         setNotice("Check your email for a link to confirm your account, then log in.");
         return;
       }
-      // Sign-up has no checkbox, so it follows the default (unticked):
-      // the new login ends when the browser closes.
-      rememberLoginChoice(mode === "login" && keepLoggedIn, email);
+      // Sign-up has no checkbox, so it leaves any remembered email alone.
+      if (mode === "login") rememberEmail(rememberMyEmail, email);
       setLeaving(true);
       router.replace(next);
     } catch {
@@ -347,11 +345,11 @@ export function LoginForm() {
                 <label className="flex w-fit cursor-pointer items-center gap-2 text-sm text-white/90">
                   <input
                     type="checkbox"
-                    checked={keepLoggedIn}
-                    onChange={(e) => setKeepLoggedIn(e.target.checked)}
+                    checked={rememberMyEmail}
+                    onChange={(e) => setRememberMyEmail(e.target.checked)}
                     className="size-4 cursor-pointer accent-white"
                   />
-                  Keep me logged in
+                  Remember my email
                 </label>
                 <Link
                   href="/forgot-password"
