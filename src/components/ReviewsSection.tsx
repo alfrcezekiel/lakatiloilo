@@ -9,11 +9,15 @@ import { createClient } from "@/lib/supabase/client";
 import { useCurrentUser } from "@/lib/auth";
 import { ReviewForm } from "@/components/ReviewForm";
 import { MyReviewBox } from "@/components/MyReviewBox";
+import { travelerTypeLabels } from "@/lib/labels";
 
 export type Review = {
   id: string;
   user_id: string;
   reviewer_name: string;
+  // "local", "domestic" or "foreign"; null for accounts made before the
+  // login extras round, which show no tag.
+  traveler_type: string | null;
   rating: number;
   comment: string;
   created_at: string;
@@ -45,7 +49,7 @@ export function ReviewsSection({ placeType, placeId }: ReviewsSectionProps) {
       try {
         const { data, error } = await createClient()
           .from("reviews")
-          .select("id, user_id, reviewer_name, rating, comment, created_at")
+          .select("id, user_id, reviewer_name, traveler_type, rating, comment, created_at")
           .eq("place_type", placeType)
           .eq("place_id", placeId)
           .order("created_at", { ascending: false });
@@ -160,6 +164,11 @@ export function ReviewsSection({ placeType, placeId }: ReviewsSectionProps) {
                       <div className="flex flex-wrap items-center justify-between gap-2">
                         <span className="flex items-center gap-2 font-semibold">
                           {review.reviewer_name}
+                          {review.traveler_type && travelerTypeLabels[review.traveler_type] && (
+                            <span className="font-normal text-white/75">
+                              · {travelerTypeLabels[review.traveler_type]}
+                            </span>
+                          )}
                           {user && review.user_id === user.id && (
                             <span className="rounded-full bg-white/20 px-2 py-0.5 text-xs font-medium">
                               You

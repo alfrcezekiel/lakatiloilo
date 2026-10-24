@@ -76,7 +76,7 @@ export function ReviewForm({ placeType, placeId, onSaved, existing, onCancel }: 
     setBusy(true);
     try {
       const reviews = createClient().from("reviews");
-      const columns = "id, user_id, reviewer_name, rating, comment, created_at";
+      const columns = "id, user_id, reviewer_name, traveler_type, rating, comment, created_at";
       const fields = { rating, comment: comment.trim() };
       // New review: only the place, stars and comment are sent; the
       // database fills in who wrote it, their name and the dates.

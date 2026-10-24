@@ -46,3 +46,18 @@ export const sectionTitles: Record<string, string> = {
   hotel: "Hotels",
   condominium: "Condominiums",
 };
+
+// "I'm traveling as", chosen at sign-up. The ids match the traveler_type
+// saved on the account and copied onto each review (supabase/sql/022).
+export const travelerTypes = [
+  { id: "local", label: "Local Ilonggo" },
+  { id: "domestic", label: "Visitor from PH" },
+  { id: "foreign", label: "Foreign tourist" },
+] as const;
+
+export type TravelerType = (typeof travelerTypes)[number]["id"];
+
+// "local" -> "Local Ilonggo", ...
+export const travelerTypeLabels: Record<string, string> = Object.fromEntries(
+  travelerTypes.map((type) => [type.id, type.label]),
+);
