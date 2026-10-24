@@ -23,9 +23,9 @@ export function useCurrentUser() {
       //     closed since, or
       //   - they opened a reset link but left without saving a new
       //     password (that login is only for the Set new password page).
-      if (loginShouldEnd() || resetIsPending()) {
+      await endShortLoginIfOver();
+      if (resetIsPending()) {
         await supabase.auth.signOut({ scope: "local" });
-        forgetShortLogin();
         endPasswordReset();
       }
       if (cancelled) return;
@@ -70,13 +70,21 @@ export function safeNextPath(next: string | null) {
 // "Keep me logged in" (ticket 45).
 //
 // Supabase keeps everyone logged in for a long time. When the traveler
-// unticks the box, we remember two things:
-//   - SHORT_LOGIN in localStorage, which survives closing the browser:
-//     "this login should end when the browser closes".
-//   - BROWSER_OPEN, a cookie with no expiry date. Browsers delete such
-//     cookies when they close, so it means "the browser is still open".
-// On the next visit, SHORT_LOGIN without BROWSER_OPEN means the browser
-// was closed in between, so useCurrentUser logs the traveler out.
+// unticks the box, their login should end when they close the browser.
+// A website is never told "the browser closed", so we work it out the
+// next time a Lakat Iloilo page opens. We remember:
+//   - SHORT_LOGIN (localStorage): "end this login when the browser closes".
+//   - BROWSER_OPEN: a cookie with no expiry date. Browsers delete such
+//     cookies when they close... unless they reopen old tabs ("Continue
+//     where you left off"), which Brave and Chrome can do.
+//   - LAST_LEFT (localStorage): when a Lakat page was last closed or
+//     hidden. Pages write it as they close; no timer runs in between.
+// When a page opens with SHORT_LOGIN set, the browser counts as closed
+// (and the login ends) if:
+//   - BROWSER_OPEN is gone, or
+//   - the last Lakat page closed more than 10 seconds ago AND no other
+//     Lakat tab answers "anyone still open?". A refresh or a quick move
+//     between pages comes back within 10 seconds, so it never counts.
 //
 // Ticked, we also remember the traveler's email (never the password), so
 // the login page comes back with the email filled in and the box ticked
@@ -84,6 +92,9 @@ export function safeNextPath(next: string | null) {
 const SHORT_LOGIN = "lakat-short-login";
 const BROWSER_OPEN = "lakat-browser-open";
 const REMEMBERED_EMAIL = "lakat-remembered-email";
+const LAST_LEFT = "lakat-last-left";
+const REOPEN_GRACE_MS = 10 * 1000; // a refresh comes back well within this
+const ANSWER_WAIT_MS = 400; // how long to wait for another tab to answer
 
 // Call right after a successful log-in or sign-up.
 export function rememberLoginChoice(keepLoggedIn: boolean, email: string) {
@@ -94,6 +105,7 @@ export function rememberLoginChoice(keepLoggedIn: boolean, email: string) {
     } else {
       localStorage.removeItem(REMEMBERED_EMAIL);
       localStorage.setItem(SHORT_LOGIN, "1");
+      localStorage.setItem(LAST_LEFT, String(Date.now()));
       const secure = location.protocol === "https:" ? "; Secure" : "";
       document.cookie = `${BROWSER_OPEN}=1; path=/; SameSite=Lax${secure}`;
     }
@@ -102,15 +114,83 @@ export function rememberLoginChoice(keepLoggedIn: boolean, email: string) {
   }
 }
 
-function loginShouldEnd() {
+// Open Lakat tabs talk to each other on this channel, so a newly opened
+// page can ask whether any other Lakat tab is still open.
+let tabs: BroadcastChannel | null = null;
+
+// Run once on each page: answer other tabs, and note the time when this
+// page closes or is hidden. Safe to call more than once.
+export function watchLakatTabs() {
+  if (tabs || typeof BroadcastChannel === "undefined") return;
+  tabs = new BroadcastChannel("lakat-tabs");
+  tabs.onmessage = (event) => {
+    if (event.data === "anyone-open?") tabs?.postMessage("still-open");
+  };
+  const noteLeaving = () => {
+    try {
+      if (localStorage.getItem(SHORT_LOGIN) === "1") {
+        localStorage.setItem(LAST_LEFT, String(Date.now()));
+      }
+    } catch {
+      // Storage blocked: nothing to write.
+    }
+  };
+  window.addEventListener("pagehide", noteLeaving);
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "hidden") noteLeaving();
+  });
+}
+
+// Asks the other Lakat tabs "anyone still open?" and waits briefly.
+function anotherTabIsOpen(): Promise<boolean> {
+  return new Promise((resolve) => {
+    if (!tabs) return resolve(false);
+    const channel = tabs;
+    const timer = setTimeout(() => {
+      channel.removeEventListener("message", onAnswer);
+      resolve(false);
+    }, ANSWER_WAIT_MS);
+    function onAnswer(event: MessageEvent) {
+      if (event.data !== "still-open") return;
+      clearTimeout(timer);
+      channel.removeEventListener("message", onAnswer);
+      resolve(true);
+    }
+    channel.addEventListener("message", onAnswer);
+    channel.postMessage("anyone-open?");
+  });
+}
+
+async function loginShouldEnd() {
   try {
-    return (
-      localStorage.getItem(SHORT_LOGIN) === "1" &&
-      !document.cookie.split("; ").some((c) => c.startsWith(`${BROWSER_OPEN}=`))
-    );
+    if (localStorage.getItem(SHORT_LOGIN) !== "1") return false;
+    const browserOpen = document.cookie
+      .split("; ")
+      .some((c) => c.startsWith(`${BROWSER_OPEN}=`));
+    if (!browserOpen) return true;
+    const lastLeft = Number(localStorage.getItem(LAST_LEFT) ?? 0);
+    if (Date.now() - lastLeft < REOPEN_GRACE_MS) return false;
+    return !(await anotherTabIsOpen());
   } catch {
     return false;
   }
+}
+
+// Runs once per page load (the result is kept and shared by every caller
+// on the page): ends an unticked login if the browser was closed.
+let shortLoginCheck: Promise<void> | null = null;
+
+export function endShortLoginIfOver() {
+  if (!shortLoginCheck) {
+    shortLoginCheck = (async () => {
+      watchLakatTabs();
+      if (await loginShouldEnd()) {
+        await createClient().auth.signOut({ scope: "local" });
+        forgetShortLogin();
+      }
+    })();
+  }
+  return shortLoginCheck;
 }
 
 function forgetShortLogin() {

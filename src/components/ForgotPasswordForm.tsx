@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,6 +8,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { GlassField, fieldInputClass } from "@/components/GlassField";
 import { authButtonClass } from "@/components/AuthShell";
 import { createClient } from "@/lib/supabase/client";
+import { watchLakatTabs } from "@/lib/auth";
 
 // The answer is the same whether or not the email has an account, so this
 // page cannot be used to find out who has signed up.
@@ -21,6 +22,9 @@ export function ForgotPasswordForm() {
   const [formError, setFormError] = useState<string | null>(null);
   const [sent, setSent] = useState(false);
   const [busy, setBusy] = useState(false);
+
+  // Count this page as an open Lakat tab for "Keep me logged in".
+  useEffect(() => watchLakatTabs(), []);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();

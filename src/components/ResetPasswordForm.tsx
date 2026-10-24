@@ -17,6 +17,7 @@ import {
   rememberLoginChoice,
   resetIsPending,
   startPasswordReset,
+  watchLakatTabs,
 } from "@/lib/auth";
 
 // What the page shows:
@@ -37,6 +38,10 @@ export function ResetPasswordForm() {
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
+    // Count this page as an open Lakat tab for "Keep me logged in". (It
+    // does not run the logout check itself: that could end the login the
+    // reset link has just made.)
+    watchLakatTabs();
     let cancelled = false;
 
     async function readLink() {
