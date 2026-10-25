@@ -78,3 +78,30 @@ export const getAccommodations = async () =>
 
 export const getAccommodation = (id: string) =>
   get<Accommodation>(`/v1/accommodations/${encodeURIComponent(id)}`);
+
+// A review as the backend sends it (backend round). Only the display name
+// is included, never the reviewer's email.
+export interface Review {
+  id: string;
+  user_id: string;
+  reviewer_name: string;
+  // "local", "domestic" or "foreign"; null for accounts made before the
+  // login extras round, which show no tag.
+  traveler_type: string | null;
+  rating: number;
+  comment: string;
+  created_at: string;
+}
+
+// A place's reviews, newest first. Anyone may read them, so no login is
+// sent. Errors throw, so the reviews section can say it couldn't load them.
+export const getReviews = async (
+  placeType: "destination" | "accommodation",
+  placeId: string,
+) => {
+  const { data } = await api().get<Review[]>("/v1/reviews", {
+    params: { place_type: placeType, place_id: placeId },
+  });
+  return data;
+};
+

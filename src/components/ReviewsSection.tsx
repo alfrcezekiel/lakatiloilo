@@ -5,23 +5,15 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { createClient } from "@/lib/supabase/client";
+import { getReviews, type Review } from "@/lib/api";
 import { useCurrentUser } from "@/lib/auth";
 import { ReviewForm } from "@/components/ReviewForm";
 import { MyReviewBox } from "@/components/MyReviewBox";
 import { travelerTypeLabels } from "@/lib/labels";
 
-export type Review = {
-  id: string;
-  user_id: string;
-  reviewer_name: string;
-  // "local", "domestic" or "foreign"; null for accounts made before the
-  // login extras round, which show no tag.
-  traveler_type: string | null;
-  rating: number;
-  comment: string;
-  created_at: string;
-};
+// The review type lives with the backend calls; other components import it
+// from here.
+export type { Review };
 
 interface ReviewsSectionProps {
   placeType: "destination" | "accommodation";
@@ -31,9 +23,10 @@ interface ReviewsSectionProps {
 const glassCard = "bg-white/15 backdrop-blur-md border border-white/25 text-white";
 
 // The Reviews part of a destination or accommodation page. It reads the
-// reviews straight from Supabase in the browser: Row Level Security lets
-// anyone read them, so no login is needed to see them. Only the reviewer's
-// display name is shown, never their email.
+// reviews from the NestJS backend, which reads them from Supabase: Row
+// Level Security lets anyone read them, so no login is needed to see them.
+// Only the reviewer's display name is shown, never their email. (Writing,
+// editing and deleting still go straight to Supabase until ticket 50.)
 export function ReviewsSection({ placeType, placeId }: ReviewsSectionProps) {
   const pathname = usePathname();
   const { user, ready } = useCurrentUser();
@@ -47,15 +40,10 @@ export function ReviewsSection({ placeType, placeId }: ReviewsSectionProps) {
     let cancelled = false;
     async function load() {
       try {
-        const { data, error } = await createClient()
-          .from("reviews")
-          .select("id, user_id, reviewer_name, traveler_type, rating, comment, created_at")
-          .eq("place_type", placeType)
-          .eq("place_id", placeId)
-          .order("created_at", { ascending: false });
+        // From the NestJS backend (GET /v1/reviews), newest first.
+        const data = await getReviews(placeType, placeId);
         if (cancelled) return;
-        if (error) throw error;
-        setReviews(data ?? []);
+        setReviews(data);
       } catch {
         if (!cancelled) setLoadError(true);
       }
