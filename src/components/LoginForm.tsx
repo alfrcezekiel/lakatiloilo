@@ -197,7 +197,7 @@ export function LoginForm() {
           </p>
           <Link
             href={next}
-            className="flex h-12 w-full items-center justify-center rounded-full bg-white text-base font-semibold text-teal-900 shadow-lg hover:bg-white/90"
+            className={authButtonClass}
           >
             Continue
           </Link>
@@ -369,7 +369,7 @@ export function LoginForm() {
             <Button
               type="submit"
               disabled={busy || leaving}
-              className={authButtonClass}
+              className={`mt-3 ${authButtonClass}`}
             >
               {(busy || leaving) && <Spinner />}
               {leaving

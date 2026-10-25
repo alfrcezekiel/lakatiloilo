@@ -1,15 +1,16 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { authButtonClass } from "@/components/AuthShell";
 
 // A pop-up that says whether something worked, with one main button.
-// Used by the Set new password page (ticket 46).
+// Used by the Set new password page (ticket 46). It opens as soon as the
+// page shows it; the page closes it by no longer showing it.
 //
 // It is the browser's own <dialog> element: while it is open, the page
 // behind it cannot be clicked, keyboard focus stays inside it, Escape
 // closes it, and screen readers read it out.
 export function StatusModal({
-  open,
   tone,
   title,
   message,
@@ -17,7 +18,6 @@ export function StatusModal({
   onAction,
   onClose,
 }: {
-  open: boolean;
   tone: "success" | "error";
   title: string;
   message: string;
@@ -30,10 +30,8 @@ export function StatusModal({
 
   useEffect(() => {
     const dialog = dialogRef.current;
-    if (!dialog) return;
-    if (open && !dialog.open) dialog.showModal();
-    if (!open && dialog.open) dialog.close();
-  }, [open]);
+    if (dialog && !dialog.open) dialog.showModal();
+  }, []);
 
   return (
     <dialog
@@ -66,7 +64,7 @@ export function StatusModal({
         type="button"
         onClick={onAction}
         autoFocus
-        className="mt-6 h-12 w-full rounded-full bg-white text-base font-semibold text-teal-900 shadow-lg hover:bg-white/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+        className={`mt-6 ${authButtonClass}`}
       >
         {actionLabel}
       </button>

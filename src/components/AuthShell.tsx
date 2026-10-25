@@ -68,6 +68,8 @@ export function AuthShell({
   );
 }
 
-// The white, rounded main button used on these pages.
+// The white, rounded main button of the log-in, Forgot password and Set
+// new password pages and their pop-ups. Works on <button>, <Button> and
+// <Link>; each place adds its own spacing (for example "mt-3").
 export const authButtonClass =
-  "mt-3 h-12 w-full rounded-full bg-white text-base font-semibold text-teal-900 shadow-lg hover:bg-white/90 hover:opacity-100";
+  "flex h-12 w-full items-center justify-center rounded-full bg-white text-base font-semibold text-teal-900 shadow-lg hover:bg-white/90 hover:opacity-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white";

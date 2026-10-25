@@ -154,7 +154,7 @@ export function ResetPasswordForm() {
         </p>
         <Link
           href="/forgot-password"
-          className="flex h-12 w-full items-center justify-center rounded-full bg-white text-base font-semibold text-teal-900 shadow-lg hover:bg-white/90"
+          className={authButtonClass}
         >
           Send me a new link
         </Link>
@@ -195,14 +195,13 @@ export function ResetPasswordForm() {
 
       <PasswordStrength id="password-strength" password={password} />
 
-      <Button type="submit" disabled={busy} className={authButtonClass}>
+      <Button type="submit" disabled={busy} className={`mt-3 ${authButtonClass}`}>
         {busy && <Spinner />}
         {busy ? "Please wait…" : "Save new password"}
       </Button>
 
       {result?.kind === "saved" && (
         <StatusModal
-          open
           tone="success"
           title="Password changed"
           message="Your new password is saved. Log in with it to continue."
@@ -213,7 +212,6 @@ export function ResetPasswordForm() {
       )}
       {result?.kind === "retry" && (
         <StatusModal
-          open
           tone="error"
           title="Password not changed"
           message={result.message}
@@ -224,7 +222,6 @@ export function ResetPasswordForm() {
       )}
       {result?.kind === "new-link" && (
         <StatusModal
-          open
           tone="error"
           title="Password not changed"
           message="This reset link has expired. Ask for a new link and try again."

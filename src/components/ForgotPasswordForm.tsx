@@ -46,13 +46,10 @@ export function ForgotPasswordForm() {
         ) {
           // 429 means "too many requests". Supabase does not always send a
           // code with it, so the status is what we check first. Two limits
-          // can cause it: one link per email address a minute, and only a
-          // few emails an hour from Supabase's built-in sender.
-          setFormError(
-            /second/i.test(error.message)
-              ? "We just sent a link to that email. Please wait a minute before asking for another one."
-              : "Too many reset emails right now. Please try again in about an hour.",
-          );
+          // can cause it (one link per email address a minute, and only a
+          // few emails an hour from Supabase's built-in sender), so the
+          // message fits both.
+          setFormError("Too many reset emails right now. Please wait a few minutes and try again.");
         } else if (error.code === "email_address_invalid" || error.code === "validation_failed") {
           setEmailError("Please enter a valid email address.");
         } else {
@@ -100,7 +97,7 @@ export function ForgotPasswordForm() {
         />
       </GlassField>
 
-      <Button type="submit" disabled={busy} className={authButtonClass}>
+      <Button type="submit" disabled={busy} className={`mt-3 ${authButtonClass}`}>
         {busy && <Spinner />}
         {busy ? "Please wait…" : "Send reset link"}
       </Button>
