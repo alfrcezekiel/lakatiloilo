@@ -14,6 +14,8 @@ Travelers who create an account can rate any destination or accommodation from 1
 
 The login page also helps travelers look after their account: a password strength bar, a "Forgot password?" email link, and a "Remember my email" choice. At sign-up, travelers say whether they are a local, a visitor from the Philippines or a foreign tourist, and their reviews show it.
 
+Backend round: every request for the app's own data goes through the NestJS backend. The home page gets its places from the backend on the server, so it arrives with places already in it. Reviews (reading, writing, editing, deleting) and creating an account or logging in also go through the backend's own endpoints, so all of the app's data requests live in one place the team can read and check.
+
 ## The user
 Travelers planning weekend trips around Iloilo Province. No login required for browsing; an account is needed only to write a review.
 
@@ -34,6 +36,8 @@ Travelers planning weekend trips around Iloilo Province. No login required for b
 14. As a traveler signing up, I want to say whether I'm a local, a visitor from the Philippines or a foreign tourist, so that people reading my reviews know where I'm coming from.
 15. As a returning traveler, I want the login page to remember my email, so that logging in again is quicker.
 16. As a traveler who forgot my password, I want to get a reset link by email and choose a new password, so that I can get back into my account.
+17. As a traveler, I want the home page to arrive with places already in it, so that it feels fast on my phone.
+18. As a developer, I want reviews and log-in to go through our own NestJS endpoints, so that all the app's data requests are in one place I can read and check.
 
 ## Screens
 1. Home page hero — redesigned to match the team's mockup:
@@ -71,6 +75,11 @@ Travelers planning weekend trips around Iloilo Province. No login required for b
 12. Forgot password page — the traveler types their email and presses "Send reset link". The page always answers "If that email has an account, we've sent a link", so it never reveals who has an account.
 13. Set new password page — opened from the link in the email. The traveler chooses a new password (with the strength bar) and presses "Save new password". A pop-up then says whether it worked: "Password changed" with a "Go to log in" button, or "Password not changed" with the reason and "Try again" (or "Send me a new link" when the link has expired). Opening the link or saving never logs anyone in, in this tab or any other; the traveler logs in with the new password on the log-in page. (Changed on 2026-10-24: it used to log the traveler in and take them home.) An expired or already-used link shows a clear message and a way to ask for a new one.
 14. Reviews section, login extras round — each review shows the reviewer's traveler type as a small tag after their name, for example "Juan · Local Ilonggo". Reviews from accounts without a traveler type show no tag.
+15. Backend round — everything looks and works the same for travelers; only where the requests go changes:
+   - **Home page:** the Next.js server asks the NestJS backend for the places before sending the page. Skeletons, the "We couldn't load places" message, search, chips and filters behave as before.
+   - **Reviews section:** reading, writing, editing and deleting reviews go through the backend instead of straight to Supabase. Messages such as "one review per place" stay the same.
+   - **Sign up / Log in page:** creating an account and logging in go through the backend. Afterwards the traveler is logged in exactly as before (navbar name, "Remember my email").
+   - **Forgot password, Set new password and Log out:** no change; they stay in the browser.
 
 ## Data
 
@@ -125,7 +134,9 @@ Loading skeletons need no data changes either: no new tables, columns or API end
 
 Row Level Security policy for reviews: anyone may read every review. Only a logged-in traveler may add a review, and only with their own user_id. Only the traveler who wrote a review may edit or delete it. No one else can change it.
 
-The browser reads and writes reviews directly through Supabase with the publishable (anon) key and the traveler's login session; the Row Level Security policy above is what keeps this safe. The NestJS backend stays read-only and is not changed. Account details (email, password) live in Supabase Auth and are never stored in the reviews table.
+Backend round: the browser no longer reads or writes reviews directly. It calls the NestJS backend, which talks to Supabase with the publishable (anon) key and, for writing, editing and deleting, the traveler's own login token. So the Row Level Security policy above still decides who may change what, exactly as before. The backend never uses the `service_role` key or any `sb_secret_` key. No tables, columns or policies change in this round. Account details (email, password) live in Supabase Auth and are never stored in the reviews table.
+
+(Before the backend round, the browser read and wrote reviews directly through Supabase with the same keys and the same Row Level Security policy.)
 
 The traveler type is saved on the Supabase Auth account, next to the display name. The database copies it onto each review, the same way it copies reviewer_name, so it can never be typed in from the browser. The reviews Row Level Security policy is unchanged.
 
@@ -141,17 +152,27 @@ PostGIS extension: Enabled on Supabase database. The `location` column stores ge
 - GET /v1/accommodations/:id — returns single accommodation by ID
 - GET /v1/accommodations/near — returns accommodations within radius (params: lat, lng, radius_km, type)
 
+**Backend round (v1):**
+- GET /v1/reviews?place_type=…&place_id=… — anyone; a place's reviews, newest first
+- POST /v1/reviews — logged-in traveler; adds their review (place, stars, comment)
+- PATCH /v1/reviews/:id — logged-in traveler; edits their own review (stars, comment)
+- DELETE /v1/reviews/:id — logged-in traveler; deletes their own review
+- POST /v1/auth/signup — anyone; creates an account (display name, traveler type, email, password)
+- POST /v1/auth/login — anyone; logs in and returns the login for the browser to keep
+
+"Logged-in traveler" means the request carries the traveler's login token; the backend passes it on to Supabase, where Row Level Security checks it. Password reset and log-out stay in the browser.
+
 **Version 2 (/v2):**
 - Reserved for future API changes. v1 remains available to prevent breaking existing clients.
 
-**CORS:** Configured to allow requests from the Next.js frontend domain.
+**CORS:** Configured to allow requests from the Next.js frontend domain. From the backend round it also accepts adding, editing and deleting (not only reading), still only from the site's own addresses.
 
 ## Architecture
 
 **Frontend (Next.js):**
 - App Router + TypeScript
 - Tailwind CSS with UI components in `src/components/ui/`
-- Fetches data from NestJS backend via HTTP calls
+- Fetches data from NestJS backend via HTTP calls (the home page on the server from the backend round, like the detail pages)
 - Deployed on Vercel
 
 **Backend (NestJS):**
@@ -159,7 +180,9 @@ PostGIS extension: Enabled on Supabase database. The `location` column stores ge
 - TypeORM or Prisma for Supabase database access
 - API versioning modules (v1, v2)
 - PostGIS integration for spatial queries
-- Deployed separately (platform TBD: Railway, Render, or similar)
+- Deployed on Vercel at https://api-lakat-iloilo.vercel.app
+- Backend round: also needs the Supabase URL and the publishable (anon) key as settings, locally and in Vercel, for the reviews and log-in endpoints
+- Backend round: the reviews and log-in endpoints are built in the NestJS backend, which runs on the server and answers with data (JSON). The Next.js frontend calls them from the browser (the client side) and shows the results; the home page's places are fetched by the Next.js server instead
 
 **Database (Supabase):**
 - Hosted PostgreSQL with PostGIS extension
@@ -171,6 +194,8 @@ PostGIS extension: Enabled on Supabase database. The `location` column stores ge
 Browsing needs no login. Writing, editing or deleting a review needs an account: Supabase Auth with email and password, plus a display name chosen at sign-up. No social logins.
 
 Login extras round: travelers can reset a forgotten password through Supabase's reset email (the built-in email sender, which allows only a few emails an hour; fine for the demo). The Forgot password and Set new password pages' addresses, on localhost and on the live URL, are added to Supabase's allowed redirect URLs. Travelers stay logged in until they log out; "Remember my email" only fills in the email on the login page.
+
+Backend round: signing up and logging in go through the backend's endpoints, which call Supabase Auth; the browser then keeps the login as before. Password reset and log-out stay in the browser (the reset link only works in the browser that asked for it).
 
 ## Done for the demo
 - [x] NestJS backend project structure created in `backend/` directory
@@ -212,9 +237,16 @@ Login extras round: travelers can reset a forgotten password through Supabase's 
 **Login extras round (live URL):**
 - [x] Typing a password at sign-up moves the strength bar from Weak to Strong
 - [x] A new traveler picks "I'm traveling as", and their review shows that tag
-- [ ] "Remember my email" starts unticked; ticked, the login page shows the email after logging out; either way, the traveler stays logged in after closing and reopening the browser
+- [x] "Remember my email" starts unticked; ticked, the login page shows the email after logging out; either way, the traveler stays logged in after closing and reopening the browser
 - [x] "Forgot password?" sends an email; its link opens the Set new password page, and the new password works for logging in
 - [x] An expired or used reset link shows a clear message, not a crash
+
+**Backend round (live URL):**
+- [ ] The home page shows places without the browser asking the backend's place endpoints (checked in the browser's Network tab)
+- [ ] On "Slow 4G", skeletons still show and are replaced with no layout jump; with the backend unreachable, "We couldn't load places" shows
+- [ ] Signing up, logging in, and writing, editing and deleting a review all work, and the Network tab shows those requests going to the backend
+- [ ] Trying to edit someone else's review through the backend is refused by the database (Row Level Security)
+- [ ] Log out, Forgot password and "Remember my email" still work
 
 ## Out of scope
 - Login for anything other than reviews (browsing stays open to everyone)
@@ -227,4 +259,5 @@ Login extras round: travelers can reset a forgotten password through Supabase's 
 - Admin UI for managing data
 - Social features (sharing, favorites)
 - Advanced spatial queries beyond radius search
+- Password reset and log-out through the backend, "Nearby places" using the /near endpoints, and keeping the backend address private (all parked in docs/LATER.md)
 - Blurred photo previews, speeding up the backend, and skeletons on the Photo credits page (it has no data to wait for)

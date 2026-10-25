@@ -9,7 +9,7 @@
 
 **Blocked by:** None
 
-**Status:** in progress (changed and checked on localhost 2026-10-24; not pushed yet, so it still needs testing on the live URL)
+**Status:** done (tested by the team on the live URL, 2026-10-25)
 
 **Decisions:**
 - 2026-10-23: the box starts unticked.
@@ -19,10 +19,10 @@
 **How it works:** Supabase keeps travelers logged in until they log out. The box only saves or forgets the email in this browser's storage, and the login page reads it back when it opens.
 
 - [x] The checkbox shows in Log in mode, unticked by default, labelled "Remember my email"
-- [ ] Ticked or unticked: after closing and reopening the browser, the traveler is still logged in
-- [ ] Ticked: after logging out, the login page shows the email filled in and the box ticked
-- [ ] Unticked: after logging out, the login page shows an empty email field
+- [x] Ticked or unticked: after closing and reopening the browser, the traveler is still logged in
+- [x] Ticked: after logging out, the login page shows the email filled in and the box ticked
+- [x] Unticked: after logging out, the login page shows an empty email field
 - [x] Refreshing the page or moving between pages never logs anyone out
-- [ ] Works on the live URL
+- [x] Works on the live URL
 
 **History (2026-10-24):** this ticket started as "Keep me logged in", where unticked travelers were logged out when they closed the browser. A cookie-only check did not work in Brave (it keeps such cookies when it reopens old tabs); a 2-minute heartbeat was tried and removed; a check when pages open worked on the live URL. The team then decided unticked travelers should stay logged in too, so all of that was removed and the box renamed.

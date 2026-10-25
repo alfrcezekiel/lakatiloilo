@@ -31,6 +31,25 @@ login extras round (tickets 43–47). Still parked:
 - Changing the traveler type after sign-up (needs a profile page)
 - A custom email sender, so reset emails are not limited to a few an hour
 
+### From the user test (Elizabeth and Mark, 2026-10-25)
+Ideas from question 4, "What one thing would make this more useful?"
+(see docs/USER-TEST.md). Each needs the team to decide what it means
+before it becomes a ticket:
+- More detailed information about each destination and accommodation
+- More interactive features (the interactive map below is one candidate)
+
+### Backend extras (parked from the backend round, 2026-10-25)
+The backend round moved the home page, reviews, sign-up and log-in onto
+the NestJS backend. Still parked:
+- Password reset and log-out through the backend. The reset link only
+  works in the browser that asked for it, and log-out only clears the
+  browser's login, so moving them adds work without much to show.
+- "Nearby places" on detail pages, using the backend's /near endpoints
+  (they exist but nothing uses them yet).
+- Keeping the backend address private. The browser now calls the backend
+  for reviews and log-in, so the address has to stay visible; making it
+  private would need the Next.js server to pass those requests on.
+
 ### Interactive map (Mapbox GL) — needs a team decision
 Proposed 2026-10-21. Mapbox GL is outside the pinned stack: it adds a new
 library, needs a Mapbox account and access token, and is billed past a

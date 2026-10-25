@@ -4,7 +4,7 @@
 
 **Blocked by:** 43
 
-**Status:** in progress (changed on localhost 2026-10-24 so a reset never logs anyone in; not pushed yet)
+**Status:** done (tested by the team on the live URL, 2026-10-25)
 
 **Checked on localhost (2026-10-24):** the "Forgot password?" link, the empty-email message, and the Set new password page's three error views (opened without a link, an expired link, a code that does not work) all show the right message. Sending a real email was left for the team.
 
@@ -12,12 +12,12 @@
 - [x] The Forgot password page always answers "If that email has an account, we've sent a link", so it never reveals who has an account
 - [x] Too many requests (Supabase's built-in sender allows only a few emails an hour) shows a plain message, not a crash
 - [x] The link in the email opens the Set new password page; saving a new password shows a "Password changed" pop-up, and its "Go to log in" button opens the log-in page, logged out
-- [ ] When the password cannot be changed (for example, the same as the old one), a "Password not changed" pop-up gives the reason and lets the traveler try again
+- [x] When the password cannot be changed (for example, the same as the old one), a "Password not changed" pop-up gives the reason and lets the traveler try again
 - [x] An expired or already-used link shows a clear message and a link to ask for a new one
 - [x] The new password works for logging in; the old one no longer does
 - [x] Opening a reset link and then leaving without saving a new password (or opening the same link a second time) does not leave the traveler logged in
-- [ ] Opening the link does not show the traveler as logged in in any other open tab
-- [ ] Works on the live URL
+- [x] Opening the link does not show the traveler as logged in in any other open tab
+- [x] Works on the live URL
 
 **Bug fix (2026-10-24):** the team opened a reset link, then opened it a second time (it said "expired"), went back to log in, and found themselves logged in without typing a password. Cause: opening a reset link logs the traveler in so the Set new password page can change the password, and nothing removed that login if they did not save. Fix: while a reset is in progress the site remembers it, and any other page (or the reset page itself, when the link fails) logs that login out. It only becomes a real login once the new password is saved. This also fixes the code review's S1.
 
