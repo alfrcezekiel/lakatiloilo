@@ -1,8 +1,7 @@
 "use client";
 
-import { getAccommodations, getDestinations } from "@/lib/api";
 import type { Accommodation, Destination } from "@/lib/api";
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { HeroSection } from "@/components/HeroSection";
 import { SearchBar } from "@/components/SearchBar";
 import { CategoryChips } from "@/components/CategoryChips";
@@ -27,7 +26,20 @@ const destinationSections = [
   "heritage",
 ].map((category) => ({ category, title: sectionTitles[category] }));
 
-export default function Home() {
+// What the server sends for the home page (see src/app/page.tsx). `failed`
+// is true when the backend could not be reached.
+export type HomePlaces = {
+  destinations: Destination[];
+  accommodations: Accommodation[];
+  failed: boolean;
+};
+
+// The home page itself. The Next.js server has already started asking the
+// NestJS backend for the places, and passes that request in as `places`:
+// the page shows straight away (with skeletons), and fills in when the
+// places arrive from the server. The browser never calls the backend's
+// place endpoints itself.
+export function HomePage({ places }: { places: Promise<HomePlaces> }) {
   const [destinations, setDestinations] = useState<Destination[]>([]);
   const [accommodations, setAccommodations] = useState<Accommodation[]>([]);
   // "all", "iloilo_city" or "iloilo_province", set by the filter buttons in
@@ -44,27 +56,21 @@ export default function Home() {
   // While it is true, sections show skeletons instead of hiding.
   const [loading, setLoading] = useState(true);
 
-  // The only place the home page loads data: one request per endpoint.
-  // Child components get the lists as props instead of fetching again.
-  // In development, React Strict Mode runs effects twice; this ref stops
-  // the second run from sending the same requests again.
-  const hasFetched = useRef(false);
-
+  // Wait for the places the server is fetching. Child components get the
+  // lists as props instead of fetching again.
   useEffect(() => {
-    if (hasFetched.current) return;
-    hasFetched.current = true;
-
-    // Both requests run at the same time. allSettled waits for both to
-    // finish, even if one fails, before turning the skeletons off.
-    Promise.allSettled([
-      getDestinations()
-        .then(setDestinations)
-        .catch(() => setLoadError(true)),
-      getAccommodations()
-        .then(setAccommodations)
-        .catch(() => setLoadError(true)),
-    ]).then(() => setLoading(false));
-  }, []);
+    let cancelled = false;
+    places.then((result) => {
+      if (cancelled) return;
+      setDestinations(result.destinations);
+      setAccommodations(result.accommodations);
+      setLoadError(result.failed);
+      setLoading(false);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [places]);
 
   // What every section shows: the category cards count these and the lists
   // display them, so both always agree with the location filter.
