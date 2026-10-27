@@ -105,3 +105,53 @@ export const getReviews = async (
   return data;
 };
 
+// Adds the logged-in traveler's review through the backend (POST
+// /v1/reviews). `accessToken` is their Supabase login token: the backend
+// passes it on, so Row Level Security checks who is writing. Answers with
+// the saved review.
+export const createReview = async (
+  accessToken: string,
+  review: {
+    place_type: "destination" | "accommodation";
+    place_id: string;
+    rating: number;
+    comment: string;
+  },
+) => {
+  const { data } = await api().post<Review>("/v1/reviews", review, {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+  return data;
+};
+
+// Changes the stars and comment of the traveler's own review through the
+// backend (PATCH /v1/reviews/:id). Answers with the saved review.
+export const updateReview = async (
+  accessToken: string,
+  id: string,
+  changes: { rating: number; comment: string },
+) => {
+  const { data } = await api().patch<Review>(
+    `/v1/reviews/${encodeURIComponent(id)}`,
+    changes,
+    { headers: { Authorization: `Bearer ${accessToken}` } },
+  );
+  return data;
+};
+
+// Deletes the traveler's own review through the backend
+// (DELETE /v1/reviews/:id).
+export const deleteReview = async (accessToken: string, id: string) => {
+  await api().delete(`/v1/reviews/${encodeURIComponent(id)}`, {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+};
+
+// The backend's own message when it refuses a request (for example
+// "You've already reviewed this place."), or null if there is none.
+export const backendMessage = (error: unknown): string | null => {
+  if (!axios.isAxiosError(error)) return null;
+  const message = (error.response?.data as { message?: unknown } | undefined)?.message;
+  return typeof message === "string" ? message : null;
+};
+

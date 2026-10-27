@@ -26,8 +26,13 @@ const bootstrap = async () => {
   // Read before starting Nest, so a missing CORS_ORIGIN fails straight away.
   const origins = corsOrigins();
   const app = await NestFactory.create(AppModule);
-  // The API is read-only, so browsers only need GET.
-  app.enableCors({ origin: origins, methods: ['GET'] });
+  // Browsers may read (GET), add (POST), edit (PATCH) and delete (DELETE)
+  // reviews. The Authorization header carries the traveler's login token.
+  app.enableCors({
+    origin: origins,
+    methods: ['GET', 'POST', 'PATCH', 'DELETE'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+  });
   // Vercel (and most hosts) tell the app which port to use through PORT.
   // On your computer PORT may be unset, so it falls back to 5000.
   const port = process.env.PORT ?? 5000;

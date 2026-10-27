@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { createClient } from "@/lib/supabase/client";
+import { backendMessage, deleteReview as deleteReviewOnBackend } from "@/lib/api";
+import { loginToken } from "@/lib/auth";
 import { ReviewForm } from "@/components/ReviewForm";
 import type { Review } from "@/components/ReviewsSection";
 
@@ -38,20 +39,19 @@ export function MyReviewBox({
     setDeleting(true);
     setDeleteError(null);
     try {
-      // count: "exact" tells us how many rows were really deleted. Row Level
-      // Security makes someone else's review invisible here, so 0 means
-      // "not allowed" (for example, logged out in another tab).
-      const { error, count } = await createClient()
-        .from("reviews")
-        .delete({ count: "exact" })
-        .eq("id", review.id);
-      if (error || count === 0) {
+      // Deleted by the NestJS backend (DELETE /v1/reviews/:id), as this
+      // traveler. Row Level Security makes someone else's review
+      // invisible there, so the backend refuses with a plain message
+      // (for example, after logging out in another tab).
+      const token = await loginToken();
+      if (!token) {
         setDeleteError("We couldn't delete your review. Please log in again and try.");
         return;
       }
+      await deleteReviewOnBackend(token, review.id);
       onDeleted(review.id);
-    } catch {
-      setDeleteError("Something went wrong. Please try again.");
+    } catch (error) {
+      setDeleteError(backendMessage(error) ?? "Something went wrong. Please try again.");
     } finally {
       setDeleting(false);
     }

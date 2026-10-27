@@ -50,6 +50,13 @@ export function useCurrentUser() {
   return { user, ready };
 }
 
+// The logged-in traveler's login token, which the backend needs to add,
+// edit or delete their reviews; null when nobody is logged in.
+export async function loginToken() {
+  const { data } = await createClient().auth.getSession();
+  return data.session?.access_token ?? null;
+}
+
 // The name travelers chose when they signed up. Falls back to the part of
 // the email before the @, so an account without a name still shows
 // something sensible.

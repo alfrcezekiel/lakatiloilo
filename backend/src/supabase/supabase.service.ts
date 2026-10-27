@@ -2,12 +2,13 @@ import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { SupabaseClient, createClient } from '@supabase/supabase-js';
 
-// The backend's connection to Supabase for reviews (and, later, log-in).
+// The backend's connection to Supabase Auth (the login service). It is
+// only used to check a traveler's login token; reviews themselves are read
+// and written with TypeORM (see src/v1/reviews).
 //
-// It uses the publishable (anon) key, the same key the website uses, so
-// Row Level Security on the reviews table still decides who may read or
-// change what. Never put the service_role key or an sb_secret_ key here:
-// they skip Row Level Security entirely.
+// It uses the publishable (anon) key, the same key the website uses.
+// Never put the service_role key or an sb_secret_ key here: they skip Row
+// Level Security entirely.
 //
 // Settings (backend/.env on your computer, Environment Variables on Vercel):
 //   SUPABASE_URL       - the project's address, e.g. https://xxxx.supabase.co
@@ -18,9 +19,9 @@ export class SupabaseService {
 
   constructor(private readonly config: ConfigService) {}
 
-  // A Supabase client with no traveler logged in. Created on first use, so
-  // the places endpoints keep working even if these settings are missing.
-  anonClient(): SupabaseClient {
+  // Created on first use, so the places endpoints keep working even if
+  // these settings are missing.
+  private client(): SupabaseClient {
     if (!this.anon) {
       const url = this.config.get<string>('SUPABASE_URL');
       const anonKey = this.config.get<string>('SUPABASE_ANON_KEY');
@@ -35,5 +36,14 @@ export class SupabaseService {
       });
     }
     return this.anon;
+  }
+
+  // Asks Supabase Auth whose login token this is. Answers with the
+  // traveler's account id, or null if the token is not genuine, has
+  // expired, or belongs to a logged-out session.
+  async userIdFor(accessToken: string): Promise<string | null> {
+    const { data, error } = await this.client().auth.getUser(accessToken);
+    if (error || !data.user) return null;
+    return data.user.id;
   }
 }

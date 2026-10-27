@@ -6,26 +6,13 @@ import { Spinner } from "@/components/ui/spinner";
 import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { createClient } from "@/lib/supabase/client";
+import { backendMessage, createReview, updateReview } from "@/lib/api";
+import { loginToken } from "@/lib/auth";
 import type { Review } from "@/components/ReviewsSection";
 
 const MAX_COMMENT = 500;
 const ratingWords = ["", "Poor", "Fair", "Good", "Very good", "Excellent"];
 
-// When the database refuses a review it answers with a code. These turn
-// the ones travelers can hit into plain sentences.
-const dbErrors: Record<string, string> = {
-  // The one-review-per-place rule (the "unique" line in supabase/sql/020).
-  "23505": "You've already reviewed this place.",
-  // Not logged in any more (for example, logged out in another tab).
-  "42501": "Please log in again, then try again.",
-  PGRST301: "Please log in again, then try again.",
-  // A rating or comment outside the limits.
-  "23514": "Please pick 1 to 5 stars and write 1 to 500 characters.",
-  // Editing found no review this account may change (Row Level Security),
-  // for example after logging out in another tab.
-  PGRST116: "We couldn't save your changes. Please log in again and try.",
-};
 const fallbackError = "Something went wrong. Please try again.";
 
 interface ReviewFormProps {
@@ -75,26 +62,25 @@ export function ReviewForm({ placeType, placeId, onSaved, existing, onCancel }: 
 
     setBusy(true);
     try {
-      const reviews = createClient().from("reviews");
-      const columns = "id, user_id, reviewer_name, traveler_type, rating, comment, created_at";
-      const fields = { rating, comment: comment.trim() };
-      // New review: only the place, stars and comment are sent; the
-      // database fills in who wrote it, their name and the dates.
-      // Editing: only the stars and comment can change (see the "grant
-      // update" line in supabase/sql/020).
-      const { data, error } = isEdit
-        ? await reviews.update(fields).eq("id", existing.id).select(columns).single()
-        : await reviews
-            .insert({ place_type: placeType, place_id: placeId, ...fields })
-            .select(columns)
-            .single();
-      if (error) {
-        setFormError(dbErrors[error.code] ?? fallbackError);
+      const token = await loginToken();
+      if (!token) {
+        setFormError("Please log in again, then try again.");
         return;
       }
-      onSaved(data);
-    } catch {
-      setFormError(fallbackError);
+      const fields = { rating, comment: comment.trim() };
+      // Both go to the NestJS backend with the traveler's login token:
+      // editing (PATCH /v1/reviews/:id) changes only the stars and
+      // comment; a new review (POST /v1/reviews) sends the place too, and
+      // the database fills in who wrote it, their name and the dates.
+      onSaved(
+        isEdit
+          ? await updateReview(token, existing.id, fields)
+          : await createReview(token, { place_type: placeType, place_id: placeId, ...fields }),
+      );
+    } catch (error) {
+      // The backend explains its refusals in plain words (for example
+      // "You've already reviewed this place."); otherwise a general one.
+      setFormError(backendMessage(error) ?? fallbackError);
     } finally {
       setBusy(false);
     }
