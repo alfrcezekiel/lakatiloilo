@@ -246,11 +246,11 @@ Backend round: signing up and logging in go through the backend's endpoints, whi
 - [x] An expired or used reset link shows a clear message, not a crash
 
 **Backend round (live URL):**
-- [ ] The home page shows places without the browser asking the backend's place endpoints (checked in the browser's Network tab)
-- [ ] On "Slow 4G", skeletons still show and are replaced with no layout jump; with the backend unreachable, "We couldn't load places" shows
-- [ ] Signing up, logging in, and writing, editing and deleting a review all work, and the Network tab shows those requests going to the backend
-- [ ] Trying to edit someone else's review through the backend is refused by the database (Row Level Security)
-- [ ] Log out, Forgot password and "Remember my email" still work
+- [x] The home page shows places without the browser asking the backend's place endpoints (checked in the browser's Network tab)
+- [x] On "Slow 4G", skeletons still show and are replaced with no layout jump; with the backend unreachable, "We couldn't load places" shows
+- [x] Signing up, logging in, and writing, editing and deleting a review all work, and the Network tab shows those requests going to the backend
+- [x] Trying to edit someone else's review through the backend is refused by the database (Row Level Security)
+- [x] Log out, Forgot password and "Remember my email" still work
 
 ## Out of scope
 - Login for anything other than reviews (browsing stays open to everyone)
