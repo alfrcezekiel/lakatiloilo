@@ -134,7 +134,7 @@ Loading skeletons need no data changes either: no new tables, columns or API end
 
 Row Level Security policy for reviews: anyone may read every review. Only a logged-in traveler may add a review, and only with their own user_id. Only the traveler who wrote a review may edit or delete it. No one else can change it.
 
-Backend round: the browser no longer reads or writes reviews directly. It calls the NestJS backend, which talks to Supabase with the publishable (anon) key and, for writing, editing and deleting, the traveler's own login token. So the Row Level Security policy above still decides who may change what, exactly as before. The backend never uses the `service_role` key or any `sb_secret_` key. No tables, columns or policies change in this round. Account details (email, password) live in Supabase Auth and are never stored in the reviews table.
+Backend round: the browser no longer reads or writes reviews directly. It calls the NestJS backend, which reads and writes the reviews table with TypeORM through its own database login (lakat_api, see supabase/sql/016 and 023), not through Supabase's data API. Reading is allowed by an "api can read reviews" policy. For writing, editing and deleting, the backend first checks the traveler's login token with Supabase Auth (using the publishable key), then, inside one transaction, tells the database which traveler it is and switches to Supabase's "authenticated" role. So the Row Level Security policy above still decides who may change what, exactly as before. lakat_api is NOINHERIT: it only has the "authenticated" rights during that switch. The backend never uses the `service_role` key or any `sb_secret_` key. No tables, columns or policies change in this round. Account details (email, password) live in Supabase Auth and are never stored in the reviews table.
 
 (Before the backend round, the browser read and wrote reviews directly through Supabase with the same keys and the same Row Level Security policy.)
 
@@ -154,9 +154,11 @@ PostGIS extension: Enabled on Supabase database. The `location` column stores ge
 
 **Backend round (v1):**
 - GET /v1/reviews?place_type=…&place_id=… — anyone; a place's reviews, newest first
-- POST /v1/reviews — logged-in traveler; adds their review (place, stars, comment)
-- PATCH /v1/reviews/:id — logged-in traveler; edits their own review (stars, comment)
-- DELETE /v1/reviews/:id — logged-in traveler; deletes their own review
+- POST /v1/reviews — logged-in traveler; adds their review (place, stars, comment). The browser sends new reviews only to this NestJS endpoint, never to Supabase's data API (`/rest/v1/reviews`) directly, and the backend writes them with TypeORM, not through the data API either; the backend answers with the saved review, or a plain message such as "You've already reviewed this place." (401 not logged in, 400 stars or comment outside the limits, 409 already reviewed)
+- PATCH /v1/reviews/:id — logged-in traveler; edits their own review (stars, comment) and answers with it
+- DELETE /v1/reviews/:id — logged-in traveler; deletes their own review (answers 204)
+
+Adding, editing and deleting all run through TypeORM as the logged-in traveler, so Row Level Security decides. For someone else's review, editing and deleting change nothing and the backend answers 404 "We couldn't find that review among yours." The browser never sends reviews to Supabase's data API directly.
 - POST /v1/auth/signup — anyone; creates an account (display name, traveler type, email, password)
 - POST /v1/auth/login — anyone; logs in and returns the login for the browser to keep
 
@@ -181,7 +183,7 @@ PostGIS extension: Enabled on Supabase database. The `location` column stores ge
 - API versioning modules (v1, v2)
 - PostGIS integration for spatial queries
 - Deployed on Vercel at https://api-lakat-iloilo.vercel.app
-- Backend round: also needs the Supabase URL and the publishable (anon) key as settings, locally and in Vercel, for the reviews and log-in endpoints
+- Backend round: also needs the Supabase URL and the publishable (anon) key as settings, locally and in Vercel, to check travelers' login tokens with Supabase Auth (reviews themselves go through TypeORM)
 - Backend round: the reviews and log-in endpoints are built in the NestJS backend, which runs on the server and answers with data (JSON). The Next.js frontend calls them from the browser (the client side) and shows the results; the home page's places are fetched by the Next.js server instead
 
 **Database (Supabase):**
