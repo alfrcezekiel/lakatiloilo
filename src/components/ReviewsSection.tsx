@@ -25,8 +25,8 @@ const glassCard = "bg-white/15 backdrop-blur-md border border-white/25 text-whit
 // The Reviews part of a destination or accommodation page. It reads the
 // reviews from the NestJS backend, which reads them from Supabase: Row
 // Level Security lets anyone read them, so no login is needed to see them.
-// Only the reviewer's display name is shown, never their email. (Writing,
-// editing and deleting still go straight to Supabase until ticket 50.)
+// Only the reviewer's display name is shown, never their email. Writing,
+// editing and deleting go through the backend too.
 export function ReviewsSection({ placeType, placeId }: ReviewsSectionProps) {
   const pathname = usePathname();
   const { user, ready } = useCurrentUser();
@@ -35,6 +35,9 @@ export function ReviewsSection({ placeType, placeId }: ReviewsSectionProps) {
   const [loadError, setLoadError] = useState(false);
   // True right after this traveler posts, to say thank you.
   const [justPosted, setJustPosted] = useState(false);
+  // The backend's message right after this traveler deletes their review,
+  // for example "Your review has been deleted."
+  const [deletedMessage, setDeletedMessage] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -113,21 +116,33 @@ export function ReviewsSection({ placeType, placeId }: ReviewsSectionProps) {
                   );
                   setJustPosted(false);
                 }}
-                onDeleted={(reviewId) => {
+                onDeleted={(reviewId, message) => {
                   setReviews((current) => (current ?? []).filter((r) => r.id !== reviewId));
                   setJustPosted(false);
+                  setDeletedMessage(message);
                 }}
               />
             ) : (
-              <ReviewForm
-                placeType={placeType}
-                placeId={placeId}
-                onSaved={(review) => {
-                  // Newest first, so the new review goes on top.
-                  setReviews((current) => [review, ...(current ?? [])]);
-                  setJustPosted(true);
-                }}
-              />
+              <div className="space-y-3">
+                {deletedMessage && (
+                  <p
+                    role="status"
+                    className="rounded-xl border border-white/25 bg-white/15 px-4 py-3 font-semibold text-white backdrop-blur-md"
+                  >
+                    ✓ {deletedMessage} You can write a new one below.
+                  </p>
+                )}
+                <ReviewForm
+                  placeType={placeType}
+                  placeId={placeId}
+                  onSaved={(review) => {
+                    // Newest first, so the new review goes on top.
+                    setReviews((current) => [review, ...(current ?? [])]);
+                    setJustPosted(true);
+                    setDeletedMessage(null);
+                  }}
+                />
+              </div>
             )
           )}
 

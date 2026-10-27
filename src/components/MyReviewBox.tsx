@@ -15,8 +15,9 @@ interface MyReviewBoxProps {
   justPosted: boolean;
   // Called with the edited review, so the list shows the new version.
   onSaved: (review: Review) => void;
-  // Called after the review is deleted, so the list drops it.
-  onDeleted: (reviewId: string) => void;
+  // Called after the review is deleted, with the backend's message, so
+  // the list drops it and the page can say it worked.
+  onDeleted: (reviewId: string, message: string) => void;
 }
 
 // Shown instead of the review form when the logged-in traveler already
@@ -48,8 +49,8 @@ export function MyReviewBox({
         setDeleteError("We couldn't delete your review. Please log in again and try.");
         return;
       }
-      await deleteReviewOnBackend(token, review.id);
-      onDeleted(review.id);
+      const deleted = await deleteReviewOnBackend(token, review.id);
+      onDeleted(review.id, deleted.message);
     } catch (error) {
       setDeleteError(backendMessage(error) ?? "Something went wrong. Please try again.");
     } finally {

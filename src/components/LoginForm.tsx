@@ -10,7 +10,9 @@ import { AuthCard, authButtonClass } from "@/components/AuthShell";
 import { GlassField, fieldInputClass } from "@/components/GlassField";
 import { MIN_PASSWORD_LENGTH, PasswordStrength } from "@/components/PasswordStrength";
 import { Skeleton } from "@/components/ui/skeleton";
+import { StatusModal } from "@/components/StatusModal";
 import { createClient } from "@/lib/supabase/client";
+import { backendRefusal, logInThroughBackend, signUpThroughBackend } from "@/lib/api";
 import {
   displayNameOf,
   rememberedEmail,
@@ -38,6 +40,9 @@ const authErrors: Record<string, { field: Field; message: string }> = {
   over_request_rate_limit: { field: "form", message: "Too many tries. Please wait a minute and try again." },
   // Supabase's built-in email sender allows only a few emails an hour.
   over_email_send_rate_limit: { field: "form", message: "Too many new accounts right now. Please try again in about an hour." },
+  // The backend's own checks (POST /v1/auth/signup).
+  display_name_invalid: { field: "name", message: "Your display name needs 2 to 40 characters." },
+  traveler_type_invalid: { field: "traveler", message: "Please pick how you're traveling." },
 };
 const fallbackError = "Something went wrong. Please try again.";
 
@@ -65,6 +70,12 @@ export function LoginForm() {
   const [rememberMyEmail, setRememberMyEmail] = useState(() => rememberedEmail() !== "");
   const [errors, setErrors] = useState<Errors>({});
   const [notice, setNotice] = useState<string | null>(null);
+  // Set right after an account is created, to show the "Account created"
+  // pop-up. Creating an account does not log the traveler in.
+  const [created, setCreated] = useState<{
+    name: string;
+    needsConfirmation: boolean;
+  } | null>(null);
   const [busy, setBusy] = useState(false);
   // True once this form has logged the traveler in and is sending them on.
   // Supabase says "logged in" a moment before the next page appears; this
@@ -87,6 +98,16 @@ export function LoginForm() {
     setShowPassword(false);
     setErrors({});
     setNotice(null);
+  };
+
+  // From the "Account created" pop-up: open Log in with every field
+  // empty, so the traveler types their own email and password (nothing
+  // from sign-up, or from a remembered email, is filled in).
+  const goToLogIn = () => {
+    setCreated(null);
+    switchMode("login");
+    setEmail("");
+    setRememberMyEmail(false);
   };
 
   // Checks that need no trip to Supabase.
@@ -119,27 +140,35 @@ export function LoginForm() {
 
     setBusy(true);
     try {
-      const supabase = createClient();
-      const { data, error } =
-        mode === "signup"
-          ? await supabase.auth.signUp({
+      // Through the NestJS backend (POST /v1/auth/signup or /login), which
+      // asks Supabase Auth. The display name is saved on the account
+      // (reviews show it, never the email), and the database copies
+      // traveler_type onto their reviews (supabase/sql/022).
+      let data;
+      try {
+        if (mode === "signup") {
+          const result = await signUpThroughBackend({
             email,
             password,
-            // Saved on the account; reviews show this name, never the email.
-            // traveler_type is copied onto their reviews by the database
-            // (supabase/sql/022).
-            options: {
-              data: { display_name: displayName.trim(), traveler_type: travelerType },
-            },
-          })
-          : await supabase.auth.signInWithPassword({ email, password });
-
-      if (error) {
-        // 429 = "too many requests". Supabase does not always send a code
-        // with it, so it gets its own message.
+            display_name: displayName.trim(),
+            traveler_type: travelerType ?? "",
+          });
+          // Not logged in: show the pop-up, then they log in themselves.
+          setCreated({
+            name: displayName.trim(),
+            needsConfirmation: result.needs_confirmation,
+          });
+          return;
+        }
+        data = await logInThroughBackend(email, password);
+      } catch (error) {
+        const refusal = backendRefusal(error);
+        if (!refusal) throw error; // no answer at all: handled below
+        // Supabase's code (passed on by the backend) picks the message.
+        // 429 = "too many requests", which Supabase does not always label.
         const known =
-          authErrors[error.code ?? ""] ??
-          (error.status === 429
+          authErrors[refusal.code ?? ""] ??
+          (refusal.status === 429
             ? { field: "form" as const, message: "Too many tries. Please wait a few minutes and try again." }
             : undefined);
         setErrors(known ? { [known.field]: known.message } : { form: fallbackError });
@@ -147,14 +176,18 @@ export function LoginForm() {
       }
 
       if (!data.session) {
-        // Only happens if "Confirm email" is switched on in Supabase.
-        setMode("login");
-        setPassword("");
-        setNotice("Check your email for a link to confirm your account, then log in.");
+        setErrors({ form: fallbackError });
         return;
       }
-      // Sign-up has no checkbox, so it leaves any remembered email alone.
-      if (mode === "login") rememberEmail(rememberMyEmail, email);
+      // Keep the login the backend handed back, in this browser, exactly
+      // as a direct Supabase log-in would (the navbar, reviews and
+      // "Remember my email" all work as before).
+      const { error: keepError } = await createClient().auth.setSession(data.session);
+      if (keepError) {
+        setErrors({ form: fallbackError });
+        return;
+      }
+      rememberEmail(rememberMyEmail, email);
       setLeaving(true);
       router.replace(next);
     } catch {
@@ -397,6 +430,21 @@ export function LoginForm() {
           Explore as a guest
         </Link>
       </p>
+
+      {created && (
+        <StatusModal
+          tone="success"
+          title="Account created"
+          message={
+            created.needsConfirmation
+              ? `Welcome to Lakat Iloilo, ${created.name}! Check your email for a link to confirm your account, then log in.`
+              : `Welcome to Lakat Iloilo, ${created.name}! Your account is ready. Log in with your email and password to start writing reviews.`
+          }
+          actionLabel="Go to log in"
+          onAction={goToLogIn}
+          onClose={goToLogIn}
+        />
+      )}
     </AuthCard>
   );
 }

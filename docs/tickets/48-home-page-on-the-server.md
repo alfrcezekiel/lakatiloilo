@@ -4,13 +4,13 @@
 
 **Blocked by:** None
 
-**Status:** in progress (built and checked on localhost 2026-10-25; not pushed yet)
+**Status:** done (tested by the team on the live URL, 2026-10-27)
 
 - [x] The browser no longer asks the backend's place endpoints for the home page (checked in the browser's Network tab)
 - [x] The hero, About and Features show straight away; the place sections and the Featured and Trending cards show skeletons until the places arrive, with no layout jump
 - [x] With the backend unreachable, "We couldn't load places" shows
 - [x] Search suggestions, category chips and the City/Province filters work as before
-- [ ] Works on the live URL
+- [x] Works on the live URL
 
 **Checked on localhost (2026-10-25):** the browser made no requests to the backend; all 34 place cards and the Featured and Trending cards showed; typing "din" in Where to? suggested Dinagyang Festival; the page sent by the server starts with the skeletons ("Loading places") and carries the places as they arrive. The team then checked it with the browser throttled to 3G: the skeletons showed first, then the real places. With the backend stopped, the home page showed "We couldn't load places", and the places came back after restarting it.
 

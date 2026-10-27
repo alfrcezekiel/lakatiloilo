@@ -4,14 +4,14 @@
 
 **Blocked by:** 49
 
-**Status:** in progress (adding, editing and deleting all go through the backend with TypeORM on localhost, 2026-10-27; editing and deleting need a real test, then the live URL)
+**Status:** done (tested by the team on the live URL, 2026-10-27)
 
 - [x] A logged-in traveler can add a review, and it appears straight away, as before
 - [x] They can edit and delete their own review, as before
-- [ ] A second review for the same place, or a request without a login, is refused with the same plain messages as before
+- [x] A second review for the same place, or a request without a login, is refused with the same plain messages as before
 - [x] Trying to edit or delete someone else's review through the backend is refused by the database (Row Level Security), not just hidden in the page
 - [x] The backend accepts adding, editing and deleting only from the site's own addresses (CORS)
-- [ ] Works on the live URL
+- [x] Works on the live URL
 
 **Progress (2026-10-25):** adding a review now goes through the backend. The NestJS endpoint POST /v1/reviews takes the traveler's login token from the Authorization header and adds the review through Supabase as that traveler, so Row Level Security still applies; the browser no longer sends new reviews to Supabase's data API. CORS allows GET and POST (with the Authorization header). Checked on localhost without a real login: no login gives 401 "Please log in to write a review.", stars outside 1-5 give 400, a fake login gives 401 "Please log in again". The team then added a review while logged in on localhost: the Network tab showed a POST to localhost:5000/v1/reviews and the review appeared straight away. Still to do: edit (PATCH) and delete (DELETE) through the backend.
 
@@ -23,3 +23,6 @@
 
 **Checked by the team (2026-10-27):** after a hard refresh on localhost, editing and deleting their own review worked, and the Network tab showed PATCH and DELETE to localhost:5000/v1/reviews (an older open tab had still been running the earlier code).
 
+**Checked by the team on the live URL (2026-10-27):** added, edited and deleted a review through the backend, and a second review for the same place showed "You've already reviewed this place."
+
+**Change (2026-10-27, team request):** DELETE /v1/reviews/:id now answers 200 with { id, message: "Your review has been deleted." } instead of 204 (no content). The review page shows "✓ Your review has been deleted. You can write a new one below." above the review form. Checked by the team on localhost the same day: deleting a review showed 200 with the message in the Network tab, and the page showed it.

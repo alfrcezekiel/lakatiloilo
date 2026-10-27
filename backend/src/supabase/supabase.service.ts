@@ -2,9 +2,9 @@ import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { SupabaseClient, createClient } from '@supabase/supabase-js';
 
-// The backend's connection to Supabase Auth (the login service). It is
-// only used to check a traveler's login token; reviews themselves are read
-// and written with TypeORM (see src/v1/reviews).
+// The backend's connection to Supabase Auth (the login service): signing
+// up, logging in (src/v1/auth) and checking a traveler's login token.
+// Reviews themselves are read and written with TypeORM (src/v1/reviews).
 //
 // It uses the publishable (anon) key, the same key the website uses.
 // Never put the service_role key or an sb_secret_ key here: they skip Row
@@ -36,6 +36,22 @@ export class SupabaseService {
       });
     }
     return this.anon;
+  }
+
+  // A brand-new Supabase client for one sign-up or log-in. Each request
+  // gets its own, so one traveler's login can never be mixed up with
+  // another's inside the backend.
+  freshClient(): SupabaseClient {
+    const url = this.config.get<string>('SUPABASE_URL');
+    const anonKey = this.config.get<string>('SUPABASE_ANON_KEY');
+    if (!url || !anonKey) {
+      throw new Error(
+        'SUPABASE_URL or SUPABASE_ANON_KEY is not set. Add them to backend/.env (see .env.example) and to Vercel.',
+      );
+    }
+    return createClient(url, anonKey, {
+      auth: { persistSession: false, autoRefreshToken: false },
+    });
   }
 
   // Asks Supabase Auth whose login token this is. Answers with the

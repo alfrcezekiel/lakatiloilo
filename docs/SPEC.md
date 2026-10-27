@@ -78,7 +78,7 @@ Travelers planning weekend trips around Iloilo Province. No login required for b
 15. Backend round — everything looks and works the same for travelers; only where the requests go changes:
    - **Home page:** the Next.js server asks the NestJS backend for the places before sending the page. Skeletons, the "We couldn't load places" message, search, chips and filters behave as before.
    - **Reviews section:** reading, writing, editing and deleting reviews go through the backend instead of straight to Supabase. Messages such as "one review per place" stay the same.
-   - **Sign up / Log in page:** creating an account and logging in go through the backend. Afterwards the traveler is logged in exactly as before (navbar name, "Remember my email").
+   - **Sign up / Log in page:** creating an account and logging in go through the backend. Creating an account does not log the traveler in: an "Account created" pop-up says "Welcome to Lakat Iloilo, <name>! Your account is ready. Log in with your email and password to start writing reviews." Its "Go to log in" button opens Log in with empty fields: the traveler types their own email and password. After logging in, the traveler is logged in exactly as before (navbar name, "Remember my email"). (Changed on 2026-10-27 at the team's request: signing up used to log the traveler in straight away.)
    - **Forgot password, Set new password and Log out:** no change; they stay in the browser.
 
 ## Data
@@ -156,11 +156,13 @@ PostGIS extension: Enabled on Supabase database. The `location` column stores ge
 - GET /v1/reviews?place_type=…&place_id=… — anyone; a place's reviews, newest first
 - POST /v1/reviews — logged-in traveler; adds their review (place, stars, comment). The browser sends new reviews only to this NestJS endpoint, never to Supabase's data API (`/rest/v1/reviews`) directly, and the backend writes them with TypeORM, not through the data API either; the backend answers with the saved review, or a plain message such as "You've already reviewed this place." (401 not logged in, 400 stars or comment outside the limits, 409 already reviewed)
 - PATCH /v1/reviews/:id — logged-in traveler; edits their own review (stars, comment) and answers with it
-- DELETE /v1/reviews/:id — logged-in traveler; deletes their own review (answers 204)
+- DELETE /v1/reviews/:id — logged-in traveler; deletes their own review (answers 200 with { id, message: "Your review has been deleted." }; the page shows that message above the review form)
 
 Adding, editing and deleting all run through TypeORM as the logged-in traveler, so Row Level Security decides. For someone else's review, editing and deleting change nothing and the backend answers 404 "We couldn't find that review among yours." The browser never sends reviews to Supabase's data API directly.
-- POST /v1/auth/signup — anyone; creates an account (display name, traveler type, email, password)
-- POST /v1/auth/login — anyone; logs in and returns the login for the browser to keep
+- POST /v1/auth/signup — anyone; creates an account (display name, traveler type, email, password) through Supabase Auth and answers { created: true, needs_confirmation }. It does not log anyone in: Supabase logs a new account in straight away, so the backend ends that login at once
+- POST /v1/auth/login — anyone; logs in through Supabase Auth and answers { session }, the login for the browser to keep (it stores it with supabase.auth.setSession)
+
+When Supabase Auth refuses, the backend answers with Supabase's own status and code (for example 400 "invalid_credentials", 422 "user_already_exists", 429 "over_request_rate_limit"), so the website shows its usual plain messages. The password is passed straight on to Supabase Auth: the backend never stores, logs or sends it back.
 
 "Logged-in traveler" means the request carries the traveler's login token; the backend passes it on to Supabase, where Row Level Security checks it. Password reset and log-out stay in the browser.
 

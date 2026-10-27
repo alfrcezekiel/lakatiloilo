@@ -38,6 +38,12 @@ export interface ReviewChanges {
   comment: string;
 }
 
+// What the website gets after deleting a review.
+export interface DeletedReview {
+  id: string;
+  message: string;
+}
+
 const COLUMNS = 'id, user_id, reviewer_name, traveler_type, rating, comment, created_at';
 
 const notYours = () =>
@@ -139,9 +145,9 @@ export class ReviewsService {
     });
   }
 
-  // Deletes the traveler's own review. As with update, someone else's
-  // review is invisible here, so nothing is deleted.
-  remove(accessToken: string, id: string): Promise<void> {
+  // Deletes the traveler's own review and says so. As with update,
+  // someone else's review is invisible here, so nothing is deleted.
+  remove(accessToken: string, id: string): Promise<DeletedReview> {
     return this.asTraveler(accessToken, async (runner) => {
       // For DELETE, TypeORM answers with [deleted rows, how many].
       const [, count]: [unknown[], number] = await runner.query(
@@ -149,6 +155,7 @@ export class ReviewsService {
         [id],
       );
       if (count === 0) throw notYours();
+      return { id, message: 'Your review has been deleted.' };
     });
   }
 

@@ -50,6 +50,7 @@ export class ReviewsController {
   // GET /v1/reviews?place_type=destination&place_id=<uuid>
   // A place's reviews, newest first. Anyone may call it.
   @Get()
+  @HttpCode(200)
   findForPlace(
     @Query('place_type') placeType: string,
     @Query('place_id', ParseUUIDPipe) placeId: string,
@@ -64,6 +65,7 @@ export class ReviewsController {
   // body: { place_type, place_id, rating, comment }
   // Adds the logged-in traveler's review and answers with it.
   @Post()
+  @HttpCode(201)
   create(
     @Headers('authorization') authorization: string | undefined,
     @Body() body: Partial<NewReview> | undefined,
@@ -87,6 +89,7 @@ export class ReviewsController {
   // body: { rating, comment }
   // Changes the stars and comment of the traveler's own review.
   @Patch(':id')
+  @HttpCode(200)
   update(
     @Headers('authorization') authorization: string | undefined,
     @Param('id', ParseUUIDPipe) id: string,
@@ -96,9 +99,11 @@ export class ReviewsController {
   }
 
   // DELETE /v1/reviews/<id>   (header: Authorization: Bearer <login token>)
-  // Deletes the traveler's own review. Answers 204 (done, nothing to send).
+  // Deletes the traveler's own review. Answers 200 with
+  // { id, message: "Your review has been deleted." }, so the website can
+  // show the backend's own message.
   @Delete(':id')
-  @HttpCode(204)
+  @HttpCode(200)
   remove(
     @Headers('authorization') authorization: string | undefined,
     @Param('id', ParseUUIDPipe) id: string,

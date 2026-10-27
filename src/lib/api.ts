@@ -139,12 +139,56 @@ export const updateReview = async (
   return data;
 };
 
+// What the backend answers after deleting a review.
+export interface DeletedReview {
+  id: string;
+  message: string;
+}
+
 // Deletes the traveler's own review through the backend
-// (DELETE /v1/reviews/:id).
+// (DELETE /v1/reviews/:id). Answers with the backend's message, for
+// example "Your review has been deleted."
 export const deleteReview = async (accessToken: string, id: string) => {
-  await api().delete(`/v1/reviews/${encodeURIComponent(id)}`, {
-    headers: { Authorization: `Bearer ${accessToken}` },
-  });
+  const { data } = await api().delete<DeletedReview>(
+    `/v1/reviews/${encodeURIComponent(id)}`,
+    { headers: { Authorization: `Bearer ${accessToken}` } },
+  );
+  return data;
+};
+
+// The login the backend hands back after logging in. The browser stores
+// it (supabase.auth.setSession), so the traveler is logged in exactly as
+// if they had logged in with Supabase directly.
+export interface BackendLogin {
+  session: { access_token: string; refresh_token: string } | null;
+}
+
+// What the backend answers after creating an account. Creating an account
+// does not log anyone in. `needs_confirmation` is true when Supabase
+// wants the email confirmed first.
+export interface BackendSignUp {
+  created: true;
+  needs_confirmation: boolean;
+}
+
+// Creates an account through the backend (POST /v1/auth/signup).
+export const signUpThroughBackend = async (account: {
+  email: string;
+  password: string;
+  display_name: string;
+  traveler_type: string;
+}) => (await api().post<BackendSignUp>("/v1/auth/signup", account)).data;
+
+// Logs in through the backend (POST /v1/auth/login).
+export const logInThroughBackend = async (email: string, password: string) =>
+  (await api().post<BackendLogin>("/v1/auth/login", { email, password })).data;
+
+// Why the backend refused, as Supabase's own code (for example
+// "invalid_credentials"), and the HTTP status (429 = too many tries).
+export const backendRefusal = (error: unknown) => {
+  if (!axios.isAxiosError(error) || !error.response) return null;
+  const code = (error.response.data as { code?: unknown } | undefined)?.code;
+  return { status: error.response.status, code: typeof code === "string" ? code : null };
 };
 
 // The backend's own message when it refuses a request (for example
