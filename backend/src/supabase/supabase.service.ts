@@ -21,20 +21,10 @@ export class SupabaseService {
 
   // Created on first use, so the places endpoints keep working even if
   // these settings are missing.
+  // Only used to check login tokens, which keeps no login of its own, so
+  // one shared client is safe here.
   private client(): SupabaseClient {
-    if (!this.anon) {
-      const url = this.config.get<string>('SUPABASE_URL');
-      const anonKey = this.config.get<string>('SUPABASE_ANON_KEY');
-      if (!url || !anonKey) {
-        throw new Error(
-          'SUPABASE_URL or SUPABASE_ANON_KEY is not set. Add them to backend/.env (see .env.example) and to Vercel.',
-        );
-      }
-      // The backend keeps no login of its own between requests.
-      this.anon = createClient(url, anonKey, {
-        auth: { persistSession: false, autoRefreshToken: false },
-      });
-    }
+    this.anon ??= this.freshClient();
     return this.anon;
   }
 
@@ -49,6 +39,7 @@ export class SupabaseService {
         'SUPABASE_URL or SUPABASE_ANON_KEY is not set. Add them to backend/.env (see .env.example) and to Vercel.',
       );
     }
+    // The backend keeps no login of its own between requests.
     return createClient(url, anonKey, {
       auth: { persistSession: false, autoRefreshToken: false },
     });

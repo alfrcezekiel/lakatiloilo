@@ -199,7 +199,7 @@ Browsing needs no login. Writing, editing or deleting a review needs an account:
 
 Login extras round: travelers can reset a forgotten password through Supabase's reset email (the built-in email sender, which allows only a few emails an hour; fine for the demo). The Forgot password and Set new password pages' addresses, on localhost and on the live URL, are added to Supabase's allowed redirect URLs. Travelers stay logged in until they log out; "Remember my email" only fills in the email on the login page.
 
-Backend round: signing up and logging in go through the backend's endpoints, which call Supabase Auth; the browser then keeps the login as before. Password reset and log-out stay in the browser (the reset link only works in the browser that asked for it).
+Backend round: signing up and logging in go through the backend's endpoints, which call Supabase Auth. Signing up does not log the traveler in; after logging in, the browser keeps the login as before. Password reset and log-out stay in the browser (the reset link only works in the browser that asked for it).
 
 ## Done for the demo
 - [x] NestJS backend project structure created in `backend/` directory

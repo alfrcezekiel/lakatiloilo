@@ -49,7 +49,7 @@ const sslOptions = (caCert?: string) => {
         entities: [Destination, Accommodation, Review],
         synchronize: false,
         // PostGIS is already installed by the SQL scripts; never try to
-        // create extensions (the read-only database role is not allowed to).
+        // create extensions (the backend's lakat_api role is not allowed to).
         installExtensions: false,
         // Print every SQL query while developing, but not on Vercel, where
         // it would bury real errors in the logs.

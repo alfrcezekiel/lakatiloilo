@@ -21,7 +21,7 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 // The traveler's login token, from "Authorization: Bearer <token>".
 const loginToken = (authorization?: string) => {
   const token = authorization?.match(/^Bearer (.+)$/)?.[1];
-  if (!token) throw new UnauthorizedException('Please log in to write a review.');
+  if (!token) throw new UnauthorizedException('Please log in, then try again.');
   return token;
 };
 
