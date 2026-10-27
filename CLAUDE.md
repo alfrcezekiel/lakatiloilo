@@ -64,6 +64,19 @@ English, and wait for the team to agree.
 | Build                       | `/implement`       | code, commits, live deploys |
 | Review                      | `/code-review`     | review report               |
 
+Project helpers (Lakat Iloilo):
+
+| When                                  | Command             | Produces                         |
+|---------------------------------------|---------------------|----------------------------------|
+| A ticket needs a backend endpoint     | `/new-endpoint`     | controller, service, api.ts, spec line |
+| A ticket needs a database change      | `/sql-change`       | `supabase/sql/NNN-*.sql` to run  |
+| Something looks wrong at one width    | `/responsive-check` | measured fix at 375–1440 px      |
+| The team says "commit and push"       | `/ship`             | one safe commit on `main`        |
+| After a push, or after the team tests | `/live-check`       | a test to follow, ticked ticket  |
+
+Project rules live in `.claude/rules/` (team habits always; backend,
+frontend and database rules when those files are worked on).
+
 ## Where things live
 
 - `docs/PROBLEM.md` — the problem, the person, the MVP cut

@@ -44,6 +44,13 @@ the NestJS backend. Still parked:
 - Password reset and log-out through the backend. The reset link only
   works in the browser that asked for it, and log-out only clears the
   browser's login, so moving them adds work without much to show.
+  A full plan was drafted on 2026-10-28 and then cancelled by the team:
+  GET /v1/auth/me (who is logged in), POST /v1/auth/logout (this device
+  only), POST /v1/auth/forgot-password and POST /v1/auth/reset-password
+  (save the new password from the link's one-time code, so the link works
+  in any browser). It needs the "Reset password" email template changed
+  and the "token verifications" rate limit raised. Listing all users is
+  not possible: it needs the service_role key.
 - "Nearby places" on detail pages, using the backend's /near endpoints
   (they exist but nothing uses them yet).
 - Keeping the backend address private. The browser now calls the backend
