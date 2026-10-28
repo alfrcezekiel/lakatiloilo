@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getReviews, type Review } from "@/lib/api";
-import { useCurrentUser } from "@/lib/auth";
+import { useCurrentUser } from "@/lib/login";
 import { ReviewForm } from "@/components/ReviewForm";
 import { MyReviewBox } from "@/components/MyReviewBox";
 import { travelerTypeLabels } from "@/lib/labels";

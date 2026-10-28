@@ -12,14 +12,8 @@ import { MIN_PASSWORD_LENGTH, PasswordStrength } from "@/components/PasswordStre
 import { Skeleton } from "@/components/ui/skeleton";
 import { StatusModal } from "@/components/StatusModal";
 import { backendRefusal, logInThroughBackend, signUpThroughBackend } from "@/lib/api";
-import {
-  displayNameOf,
-  rememberedEmail,
-  rememberEmail,
-  safeNextPath,
-  saveLogin,
-  useCurrentUser,
-} from "@/lib/auth";
+import { rememberedEmail, rememberEmail, safeNextPath } from "@/lib/auth";
+import { displayNameOf, saveLogin, useCurrentUser } from "@/lib/login";
 import { travelerTypes, type TravelerType } from "@/lib/labels";
 
 type Mode = "login" | "signup";

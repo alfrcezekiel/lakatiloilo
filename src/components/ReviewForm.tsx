@@ -7,7 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { backendMessage, createReview, updateReview } from "@/lib/api";
-import { loginToken } from "@/lib/auth";
+import { loginToken } from "@/lib/login";
 import type { Review } from "@/components/ReviewsSection";
 
 const MAX_COMMENT = 500;

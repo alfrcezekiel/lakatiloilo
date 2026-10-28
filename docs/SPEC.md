@@ -90,7 +90,7 @@ Travelers planning weekend trips around Iloilo Province. No login required for b
    - **Log out:** asks the backend to end the login on this device only, then the website forgets its copy and shows "Log in". If the backend cannot be reached, the traveler is still logged out in this browser.
    - **Other open tabs** notice logging in and out, as before.
    - **Forgot password and Set new password:** no change; they still talk to Supabase from the browser.
-   - **Once, after this goes live:** travelers who are logged in will need to log in again, because the website stops reading Supabase's old copy of the login.
+   - **Once, after this goes live:** travelers who are logged in will need to log in again, because the website stops reading Supabase's old copy of the login. Their old Supabase login is ended through the backend and removed from the browser at the same time.
 
 ## Data
 
@@ -205,7 +205,7 @@ When Supabase Auth refuses, the backend answers with Supabase's own status and c
 - Deployed on Vercel at https://api-lakat-iloilo.vercel.app
 - Backend round: also needs the Supabase URL and the publishable (anon) key as settings, locally and in Vercel, to check travelers' login tokens with Supabase Auth (reviews themselves go through TypeORM)
 - Backend round: the reviews and log-in endpoints are built in the NestJS backend, which runs on the server and answers with data (JSON). The Next.js frontend calls them from the browser (the client side) and shows the results; the home page's places are fetched by the Next.js server instead
-- Own login round: the "who is logged in", renew-login and log-out endpoints are also in the NestJS backend, next to sign-up and log-in. The website keeps the login itself and sends it to the backend; only the Forgot password and Set new password pages still use Supabase's browser library
+- Own login round: the "who is logged in", renew-login and log-out endpoints are also in the NestJS backend, next to sign-up and log-in. The website keeps the login itself and sends it to the backend; only the Forgot password and Set new password pages still use Supabase's browser library. Any other page that finds a Supabase login left in the browser (from before this round, or from a reset link that was opened but not used) ends it through the backend's log-out endpoint and deletes it, so no normal page talks to Supabase Auth
 
 **Database (Supabase):**
 - Hosted PostgreSQL with PostGIS extension

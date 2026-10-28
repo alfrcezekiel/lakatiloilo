@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { backendMessage, deleteReview as deleteReviewOnBackend } from "@/lib/api";
-import { loginToken } from "@/lib/auth";
+import { loginToken } from "@/lib/login";
 import { ReviewForm } from "@/components/ReviewForm";
 import type { Review } from "@/components/ReviewsSection";
 

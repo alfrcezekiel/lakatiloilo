@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { Logo } from "@/components/Logo";
 import { scrollToSection } from "@/lib/utils/scroll";
-import { displayNameOf, logOut as logOutOnThisDevice, useCurrentUser } from "@/lib/auth";
+import { displayNameOf, logOut as logOutOnThisDevice, useCurrentUser } from "@/lib/login";
 
 export function DockNavbar() {
   const [isOpen, setIsOpen] = useState(false);
