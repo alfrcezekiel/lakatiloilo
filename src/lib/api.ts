@@ -198,6 +198,21 @@ export const signUpThroughBackend = async (account: {
   traveler_type: string;
 }) => (await api().post<BackendSignUp>("/v1/auth/signup", account)).data;
 
+// Renews the login before it runs out (POST /v1/auth/refresh). Takes the
+// login's renewal code and answers with a renewed login; 401 when the
+// code no longer works.
+export const refreshLogin = async (refreshToken: string) =>
+  (await api().post<BackendLogin>("/v1/auth/refresh", { refresh_token: refreshToken })).data;
+
+// Ends the login on this device through the backend (POST
+// /v1/auth/logout). Answers { message: "You're logged out." }.
+export const logOutThroughBackend = async (accessToken: string) =>
+  (
+    await api().post<{ message: string }>("/v1/auth/logout", undefined, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    })
+  ).data;
+
 // Logs in through the backend (POST /v1/auth/login).
 export const logInThroughBackend = async (email: string, password: string) =>
   (await api().post<BackendLogin>("/v1/auth/login", { email, password })).data;

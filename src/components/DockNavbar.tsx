@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { Logo } from "@/components/Logo";
 import { scrollToSection } from "@/lib/utils/scroll";
-import { displayNameOf, forgetLogin, useCurrentUser } from "@/lib/auth";
+import { displayNameOf, logOut as logOutOnThisDevice, useCurrentUser } from "@/lib/auth";
 
 export function DockNavbar() {
   const [isOpen, setIsOpen] = useState(false);
@@ -12,10 +12,9 @@ export function DockNavbar() {
 
   const logOut = () => {
     setIsOpen(false);
-    // Forget the website's own copy of the login in this browser. The
-    // navbar updates by itself: useCurrentUser hears about it. (Ticket 55
-    // will also ask the backend to end the login.)
-    forgetLogin();
+    // Forgets the login here and asks the backend to end it on this
+    // device. The navbar updates by itself: useCurrentUser hears about it.
+    logOutOnThisDevice();
   };
 
   // "Log in", or the traveler's name with "Log out". Shown in the bar on

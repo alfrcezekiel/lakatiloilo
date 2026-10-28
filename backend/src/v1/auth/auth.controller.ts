@@ -63,6 +63,32 @@ export class AuthController {
     return this.authService.me(loginToken(authorization));
   }
 
+  // POST /v1/auth/logout   (header: Authorization: Bearer <login token>)
+  // Ends the traveler's login on this device only and answers
+  // { message: "You're logged out." }. 401 without a valid login.
+  @Post('logout')
+  @HttpCode(200)
+  logOut(@Headers('authorization') authorization: string | undefined) {
+    return this.authService.logOut(loginToken(authorization));
+  }
+
+  // POST /v1/auth/refresh
+  // body: { refresh_token }
+  // Renews the login before it runs out and answers { session }, the
+  // renewed login. 401 "Your login has ended. Please log in again." when
+  // the renewal code no longer works. "no-store": logins are never kept by
+  // browsers or proxies.
+  @Post('refresh')
+  @HttpCode(200)
+  @Header('Cache-Control', 'no-store')
+  refresh(@Body() body: Record<string, unknown> | undefined) {
+    const refreshToken = typeof body?.refresh_token === 'string' ? body.refresh_token.trim() : '';
+    if (!refreshToken) {
+      throw new BadRequestException({ statusCode: 400, code: 'validation_failed', message: 'Please send the login renewal code.' });
+    }
+    return this.authService.refresh(refreshToken);
+  }
+
   // POST /v1/auth/login
   // body: { email, password }
   // Logs in and answers { session } (the login, for the browser to keep).

@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { createClient } from "@/lib/supabase/client";
-import { getMe, type Traveler } from "@/lib/api";
+import { getMe, logOutThroughBackend, refreshLogin, type Traveler } from "@/lib/api";
 
 export type { Traveler };
 
@@ -18,8 +18,8 @@ export type { Traveler };
 export interface SavedLogin {
   access_token: string;
   refresh_token: string;
-  // When the access token runs out, in seconds since 1970 (ticket 54
-  // renews it before then).
+  // When the access token runs out, in seconds since 1970. The website
+  // renews it shortly before then (see freshToken below).
   expires_at: number | null;
 }
 
@@ -54,6 +54,7 @@ export function saveLogin(login: { access_token: string; refresh_token: string; 
     // logged in, but nothing breaks.
   }
   window.dispatchEvent(new Event(LOGIN_CHANGED));
+  scheduleRenewal();
 }
 
 // Forget the login in this browser (log out, or the login has ended).
@@ -64,6 +65,23 @@ export function forgetLogin() {
     // Nothing to forget if storage is blocked.
   }
   window.dispatchEvent(new Event(LOGIN_CHANGED));
+}
+
+// Log out (ticket 55): the website forgets its copy straight away, so the
+// page shows "Log in" at once, and asks the backend to end the login on
+// this device, so the copy can never be used again. If the backend cannot
+// be reached, the traveler is still logged out in this browser.
+export async function logOut() {
+  // A login that has run out is renewed first: Supabase only ends a login
+  // it still accepts.
+  const token = await freshToken();
+  forgetLogin();
+  if (!token) return;
+  try {
+    await logOutThroughBackend(token);
+  } catch {
+    // Backend unreachable or the login had already ended: nothing more to do.
+  }
 }
 
 // Who is logged in right now, for any "use client" component.
@@ -86,11 +104,13 @@ export function useCurrentUser() {
 
     const check = async () => {
       const change = ++latest;
-      const login = readLogin();
-      const traveler = login ? await travelerFor(login.access_token) : null;
+      // Renews the login first if it has run out (for example, the site
+      // was opened again the next day).
+      const token = await freshToken();
+      const traveler = token ? await travelerFor(token) : null;
       if (cancelled || change !== latest) return;
       // The backend says this login is no longer valid: forget it.
-      if (login && !traveler) forgetLogin();
+      if (token && !traveler) forgetLogin();
       setUser(traveler);
       setReady(true);
     };
@@ -108,6 +128,7 @@ export function useCurrentUser() {
     }
 
     check();
+    scheduleRenewal();
     window.addEventListener(LOGIN_CHANGED, check);
     window.addEventListener("storage", onStorage);
     return () => {
@@ -121,9 +142,110 @@ export function useCurrentUser() {
 }
 
 // The logged-in traveler's login token, which the backend needs to add,
-// edit or delete their reviews; null when nobody is logged in.
+// edit or delete their reviews; null when nobody is logged in. Renewed
+// first if it is about to run out.
 export async function loginToken() {
-  return readLogin()?.access_token ?? null;
+  return freshToken();
+}
+
+// Keeping the login fresh (ticket 54).
+//
+// A login runs out after about an hour. The website renews it through the
+// backend a minute before that (and whenever it finds it has run out, for
+// example when a laptop wakes up), so travelers stay logged in until they
+// log out. Each renewal code works only once, so two tabs must never renew
+// at the same moment: the browser's "lock" makes them take turns, and the
+// second one simply finds the login already renewed.
+const RENEW_EARLY_SECONDS = 60;
+
+// When this login runs out, in seconds since 1970: from the login itself,
+// or from inside its token for logins saved without it.
+function expiresAt(login: SavedLogin): number | null {
+  if (login.expires_at) return login.expires_at;
+  try {
+    const payload = login.access_token.split(".")[1];
+    const exp = JSON.parse(atob(payload.replace(/-/g, "+").replace(/_/g, "/"))).exp;
+    return typeof exp === "number" ? exp : null;
+  } catch {
+    return null;
+  }
+}
+
+function needsRenewal(login: SavedLogin) {
+  const expires = expiresAt(login);
+  return expires !== null && expires - Date.now() / 1000 < RENEW_EARLY_SECONDS;
+}
+
+// Runs `work` while no other tab of this site is renewing. Older browsers
+// without locks just run it.
+function oneTabAtATime<T>(work: () => Promise<T>): Promise<T> {
+  if (typeof navigator !== "undefined" && navigator.locks) {
+    return navigator.locks.request("lakat-login-renewal", work) as Promise<T>;
+  }
+  return work();
+}
+
+let renewing: Promise<string | null> | null = null;
+
+// The current login token, renewed first if it is about to run out. null
+// when nobody is logged in, or the renewal was refused (the login is then
+// forgotten, and the page shows "Log in").
+export async function freshToken(): Promise<string | null> {
+  const login = readLogin();
+  if (!login) return null;
+  if (!needsRenewal(login)) return login.access_token;
+  renewing ??= oneTabAtATime(async () => {
+    // Another tab may have renewed it while this one waited its turn.
+    const current = readLogin();
+    if (!current) return null;
+    if (!needsRenewal(current)) return current.access_token;
+    try {
+      const { session } = await refreshLogin(current.refresh_token);
+      if (!session) {
+        forgetLogin();
+        return null;
+      }
+      saveLogin(session);
+      return session.access_token;
+    } catch (error) {
+      if (axios.isAxiosError(error) && error.response?.status === 401) {
+        forgetLogin();
+        return null;
+      }
+      // The backend cannot be reached: keep the login and try again later.
+      return current.access_token;
+    }
+  }).finally(() => {
+    renewing = null;
+  });
+  return renewing;
+}
+
+// One timer per tab that renews the login a minute before it runs out.
+let renewalTimer: ReturnType<typeof setTimeout> | null = null;
+
+function scheduleRenewal() {
+  if (typeof window === "undefined") return;
+  if (renewalTimer) clearTimeout(renewalTimer);
+  renewalTimer = null;
+  const login = readLogin();
+  const expires = login ? expiresAt(login) : null;
+  if (!expires) return;
+  const wait = Math.max(0, (expires - RENEW_EARLY_SECONDS) * 1000 - Date.now());
+  // Browsers cap timers at about 24 days; logins are much shorter anyway.
+  renewalTimer = setTimeout(() => {
+    freshToken().finally(scheduleRenewal);
+  }, Math.min(wait, 2_000_000_000));
+}
+
+// Timers pause while a laptop sleeps, so check again when the page is
+// looked at again.
+if (typeof window !== "undefined") {
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible") {
+      freshToken().finally(scheduleRenewal);
+    }
+  });
 }
 
 // The name to show for the logged-in traveler, for example in the navbar.
