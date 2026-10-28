@@ -11,13 +11,13 @@ import { GlassField, fieldInputClass } from "@/components/GlassField";
 import { MIN_PASSWORD_LENGTH, PasswordStrength } from "@/components/PasswordStrength";
 import { Skeleton } from "@/components/ui/skeleton";
 import { StatusModal } from "@/components/StatusModal";
-import { createClient } from "@/lib/supabase/client";
 import { backendRefusal, logInThroughBackend, signUpThroughBackend } from "@/lib/api";
 import {
   displayNameOf,
   rememberedEmail,
   rememberEmail,
   safeNextPath,
+  saveLogin,
   useCurrentUser,
 } from "@/lib/auth";
 import { travelerTypes, type TravelerType } from "@/lib/labels";
@@ -179,14 +179,10 @@ export function LoginForm() {
         setErrors({ form: fallbackError });
         return;
       }
-      // Keep the login the backend handed back, in this browser, exactly
-      // as a direct Supabase log-in would (the navbar, reviews and
-      // "Remember my email" all work as before).
-      const { error: keepError } = await createClient().auth.setSession(data.session);
-      if (keepError) {
-        setErrors({ form: fallbackError });
-        return;
-      }
+      // Keep the login the backend handed back in the website's own copy
+      // (not Supabase's browser library, which would check it with
+      // Supabase straight away). The navbar and reviews pick it up.
+      saveLogin(data.session);
       rememberEmail(rememberMyEmail, email);
       setLeaving(true);
       router.replace(next);

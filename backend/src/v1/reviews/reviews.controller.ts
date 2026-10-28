@@ -11,19 +11,12 @@ import {
   Patch,
   Post,
   Query,
-  UnauthorizedException,
 } from '@nestjs/common';
+import { loginToken } from '../login-token';
 import { NewReview, PlaceType, ReviewChanges, ReviewsService } from './reviews.service';
 
 const PLACE_TYPES: PlaceType[] = ['destination', 'accommodation'];
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
-// The traveler's login token, from "Authorization: Bearer <token>".
-const loginToken = (authorization?: string) => {
-  const token = authorization?.match(/^Bearer (.+)$/)?.[1];
-  if (!token) throw new UnauthorizedException('Please log in, then try again.');
-  return token;
-};
 
 // Stars 1 to 5 and a comment of 1 to 500 characters (trimmed). These
 // checks give friendly messages; the database checks everything again.

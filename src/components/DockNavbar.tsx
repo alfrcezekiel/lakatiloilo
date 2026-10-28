@@ -4,17 +4,18 @@ import { useState } from "react";
 import Link from "next/link";
 import { Logo } from "@/components/Logo";
 import { scrollToSection } from "@/lib/utils/scroll";
-import { createClient } from "@/lib/supabase/client";
-import { displayNameOf, useCurrentUser } from "@/lib/auth";
+import { displayNameOf, forgetLogin, useCurrentUser } from "@/lib/auth";
 
 export function DockNavbar() {
   const [isOpen, setIsOpen] = useState(false);
   const { user, ready } = useCurrentUser();
 
-  const logOut = async () => {
+  const logOut = () => {
     setIsOpen(false);
-    // The navbar updates by itself: useCurrentUser hears about the logout.
-    await createClient().auth.signOut();
+    // Forget the website's own copy of the login in this browser. The
+    // navbar updates by itself: useCurrentUser hears about it. (Ticket 55
+    // will also ask the backend to end the login.)
+    forgetLogin();
   };
 
   // "Log in", or the traveler's name with "Log out". Shown in the bar on

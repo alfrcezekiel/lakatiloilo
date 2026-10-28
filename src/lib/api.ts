@@ -156,11 +156,30 @@ export const deleteReview = async (accessToken: string, id: string) => {
   return data;
 };
 
-// The login the backend hands back after logging in. The browser stores
-// it (supabase.auth.setSession), so the traveler is logged in exactly as
-// if they had logged in with Supabase directly.
+// The logged-in traveler, as the backend's "who is logged in" endpoint
+// answers. Only their own account, never anyone else's.
+export interface Traveler {
+  id: string;
+  email: string | null;
+  display_name: string;
+  // "local", "domestic" or "foreign"; null for older accounts.
+  traveler_type: string | null;
+}
+
+// "Who is logged in" (GET /v1/auth/me), worked out by the backend from
+// the traveler's login token.
+export const getMe = async (accessToken: string) =>
+  (
+    await api().get<Traveler>("/v1/auth/me", {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    })
+  ).data;
+
+// The login the backend hands back after logging in. The website keeps
+// it in its own copy (saveLogin in src/lib/auth.ts) and sends the access
+// token to the backend; expires_at says when it runs out.
 export interface BackendLogin {
-  session: { access_token: string; refresh_token: string } | null;
+  session: { access_token: string; refresh_token: string; expires_at?: number } | null;
 }
 
 // What the backend answers after creating an account. Creating an account

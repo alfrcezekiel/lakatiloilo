@@ -1,4 +1,5 @@
-import { BadRequestException, Body, Controller, HttpCode, Post } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Get, Header, Headers, HttpCode, Post } from '@nestjs/common';
+import { loginToken } from '../login-token';
 import { AuthService, SignUpRequest } from './auth.service';
 
 const TRAVELER_TYPES = ['local', 'domestic', 'foreign'];
@@ -48,6 +49,18 @@ export class AuthController {
       display_name: displayName,
       traveler_type: travelerType as SignUpRequest['traveler_type'],
     });
+  }
+
+  // GET /v1/auth/me   (header: Authorization: Bearer <login token>)
+  // "Who is logged in": answers { id, email, display_name, traveler_type }
+  // for the traveler whose login token it is, and nobody else. "no-store"
+  // stops browsers and proxies from keeping a copy of these personal
+  // details.
+  @Get('me')
+  @HttpCode(200)
+  @Header('Cache-Control', 'no-store')
+  me(@Headers('authorization') authorization: string | undefined) {
+    return this.authService.me(loginToken(authorization));
   }
 
   // POST /v1/auth/login

@@ -16,6 +16,8 @@ The login page also helps travelers look after their account: a password strengt
 
 Backend round: every request for the app's own data goes through the NestJS backend. The home page gets its places from the backend on the server, so it arrives with places already in it. Reviews (reading, writing, editing, deleting) and creating an account or logging in also go through the backend's own endpoints, so all of the app's data requests live in one place the team can read and check.
 
+Own login round: the website keeps its own copy of the traveler's login instead of handing it to Supabase's browser library. "Who is logged in", keeping the login fresh, and logging out go through the NestJS backend's own endpoints, so normal pages no longer send requests to Supabase Auth. Travelers see the same screens.
+
 ## The user
 Travelers planning weekend trips around Iloilo Province. No login required for browsing; an account is needed only to write a review.
 
@@ -38,6 +40,7 @@ Travelers planning weekend trips around Iloilo Province. No login required for b
 16. As a traveler who forgot my password, I want to get a reset link by email and choose a new password, so that I can get back into my account.
 17. As a traveler, I want the home page to arrive with places already in it, so that it feels fast on my phone.
 18. As a developer, I want reviews and log-in to go through our own NestJS endpoints, so that all the app's data requests are in one place I can read and check.
+19. As a developer, I want "who is logged in", keeping the login fresh and logging out to go through our own NestJS endpoints, so that normal pages never talk to Supabase Auth directly.
 
 ## Screens
 1. Home page hero — redesigned to match the team's mockup:
@@ -80,6 +83,14 @@ Travelers planning weekend trips around Iloilo Province. No login required for b
    - **Reviews section:** reading, writing, editing and deleting reviews go through the backend instead of straight to Supabase. Messages such as "one review per place" stay the same.
    - **Sign up / Log in page:** creating an account and logging in go through the backend. Creating an account does not log the traveler in: an "Account created" pop-up says "Welcome to Lakat Iloilo, <name>! Your account is ready. Log in with your email and password to start writing reviews." Its "Go to log in" button opens Log in with empty fields: the traveler types their own email and password. After logging in, the traveler is logged in exactly as before (navbar name, "Remember my email"). (Changed on 2026-10-27 at the team's request: signing up used to log the traveler in straight away.)
    - **Forgot password, Set new password and Log out:** no change; they stay in the browser.
+16. Own login round — everything looks the same for travelers; only where the requests go changes:
+   - **Log in:** after a successful log-in, the website keeps the login itself instead of handing it to Supabase's browser library (which used to check it with Supabase straight away).
+   - **Navbar and Reviews section:** they learn who is logged in from the backend's "who is logged in" endpoint: the navbar's "Hi, <name>", and Edit and Delete on the traveler's own review.
+   - **Staying logged in:** a login runs out after about an hour, so the website quietly renews it through the backend before then. Travelers still stay logged in until they log out.
+   - **Log out:** asks the backend to end the login on this device only, then the website forgets its copy and shows "Log in". If the backend cannot be reached, the traveler is still logged out in this browser.
+   - **Other open tabs** notice logging in and out, as before.
+   - **Forgot password and Set new password:** no change; they still talk to Supabase from the browser.
+   - **Once, after this goes live:** travelers who are logged in will need to log in again, because the website stops reading Supabase's old copy of the login.
 
 ## Data
 
@@ -136,6 +147,8 @@ Row Level Security policy for reviews: anyone may read every review. Only a logg
 
 Backend round: the browser no longer reads or writes reviews directly. It calls the NestJS backend, which reads and writes the reviews table with TypeORM through its own database login (lakat_api, see supabase/sql/016 and 023), not through Supabase's data API. Reading is allowed by an "api can read reviews" policy. For writing, editing and deleting, the backend first checks the traveler's login token with Supabase Auth (using the publishable key), then, inside one transaction, tells the database which traveler it is and switches to Supabase's "authenticated" role. So the Row Level Security policy above still decides who may change what, exactly as before. lakat_api is NOINHERIT: it only has the "authenticated" rights during that switch. The backend never uses the `service_role` key or any `sb_secret_` key. No tables, columns or policies change in this round. Account details (email, password) live in Supabase Auth and are never stored in the reviews table.
 
+Own login round: no tables, columns or policies change, and there is no new SQL. Account details stay in Supabase Auth; the backend talks to it with the publishable key and the traveler's own login only. The website's copy of the login is kept in this browser's storage, never in the database (Supabase's library also kept it where the page can read it, so this is no less safe). Every logged-in traveler's hourly renewal now reaches Supabase from the backend's one address, so the team raises Supabase's "token refreshes" rate limit if travelers start being logged out early.
+
 (Before the backend round, the browser read and wrote reviews directly through Supabase with the same keys and the same Row Level Security policy.)
 
 The traveler type is saved on the Supabase Auth account, next to the display name. The database copies it onto each review, the same way it copies reviewer_name, so it can never be typed in from the browser. The reviews Row Level Security policy is unchanged.
@@ -164,6 +177,11 @@ Adding, editing and deleting all run through TypeORM as the logged-in traveler, 
 
 When Supabase Auth refuses, the backend answers with Supabase's own status and code (for example 400 "invalid_credentials", 422 "user_already_exists", 429 "over_request_rate_limit"), so the website shows its usual plain messages. The password is passed straight on to Supabase Auth: the backend never stores, logs or sends it back.
 
+**Own login round (v1):**
+- GET /v1/auth/me — logged-in traveler; answers 200 { id, display_name, traveler_type, email } for the traveler whose login it is (401 "Please log in, then try again." without a valid login). It never lists other accounts: that would need the service_role key
+- POST /v1/auth/refresh — the website, sending the login's renewal code (refresh token); answers 200 { session }, a renewed login (401 "Your login has ended. Please log in again." when the renewal code is no longer valid, for example after logging out)
+- POST /v1/auth/logout — logged-in traveler; ends their login on this device only, so its renewal code stops working, and answers 200 { message: "You're logged out." } (401 without a valid login)
+
 "Logged-in traveler" means the request carries the traveler's login token; the backend passes it on to Supabase, where Row Level Security checks it. Password reset and log-out stay in the browser.
 
 **Version 2 (/v2):**
@@ -187,6 +205,7 @@ When Supabase Auth refuses, the backend answers with Supabase's own status and c
 - Deployed on Vercel at https://api-lakat-iloilo.vercel.app
 - Backend round: also needs the Supabase URL and the publishable (anon) key as settings, locally and in Vercel, to check travelers' login tokens with Supabase Auth (reviews themselves go through TypeORM)
 - Backend round: the reviews and log-in endpoints are built in the NestJS backend, which runs on the server and answers with data (JSON). The Next.js frontend calls them from the browser (the client side) and shows the results; the home page's places are fetched by the Next.js server instead
+- Own login round: the "who is logged in", renew-login and log-out endpoints are also in the NestJS backend, next to sign-up and log-in. The website keeps the login itself and sends it to the backend; only the Forgot password and Set new password pages still use Supabase's browser library
 
 **Database (Supabase):**
 - Hosted PostgreSQL with PostGIS extension
@@ -200,6 +219,8 @@ Browsing needs no login. Writing, editing or deleting a review needs an account:
 Login extras round: travelers can reset a forgotten password through Supabase's reset email (the built-in email sender, which allows only a few emails an hour; fine for the demo). The Forgot password and Set new password pages' addresses, on localhost and on the live URL, are added to Supabase's allowed redirect URLs. Travelers stay logged in until they log out; "Remember my email" only fills in the email on the login page.
 
 Backend round: signing up and logging in go through the backend's endpoints, which call Supabase Auth. Signing up does not log the traveler in; after logging in, the browser keeps the login as before. Password reset and log-out stay in the browser (the reset link only works in the browser that asked for it).
+
+Own login round: the website keeps its own copy of the login. "Who is logged in", renewing the login (about once an hour) and logging out go through the backend; log out ends the login on this device only. Password reset stays in the browser with Supabase.
 
 ## Done for the demo
 - [x] NestJS backend project structure created in `backend/` directory
@@ -252,6 +273,14 @@ Backend round: signing up and logging in go through the backend's endpoints, whi
 - [x] Trying to edit someone else's review through the backend is refused by the database (Row Level Security)
 - [x] Log out, Forgot password and "Remember my email" still work
 
+**Own login round (live URL):**
+- [ ] Logging in, opening detail pages and logging out send no requests to Supabase Auth (no /auth/v1/user, /auth/v1/logout or /auth/v1/token in the Network tab)
+- [ ] The navbar's "Hi, <name>" comes from the backend's "who is logged in" endpoint
+- [ ] A traveler who stays on the site for more than an hour is still logged in and can still write a review (the renewal works)
+- [ ] Log out goes to the backend; the navbar shows "Log in", and the same login is still active on another device
+- [ ] Writing, editing and deleting a review still work, and other open tabs notice logging in and out
+- [ ] Forgot password and "Remember my email" still work
+
 ## Out of scope
 - Login for anything other than reviews (browsing stays open to everyone)
 - Changing the traveler type after sign-up (needs a profile page), and a custom email sender for reset emails
@@ -263,5 +292,6 @@ Backend round: signing up and logging in go through the backend's endpoints, whi
 - Admin UI for managing data
 - Social features (sharing, favorites)
 - Advanced spatial queries beyond radius search
-- Password reset and log-out through the backend, "Nearby places" using the /near endpoints, and keeping the backend address private (all parked in docs/LATER.md)
+- Password reset through the backend, "Nearby places" using the /near endpoints, and keeping the backend address private (all parked in docs/LATER.md)
+- Listing all users (needs the service_role key, which this project never uses) and logging out of every device at once
 - Blurred photo previews, speeding up the backend, and skeletons on the Photo credits page (it has no data to wait for)

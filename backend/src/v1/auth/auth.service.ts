@@ -1,6 +1,15 @@
-import { HttpException, Injectable, Logger } from '@nestjs/common';
+import { HttpException, Injectable, Logger, UnauthorizedException } from '@nestjs/common';
 import type { AuthError, Session } from '@supabase/supabase-js';
 import { SupabaseService } from '../../supabase/supabase.service';
+
+// "Who is logged in": the traveler's own account details, and nothing
+// else (never another account, never the password).
+export interface Traveler {
+  id: string;
+  email: string | null;
+  display_name: string;
+  traveler_type: string | null;
+}
 
 // What a new traveler sends to create an account.
 export interface SignUpRequest {
@@ -58,6 +67,24 @@ export class AuthService {
       }
     }
     return { created: true, needs_confirmation: !data.session };
+  }
+
+  // The traveler whose login token this is. Supabase Auth checks the
+  // token is genuine and still active; otherwise the answer is 401.
+  async me(accessToken: string): Promise<Traveler> {
+    const user = await this.supabase.userFor(accessToken);
+    if (!user) throw new UnauthorizedException('Please log in, then try again.');
+    const name = user.user_metadata?.display_name;
+    const type = user.user_metadata?.traveler_type;
+    return {
+      id: user.id,
+      email: user.email ?? null,
+      // Older accounts may have no display name: use the part of the
+      // email before the @, as the reviews do.
+      display_name:
+        typeof name === 'string' && name.trim() ? name.trim() : (user.email?.split('@')[0] ?? 'Traveler'),
+      traveler_type: typeof type === 'string' ? type : null,
+    };
   }
 
   async logIn(email: string, password: string): Promise<LoginResult> {

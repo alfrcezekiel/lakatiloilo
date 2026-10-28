@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { SupabaseClient, createClient } from '@supabase/supabase-js';
+import { SupabaseClient, User, createClient } from '@supabase/supabase-js';
 
 // The backend's connection to Supabase Auth (the login service): signing
 // up, logging in (src/v1/auth) and checking a traveler's login token.
@@ -45,12 +45,17 @@ export class SupabaseService {
     });
   }
 
-  // Asks Supabase Auth whose login token this is. Answers with the
-  // traveler's account id, or null if the token is not genuine, has
-  // expired, or belongs to a logged-out session.
-  async userIdFor(accessToken: string): Promise<string | null> {
+  // Asks Supabase Auth whose login token this is. Answers with that
+  // traveler's account, or null if the token is not genuine, has expired,
+  // or belongs to a logged-out session.
+  async userFor(accessToken: string): Promise<User | null> {
     const { data, error } = await this.client().auth.getUser(accessToken);
     if (error || !data.user) return null;
-    return data.user.id;
+    return data.user;
+  }
+
+  // The same, but only the account id (what the reviews need).
+  async userIdFor(accessToken: string): Promise<string | null> {
+    return (await this.userFor(accessToken))?.id ?? null;
   }
 }
