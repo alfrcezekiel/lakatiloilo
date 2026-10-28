@@ -274,12 +274,12 @@ Own login round: the website keeps its own copy of the login. "Who is logged in"
 - [x] Log out, Forgot password and "Remember my email" still work
 
 **Own login round (live URL):**
-- [ ] Logging in, opening detail pages and logging out send no requests to Supabase Auth (no /auth/v1/user, /auth/v1/logout or /auth/v1/token in the Network tab)
-- [ ] The navbar's "Hi, <name>" comes from the backend's "who is logged in" endpoint
-- [ ] A traveler who stays on the site for more than an hour is still logged in and can still write a review (the renewal works)
-- [ ] Log out goes to the backend; the navbar shows "Log in", and the same login is still active on another device
-- [ ] Writing, editing and deleting a review still work, and other open tabs notice logging in and out
-- [ ] Forgot password and "Remember my email" still work
+- [x] Logging in, opening detail pages and logging out send no requests to Supabase Auth (no /auth/v1/user, /auth/v1/logout or /auth/v1/token in the Network tab)
+- [x] The navbar's "Hi, <name>" comes from the backend's "who is logged in" endpoint
+- [x] A traveler who stays on the site for more than an hour is still logged in and can still write a review (the renewal works)
+- [x] Log out goes to the backend; the navbar shows "Log in", and the same login is still active on another device
+- [x] Writing, editing and deleting a review still work, and other open tabs notice logging in and out
+- [x] Forgot password and "Remember my email" still work
 
 ## Out of scope
 - Login for anything other than reviews (browsing stays open to everyone)
