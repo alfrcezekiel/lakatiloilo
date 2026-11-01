@@ -28,6 +28,8 @@ export function PlaceListSkeleton({
               <Skeleton className="aspect-video w-full rounded-none" />
               <div className="p-6">
                 <Skeleton className="h-6 w-2/3" />
+                {/* The rating line under the name. */}
+                <Skeleton className="mt-1.5 h-5 w-28" />
               </div>
               <div className="space-y-3 px-6 pb-6">
                 <Skeleton className="h-4 w-full" />
@@ -37,6 +39,8 @@ export function PlaceListSkeleton({
                   <Skeleton className="h-3 w-1/2" />
                 </div>
                 {withPill && <Skeleton className="h-6 w-24 rounded-full" />}
+                {/* The amber "View details" button (44 px tall). */}
+                <Skeleton className="h-11 w-40 rounded-full" />
               </div>
             </div>
           ))}

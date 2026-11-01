@@ -38,6 +38,14 @@ export interface ReviewChanges {
   comment: string;
 }
 
+// One place's rating, for the home page cards.
+export interface PlaceRating {
+  place_type: PlaceType;
+  place_id: string;
+  average_rating: number;
+  review_count: number;
+}
+
 // What the website gets after deleting a review.
 export interface DeletedReview {
   id: string;
@@ -72,6 +80,34 @@ export class ReviewsService {
     } catch (error) {
       this.logger.error(`Could not read reviews: ${String(error)}`);
       throw new ServiceUnavailableException('Could not load reviews right now.');
+    }
+  }
+
+  // Every reviewed place's average stars and number of reviews, for the
+  // home page cards (GET /v1/ratings, buttons & cards round). Anyone may
+  // read them: they come from the same reviews everyone can already read.
+  // Places with no reviews are simply not in the list.
+  async ratings(): Promise<PlaceRating[]> {
+    try {
+      const rows = await this.reviews
+        .createQueryBuilder('review')
+        .select('review.place_type', 'place_type')
+        .addSelect('review.place_id', 'place_id')
+        .addSelect('AVG(review.rating)', 'average_rating')
+        .addSelect('COUNT(*)', 'review_count')
+        .groupBy('review.place_type')
+        .addGroupBy('review.place_id')
+        .getRawMany<{ place_type: PlaceType; place_id: string; average_rating: string; review_count: string }>();
+      // Postgres answers AVG and COUNT as text, so turn them into numbers.
+      return rows.map((row) => ({
+        place_type: row.place_type,
+        place_id: row.place_id,
+        average_rating: Number(row.average_rating),
+        review_count: Number(row.review_count),
+      }));
+    } catch (error) {
+      this.logger.error(`Could not read ratings: ${String(error)}`);
+      throw new ServiceUnavailableException('Could not load ratings right now.');
     }
   }
 

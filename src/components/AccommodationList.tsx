@@ -2,6 +2,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import Link from "next/link";
 import { PlaceListSkeleton } from "@/components/PlaceListSkeleton";
 import { Reveal } from "@/components/Reveal";
+import { ViewDetails, cardLink } from "@/components/ViewDetails";
+import { CardRating, type RatingsByPlace } from "@/components/CardRating";
 
 interface Accommodation {
   id: string;
@@ -15,11 +17,13 @@ interface Accommodation {
 interface AccommodationListProps {
   accommodations: Accommodation[];
   id?: string;
+  // Every reviewed place's rating, for the line under each name.
+  ratings: RatingsByPlace;
   // True while the home page is still waiting for the backend.
   loading: boolean;
 }
 
-export function AccommodationList({ accommodations, id, loading }: AccommodationListProps) {
+export function AccommodationList({ accommodations, id, ratings, loading }: AccommodationListProps) {
   if (loading) {
     return (
       <PlaceListSkeleton id={id} title="Hotels & Condominiums" withPill />
@@ -46,8 +50,9 @@ export function AccommodationList({ accommodations, id, loading }: Accommodation
             <Reveal key={accommodation.id} className="grid" delay={(index % 3) * 0.1}>
               <Link
                 href={`/accommodations/${accommodation.id}`}
+                className={cardLink}
               >
-                <Card className="overflow-hidden bg-white/15 backdrop-blur-md border border-white/25 transition duration-300 hover:shadow-2xl motion-safe:hover:-translate-y-1 cursor-pointer h-full">
+                <Card className="overflow-hidden bg-white/15 backdrop-blur-md border border-white/25 transition duration-300 hover:shadow-2xl motion-safe:hover:-translate-y-1 cursor-pointer h-full flex flex-col">
                   <div className="aspect-video w-full overflow-hidden bg-muted">
                     <img
                       src={accommodation.photo_url}
@@ -59,8 +64,9 @@ export function AccommodationList({ accommodations, id, loading }: Accommodation
                     <CardTitle className="line-clamp-1 text-lg text-white">
                       {accommodation.name}
                     </CardTitle>
+                    <CardRating ratings={ratings} placeType="accommodation" placeId={accommodation.id} />
                   </CardHeader>
-                  <CardContent className="space-y-3">
+                  <CardContent className="flex flex-1 flex-col gap-3">
                     <p className="line-clamp-2 text-sm text-white/90">
                       {accommodation.description}
                     </p>
@@ -68,9 +74,10 @@ export function AccommodationList({ accommodations, id, loading }: Accommodation
                       <p className="text-xs font-medium text-white/70">Address</p>
                       <p className="text-xs text-white/90">{accommodation.address}</p>
                     </div>
-                    <div className="inline-block rounded-full bg-white/20 px-3 py-1 text-xs font-medium text-white capitalize">
+                    <div className="self-start rounded-full bg-white/20 px-3 py-1 text-xs font-medium text-white capitalize">
                       {accommodation.type}
                     </div>
+                    <ViewDetails />
                   </CardContent>
                 </Card>
               </Link>

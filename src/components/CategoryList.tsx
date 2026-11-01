@@ -2,6 +2,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import Link from "next/link";
 import { PlaceListSkeleton } from "@/components/PlaceListSkeleton";
 import { Reveal } from "@/components/Reveal";
+import { ViewDetails, cardLink } from "@/components/ViewDetails";
+import { CardRating, type RatingsByPlace } from "@/components/CardRating";
 
 interface Destination {
   id: string;
@@ -17,11 +19,13 @@ interface CategoryListProps {
   category: string;
   title: string;
   id?: string;
+  // Every reviewed place's rating, for the line under each name.
+  ratings: RatingsByPlace;
   // True while the home page is still waiting for the backend.
   loading: boolean;
 }
 
-export function CategoryList({ destinations, category, title, id, loading }: CategoryListProps) {
+export function CategoryList({ destinations, category, title, id, ratings, loading }: CategoryListProps) {
   const filteredDestinations = destinations
     .filter((dest) => dest.category === category)
     .slice(0, 6);
@@ -47,8 +51,9 @@ export function CategoryList({ destinations, category, title, id, loading }: Cat
             <Reveal key={destination.id} className="grid" delay={(index % 3) * 0.1}>
               <Link
                 href={`/destinations/${destination.id}`}
+                className={cardLink}
               >
-                <Card className="overflow-hidden bg-white/15 backdrop-blur-md border border-white/25 transition duration-300 hover:shadow-2xl motion-safe:hover:-translate-y-1 cursor-pointer h-full">
+                <Card className="overflow-hidden bg-white/15 backdrop-blur-md border border-white/25 transition duration-300 hover:shadow-2xl motion-safe:hover:-translate-y-1 cursor-pointer h-full flex flex-col">
                   <div className="aspect-video w-full overflow-hidden bg-muted">
                     <img
                       src={destination.photo_url}
@@ -60,8 +65,9 @@ export function CategoryList({ destinations, category, title, id, loading }: Cat
                     <CardTitle className="line-clamp-1 text-lg text-white">
                       {destination.name}
                     </CardTitle>
+                    <CardRating ratings={ratings} placeType="destination" placeId={destination.id} />
                   </CardHeader>
-                  <CardContent className="space-y-3">
+                  <CardContent className="flex flex-1 flex-col gap-3">
                     <p className="line-clamp-2 text-sm text-white/90">
                       {destination.description}
                     </p>
@@ -69,6 +75,7 @@ export function CategoryList({ destinations, category, title, id, loading }: Cat
                       <p className="text-xs font-medium text-white/70">Address</p>
                       <p className="text-xs text-white/90">{destination.address}</p>
                     </div>
+                    <ViewDetails />
                   </CardContent>
                 </Card>
               </Link>

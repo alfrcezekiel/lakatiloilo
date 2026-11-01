@@ -76,6 +76,18 @@ export const getDestination = (id: string) =>
 export const getAccommodations = async () =>
   (await get<Accommodation[]>("/v1/accommodations")) ?? [];
 
+// One place's rating, for the home page cards (buttons & cards round).
+export interface PlaceRating {
+  place_type: "destination" | "accommodation";
+  place_id: string;
+  average_rating: number;
+  review_count: number;
+}
+
+// Every reviewed place's average stars and number of reviews
+// (GET /v1/ratings, anyone). Places with no reviews are not in the list.
+export const getRatings = async () => (await get<PlaceRating[]>("/v1/ratings")) ?? [];
+
 export const getAccommodation = (id: string) =>
   get<Accommodation>(`/v1/accommodations/${encodeURIComponent(id)}`);
 

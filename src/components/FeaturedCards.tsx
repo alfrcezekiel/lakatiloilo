@@ -1,11 +1,14 @@
-import { ArrowRight } from "lucide-react";
 import Link from "next/link";
+import { ViewDetails } from "@/components/ViewDetails";
+import { CardRating, type RatingsByPlace } from "@/components/CardRating";
 import { Reveal } from "@/components/Reveal";
 import type { Destination } from "@/lib/api";
 import { Skeleton } from "@/components/ui/skeleton";
 
 interface FeaturedCardsProps {
   destinations: Destination[];
+  // Every reviewed place's rating, for the line under each name.
+  ratings: RatingsByPlace;
   // True while the home page is still waiting for the backend.
   loading: boolean;
 }
@@ -23,7 +26,7 @@ const photoClass =
 // Bucari is missing. While the places are loading, both cards show as
 // skeletons. Once loaded, a card is left out if its place is not in the
 // data, so visitors never see a broken image or a made-up name.
-export function FeaturedCards({ destinations, loading }: FeaturedCardsProps) {
+export function FeaturedCards({ destinations, ratings, loading }: FeaturedCardsProps) {
   if (loading) {
     return (
       <div className="grid gap-5 lg:grid-cols-2">
@@ -33,7 +36,10 @@ export function FeaturedCards({ destinations, loading }: FeaturedCardsProps) {
             <div className="min-w-0 flex-1">
               <Skeleton className="h-6 w-24 rounded-full" />
               <Skeleton className="mt-3 h-7 w-3/4 sm:h-9" />
-              <Skeleton className="mt-2 h-4 w-24" />
+              {/* The rating line. */}
+              <Skeleton className="mt-1 h-5 w-28" />
+              {/* The amber "View details" button (44 px tall). */}
+              <Skeleton className="mt-3 h-11 w-40 rounded-full" />
             </div>
           </div>
         ))}
@@ -67,7 +73,7 @@ export function FeaturedCards({ destinations, loading }: FeaturedCardsProps) {
         <Reveal key={badge} className="grid" delay={index * 0.12}>
           <Link
             href={`/destinations/${place.id}`}
-            className={`group ${cardClass} transition duration-300 hover:bg-white/20 hover:shadow-2xl motion-safe:hover:-translate-y-1`}
+            className={`group ${cardClass} transition duration-300 hover:bg-white/20 hover:shadow-2xl motion-safe:hover:-translate-y-1 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white`}
           >
             <div className={photoClass}>
               <img
@@ -85,13 +91,10 @@ export function FeaturedCards({ destinations, loading }: FeaturedCardsProps) {
               <h3 className="font-fraunces mt-2 line-clamp-2 text-xl font-medium text-white sm:text-3xl">
                 {place.name}
               </h3>
-              <p className="mt-1 text-sm text-white/80">
-                View details{" "}
-                <ArrowRight
-                  aria-hidden="true"
-                  className="inline-block size-4 align-[-0.125em] transition-transform motion-safe:group-hover:translate-x-1"
-                />
-              </p>
+              <div className="mt-1">
+                <CardRating ratings={ratings} placeType="destination" placeId={place.id} />
+              </div>
+              <ViewDetails className="mt-3" />
             </div>
           </Link>
         </Reveal>

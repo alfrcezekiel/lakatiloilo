@@ -2,6 +2,7 @@
 
 import { createContext, useCallback, useContext, type ReactNode } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useRouter } from "next/navigation";
 import { getReviews, type Review } from "@/lib/api";
 import { StatTile } from "@/components/PlaceDetail";
 
@@ -48,12 +49,20 @@ export function usePlaceReviews() {
   // After a traveler writes, edits or deletes a review, the backend's
   // answer is put straight into the cached copy, so every part of the page
   // shows the change at once without asking the backend again.
+  //
+  // It also calls router.refresh(), which makes Next.js forget the pages it
+  // kept from earlier in this visit. Without it, pressing the browser's Back
+  // button showed the home page from before, with the card's old rating
+  // (buttons & cards round). The page on screen stays as it is.
+  const router = useRouter();
   const setReviews = useCallback(
-    (update: (current: Review[]) => Review[]) =>
+    (update: (current: Review[]) => Review[]) => {
       queryClient.setQueryData<Review[]>(reviewsKey(placeType, placeId), (current) =>
         update(current ?? []),
-      ),
-    [queryClient, placeType, placeId],
+      );
+      router.refresh();
+    },
+    [queryClient, placeType, placeId, router],
   );
 
   return {

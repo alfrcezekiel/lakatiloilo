@@ -1,6 +1,7 @@
 "use client";
 
-import type { Accommodation, Destination } from "@/lib/api";
+import type { Accommodation, Destination, PlaceRating } from "@/lib/api";
+import { ratingKey, type RatingsByPlace } from "@/components/CardRating";
 import { useState, useEffect, useMemo } from "react";
 import { HeroSection } from "@/components/HeroSection";
 import { SearchBar } from "@/components/SearchBar";
@@ -32,6 +33,8 @@ const destinationSections = [
 export type HomePlaces = {
   destinations: Destination[];
   accommodations: Accommodation[];
+  // Every reviewed place's rating (GET /v1/ratings); null if it failed.
+  ratings: PlaceRating[] | null;
   failed: boolean;
 };
 
@@ -56,6 +59,8 @@ export function HomePage({ places }: { places: Promise<HomePlaces> }) {
   // True until both backend requests have finished (worked or failed).
   // While it is true, sections show skeletons instead of hiding.
   const [loading, setLoading] = useState(true);
+  // Ratings for the cards, looked up by place (null if they failed).
+  const [ratings, setRatings] = useState<RatingsByPlace>(null);
 
   // Wait for the places the server is fetching. Child components get the
   // lists as props instead of fetching again.
@@ -65,6 +70,10 @@ export function HomePage({ places }: { places: Promise<HomePlaces> }) {
       if (cancelled) return;
       setDestinations(result.destinations);
       setAccommodations(result.accommodations);
+      setRatings(
+        result.ratings &&
+          new Map(result.ratings.map((r) => [ratingKey(r.place_type, r.place_id), r])),
+      );
       setLoadError(result.failed);
       setLoading(false);
     });
@@ -117,7 +126,7 @@ export function HomePage({ places }: { places: Promise<HomePlaces> }) {
                 onCategoryChange={setSelectedCategory}
               />
             </Reveal>
-            <FeaturedCards destinations={destinations} loading={loading} />
+            <FeaturedCards destinations={destinations} ratings={ratings} loading={loading} />
           </div>
         </HeroSection>
       </section>
@@ -168,6 +177,7 @@ export function HomePage({ places }: { places: Promise<HomePlaces> }) {
             category={section.category}
             title={section.title}
             id={`${section.category}-list`}
+            ratings={ratings}
             loading={loading}
           />
         ))}
@@ -175,6 +185,7 @@ export function HomePage({ places }: { places: Promise<HomePlaces> }) {
         <AccommodationList
           accommodations={visibleAccommodations}
           id="accommodation-list"
+          ratings={ratings}
           loading={loading}
         />
       </section>
