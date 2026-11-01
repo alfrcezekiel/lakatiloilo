@@ -1,7 +1,8 @@
 "use client";
 
 import { X } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { AnimatePresence, motion } from "motion/react";
 import Link from "next/link";
 import { Logo } from "@/components/Logo";
 import { scrollToSection } from "@/lib/utils/scroll";
@@ -10,6 +11,16 @@ import { displayNameOf, logOut as logOutOnThisDevice, useCurrentUser } from "@/l
 export function DockNavbar() {
   const [isOpen, setIsOpen] = useState(false);
   const { user, ready } = useCurrentUser();
+
+  // The Escape key closes the phone menu, like the close button.
+  useEffect(() => {
+    if (!isOpen) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setIsOpen(false);
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [isOpen]);
 
   const logOut = () => {
     setIsOpen(false);
@@ -58,41 +69,57 @@ export function DockNavbar() {
 
   return (
     <>
-      {isOpen && (
-        <>
-          <div
-            onClick={() => setIsOpen(false)}
-            className="fixed inset-0 bg-black/50 backdrop-blur-md z-40 sm:hidden"
-          />
-          <div className="fixed inset-0 z-50 sm:hidden">
-            <div className="h-full bg-teal-900/95 backdrop-blur-xl p-6 flex flex-col">
-              <div className="flex items-center justify-between mb-8">
-                <Logo width={163} height={34} />
-                <button
-                  type="button"
-                  onClick={() => setIsOpen(false)}
-                  aria-label="Close menu"
-                  className="text-white hover:text-white/80 transition-colors"
-                >
-                  <X aria-hidden="true" className="size-7" />
-                </button>
-              </div>
-              <div className="flex flex-col gap-4 text-lg font-medium text-white">
-                {navLinks.map((link) => (
-                  <span
-                    key={link.id}
-                    onClick={() => handleScrollToSection(link.id)}
-                    className="cursor-pointer hover:text-white/80 py-3 transition-colors duration-200 border-b border-white/10 last:border-0"
+      {/* The phone menu: the dark backdrop fades in and the panel slides
+          in from the right, then both go out the same way when it closes.
+          AnimatePresence keeps them on screen until the closing slide has
+          finished. With "reduce motion" on, they just appear and go. */}
+      <AnimatePresence>
+        {isOpen && (
+          <>
+            <motion.div
+              key="menu-backdrop"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsOpen(false)}
+              className="fixed inset-0 bg-black/50 backdrop-blur-md z-40 sm:hidden"
+            />
+            <motion.div
+              key="menu-panel"
+              initial={{ x: "100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "100%" }}
+              className="fixed inset-0 z-50 sm:hidden"
+            >
+              <div className="h-full bg-teal-900/95 backdrop-blur-xl p-6 flex flex-col">
+                <div className="flex items-center justify-between mb-8">
+                  <Logo width={163} height={34} />
+                  <button
+                    type="button"
+                    onClick={() => setIsOpen(false)}
+                    aria-label="Close menu"
+                    className="text-white hover:text-white/80 transition-colors"
                   >
-                    {link.label}
-                  </span>
-                ))}
-                {accountItem && <div className="py-3">{accountItem}</div>}
+                    <X aria-hidden="true" className="size-7" />
+                  </button>
+                </div>
+                <div className="flex flex-col gap-4 text-lg font-medium text-white">
+                  {navLinks.map((link) => (
+                    <span
+                      key={link.id}
+                      onClick={() => handleScrollToSection(link.id)}
+                      className="cursor-pointer hover:text-white/80 py-3 transition-colors duration-200 border-b border-white/10 last:border-0"
+                    >
+                      {link.label}
+                    </span>
+                  ))}
+                  {accountItem && <div className="py-3">{accountItem}</div>}
+                </div>
               </div>
-            </div>
-          </div>
-        </>
-      )}
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
 
       {/* sm:w-max: on tablets and laptops the bar is as wide as its
           contents. Without it, "left-1/2" lets the bar use only half the

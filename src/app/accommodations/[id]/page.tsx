@@ -3,6 +3,7 @@ import type { Accommodation } from "@/lib/api";
 import { categoryLabels, locationLabels } from "@/lib/labels";
 import { cn } from "@/lib/utils";
 import { ReviewsSection } from "@/components/ReviewsSection";
+import { Reveal } from "@/components/Reveal";
 import { PlaceReviewsProvider, RatingTile } from "@/components/PlaceReviews";
 import {
   PanelFact,
@@ -57,15 +58,17 @@ export default async function AccommodationDetailPage({
         <PlaceBody
           main={
             <>
-              <div className="grid grid-cols-3 gap-2 sm:gap-3">
+              <Reveal className="grid grid-cols-3 gap-2 sm:gap-3">
                 <StatTile label="Type">{type}</StatTile>
                 <StatTile label="Area">{area}</StatTile>
                 <RatingTile />
-              </div>
-              <section>
-                <SectionHeading>About</SectionHeading>
-                <p className="text-white/90 leading-relaxed">{accommodation.description}</p>
-              </section>
+              </Reveal>
+              <Reveal>
+                <section>
+                  <SectionHeading>About</SectionHeading>
+                  <p className="text-white/90 leading-relaxed">{accommodation.description}</p>
+                </section>
+              </Reveal>
             </>
           }
           aside={

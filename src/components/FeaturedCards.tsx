@@ -1,5 +1,6 @@
 import { ArrowRight } from "lucide-react";
 import Link from "next/link";
+import { Reveal } from "@/components/Reveal";
 import type { Destination } from "@/lib/api";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -62,37 +63,38 @@ export function FeaturedCards({ destinations, loading }: FeaturedCardsProps) {
 
   return (
     <div className="grid gap-5 lg:grid-cols-2">
-      {cards.map(({ place, badge, badgeClass }) => (
-        <Link
-          key={badge}
-          href={`/destinations/${place.id}`}
-          className={`group ${cardClass} transition-colors hover:bg-white/20`}
-        >
-          <div className={photoClass}>
-            <img
-              src={place.photo_url}
-              alt={place.name}
-              className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-            />
-          </div>
-          <div className="min-w-0">
-            <span
-              className={`inline-block rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-widest ${badgeClass}`}
-            >
-              {badge}
-            </span>
-            <h3 className="font-fraunces mt-2 line-clamp-2 text-xl font-medium text-white sm:text-3xl">
-              {place.name}
-            </h3>
-            <p className="mt-1 text-sm text-white/80">
-              View details{" "}
-              <ArrowRight
-                aria-hidden="true"
-                className="inline-block size-4 align-[-0.125em] transition-transform group-hover:translate-x-1"
+      {cards.map(({ place, badge, badgeClass }, index) => (
+        <Reveal key={badge} className="grid" delay={index * 0.12}>
+          <Link
+            href={`/destinations/${place.id}`}
+            className={`group ${cardClass} transition duration-300 hover:bg-white/20 hover:shadow-2xl motion-safe:hover:-translate-y-1`}
+          >
+            <div className={photoClass}>
+              <img
+                src={place.photo_url}
+                alt={place.name}
+                className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
               />
-            </p>
-          </div>
-        </Link>
+            </div>
+            <div className="min-w-0">
+              <span
+                className={`inline-block rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-widest ${badgeClass}`}
+              >
+                {badge}
+              </span>
+              <h3 className="font-fraunces mt-2 line-clamp-2 text-xl font-medium text-white sm:text-3xl">
+                {place.name}
+              </h3>
+              <p className="mt-1 text-sm text-white/80">
+                View details{" "}
+                <ArrowRight
+                  aria-hidden="true"
+                  className="inline-block size-4 align-[-0.125em] transition-transform group-hover:translate-x-1"
+                />
+              </p>
+            </div>
+          </Link>
+        </Reveal>
       ))}
     </div>
   );

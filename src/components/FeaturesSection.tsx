@@ -1,4 +1,5 @@
 import { Hotel, LockOpen, MapPin, Mountain, Search, Smartphone, Star } from "lucide-react";
+import { Reveal } from "@/components/Reveal";
 
 // What the site does, as one list. Each card has an icon, a title and a
 // short text; adding or changing a card means editing one entry here.
@@ -44,22 +45,24 @@ export function FeaturesSection() {
   return (
     <div className="py-16">
       <div className="mx-auto max-w-6xl px-4 sm:px-6">
-        <div className="text-center mb-12">
+        <Reveal className="text-center mb-12">
           <h2 className="text-3xl font-bold text-white mb-4">
             Discover Iloilo with Ease
           </h2>
           <p className="text-lg text-white/90 max-w-3xl mx-auto">
             Discover what our centralized tourism platform offers to help you explore Iloilo with ease.
           </p>
-        </div>
+        </Reveal>
 
         {/* A wrapping row instead of a grid, so a last row with fewer cards
             sits in the middle: 1 column on phones, 2 on tablets, 3 on
             desktops. The widths subtract the 1.5rem gap between cards. */}
         <ul className="flex flex-wrap justify-center gap-6">
-          {features.map((feature) => (
-            <li
+          {features.map((feature, index) => (
+            <Reveal
+              as="li"
               key={feature.title}
+              delay={(index % 3) * 0.1}
               className="w-full md:w-[calc((100%-1.5rem)/2)] lg:w-[calc((100%-3rem)/3)] bg-white/15 backdrop-blur-md border border-white/25 rounded-2xl p-6"
             >
               <feature.icon aria-hidden="true" strokeWidth={1.75} className="size-10 mb-4 text-white" />
@@ -67,7 +70,7 @@ export function FeaturesSection() {
                 {feature.title}
               </h3>
               <p className="text-white/90 leading-relaxed">{feature.text}</p>
-            </li>
+            </Reveal>
           ))}
         </ul>
       </div>

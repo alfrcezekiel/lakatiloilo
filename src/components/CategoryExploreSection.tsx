@@ -6,6 +6,7 @@ import type { Accommodation, Destination } from "@/lib/api";
 import { locationFilters, sectionTitles } from "@/lib/labels";
 import { scrollToSection } from "@/lib/utils/scroll";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Reveal } from "@/components/Reveal";
 
 // Card names come from src/lib/labels.ts, so they match the list headings.
 const categories = [
@@ -90,16 +91,16 @@ export function CategoryExploreSection({
     // heading is not hidden behind it.
     <section id="explore-categories" className="scroll-mt-24 py-16">
       <div className="mx-auto max-w-6xl px-4 sm:px-6">
-        <div className="text-center mb-12">
+        <Reveal className="text-center mb-12">
           <h2 className="text-4xl font-bold text-white mb-4 font-fraunces">
             What do you want to explore?
           </h2>
           <p className="text-lg text-white/90 max-w-2xl mx-auto font-inter">
             Discover diverse destinations across Iloilo—from mountains and food spots to festivals and heritage sites.
           </p>
-        </div>
+        </Reveal>
 
-        <div className="flex justify-center mb-8">
+        <Reveal delay={0.1} className="flex justify-center mb-8">
           <div className="inline-flex bg-white/10 backdrop-blur-md border border-white/20 rounded-full p-1">
             {locationFilters.map((filter) => (
               <button
@@ -115,44 +116,47 @@ export function CategoryExploreSection({
               </button>
             ))}
           </div>
-        </div>
+        </Reveal>
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-          {categories.map((category) => {
+          {categories.map((category, index) => {
             const count = categoryCounts[category.id] || 0;
             const imageUrl = categoryImages[category.id as keyof typeof categoryImages];
             const sectionId = categorySectionIds[category.id];
 
             return (
-              <div
-                key={category.id}
-                className="relative group overflow-hidden rounded-2xl h-48 cursor-pointer"
-                onClick={() => {
-                  if (sectionId) {
-                    scrollToSection(sectionId);
-                  }
-                }}
-              >
+              // Cards in one row arrive one after another (4 per row on a
+              // laptop).
+              <Reveal key={category.id} delay={(index % 4) * 0.08}>
                 <div
-                  className="absolute inset-0 bg-cover bg-center transition-transform duration-300 group-hover:scale-110"
-                  style={{ backgroundImage: `url(${imageUrl})` }}
-                />
-                <div className="absolute inset-0 bg-linear-to-t from-black/70 via-black/30 to-transparent" />
-                <div className="absolute inset-0 flex flex-col justify-end p-6">
-                  <category.icon aria-hidden="true" strokeWidth={1.75} className="size-10 shrink-0 mb-2 text-white" />
-                  <h3 className="text-xl font-semibold text-white mb-1">
-                    {category.name}
-                  </h3>
-                  {loading ? (
-                    <Skeleton className="h-5 w-20" />
-                  ) : (
-                    <p className="flex items-center gap-1 text-white/90 text-sm">
-                      {count} place{count !== 1 ? "s" : ""}
-                      <ArrowRight aria-hidden="true" className="size-4" />
-                    </p>
-                  )}
+                  className="relative group overflow-hidden rounded-2xl h-48 cursor-pointer transition duration-300 hover:shadow-2xl motion-safe:hover:-translate-y-1"
+                  onClick={() => {
+                    if (sectionId) {
+                      scrollToSection(sectionId);
+                    }
+                  }}
+                >
+                  <div
+                    className="absolute inset-0 bg-cover bg-center transition-transform duration-300 group-hover:scale-110"
+                    style={{ backgroundImage: `url(${imageUrl})` }}
+                  />
+                  <div className="absolute inset-0 bg-linear-to-t from-black/70 via-black/30 to-transparent" />
+                  <div className="absolute inset-0 flex flex-col justify-end p-6">
+                    <category.icon aria-hidden="true" strokeWidth={1.75} className="size-10 shrink-0 mb-2 text-white" />
+                    <h3 className="text-xl font-semibold text-white mb-1">
+                      {category.name}
+                    </h3>
+                    {loading ? (
+                      <Skeleton className="h-5 w-20" />
+                    ) : (
+                      <p className="flex items-center gap-1 text-white/90 text-sm">
+                        {count} place{count !== 1 ? "s" : ""}
+                        <ArrowRight aria-hidden="true" className="size-4" />
+                      </p>
+                    )}
+                  </div>
                 </div>
-              </div>
+              </Reveal>
             );
           })}
         </div>

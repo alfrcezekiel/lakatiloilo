@@ -2,6 +2,7 @@
 
 import { Check } from "lucide-react";
 import { useState } from "react";
+import { AnimatePresence, motion } from "motion/react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
@@ -83,12 +84,12 @@ export function ReviewsSection() {
                 justPosted={justPosted}
                 onSaved={(saved) => {
                   setReviews((current) =>
-                    (current ?? []).map((r) => (r.id === saved.id ? saved : r)),
+                    current.map((r) => (r.id === saved.id ? saved : r)),
                   );
                   setJustPosted(false);
                 }}
                 onDeleted={(reviewId, message) => {
-                  setReviews((current) => (current ?? []).filter((r) => r.id !== reviewId));
+                  setReviews((current) => current.filter((r) => r.id !== reviewId));
                   setJustPosted(false);
                   setDeletedMessage(message);
                 }}
@@ -109,7 +110,7 @@ export function ReviewsSection() {
                   placeId={placeId}
                   onSaved={(review) => {
                     // Newest first, so the new review goes on top.
-                    setReviews((current) => [review, ...(current ?? [])]);
+                    setReviews((current) => [review, ...current]);
                     setJustPosted(true);
                     setDeletedMessage(null);
                   }}
@@ -131,37 +132,51 @@ export function ReviewsSection() {
           )}
 
           {reviews.length > 0 && (
-            <ul className="space-y-3">
-              {reviews.map((review) => (
-                <li key={review.id}>
-                  <Card className={glassCard}>
-                    <CardContent className="p-5 space-y-2">
-                      <div className="flex flex-wrap items-center justify-between gap-2">
-                        <span className="flex items-center gap-2 font-semibold">
-                          {review.reviewer_name}
-                          {review.traveler_type && travelerTypeLabels[review.traveler_type] && (
-                            <span className="font-normal text-white/75">
-                              · {travelerTypeLabels[review.traveler_type]}
-                            </span>
-                          )}
-                          {user && review.user_id === user.id && (
-                            <span className="rounded-full bg-white/20 px-2 py-0.5 text-xs font-medium">
-                              You
-                            </span>
-                          )}
-                        </span>
-                        <time dateTime={review.created_at} className="text-sm text-white/70">
-                          {formatDate(review.created_at)}
-                        </time>
-                      </div>
-                      <Stars rating={review.rating} />
-                      <p className="whitespace-pre-line text-white/90 leading-relaxed">
-                        {review.comment}
-                      </p>
-                    </CardContent>
-                  </Card>
-                </li>
-              ))}
+            <ul className="flex flex-col">
+              {/* A new review slides in at the top; a deleted one shrinks
+                  away and the others glide into its place. initial={false}:
+                  the reviews already there when the page opens don't move.
+                  The gap between cards is padding inside each item, so it
+                  shrinks away together with a deleted review. */}
+              <AnimatePresence initial={false}>
+                {reviews.map((review) => (
+                  <motion.li
+                    key={review.id}
+                    layout
+                    initial={{ opacity: 0, y: -16, height: 0 }}
+                    animate={{ opacity: 1, y: 0, height: "auto" }}
+                    exit={{ opacity: 0, scale: 0.96, height: 0 }}
+                    className="overflow-hidden pb-3"
+                  >
+                    <Card className={glassCard}>
+                      <CardContent className="p-5 space-y-2">
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <span className="flex items-center gap-2 font-semibold">
+                            {review.reviewer_name}
+                            {review.traveler_type && travelerTypeLabels[review.traveler_type] && (
+                              <span className="font-normal text-white/75">
+                                · {travelerTypeLabels[review.traveler_type]}
+                              </span>
+                            )}
+                            {user && review.user_id === user.id && (
+                              <span className="rounded-full bg-white/20 px-2 py-0.5 text-xs font-medium">
+                                You
+                              </span>
+                            )}
+                          </span>
+                          <time dateTime={review.created_at} className="text-sm text-white/70">
+                            {formatDate(review.created_at)}
+                          </time>
+                        </div>
+                        <Stars rating={review.rating} />
+                        <p className="whitespace-pre-line text-white/90 leading-relaxed">
+                          {review.comment}
+                        </p>
+                      </CardContent>
+                    </Card>
+                  </motion.li>
+                ))}
+              </AnimatePresence>
             </ul>
           )}
         </div>

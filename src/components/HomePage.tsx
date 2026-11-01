@@ -14,6 +14,7 @@ import { AccommodationList } from "@/components/AccommodationList";
 import { Footer } from "@/components/Footer";
 import { DockNavbar } from "@/components/DockNavbar";
 import { ScrollToTop } from "@/components/ScrollToTop";
+import { Reveal } from "@/components/Reveal";
 import { sectionTitles } from "@/lib/labels";
 
 // The destination list sections, in the order they appear on the page.
@@ -102,16 +103,20 @@ export function HomePage({ places }: { places: Promise<HomePlaces> }) {
           {/* No padding here: HeroSection already sets the page width and
               side padding, so the search bar lines up with the headline. */}
           <div className="relative z-10">
-            <SearchBar
-              destinations={destinations}
-              accommodations={accommodations}
-              selectedCategory={selectedCategory}
-              loading={loading}
-            />
-            <CategoryChips
-              selectedCategory={selectedCategory}
-              onCategoryChange={setSelectedCategory}
-            />
+            <Reveal delay={0.3}>
+              <SearchBar
+                destinations={destinations}
+                accommodations={accommodations}
+                selectedCategory={selectedCategory}
+                loading={loading}
+              />
+            </Reveal>
+            <Reveal delay={0.4}>
+              <CategoryChips
+                selectedCategory={selectedCategory}
+                onCategoryChange={setSelectedCategory}
+              />
+            </Reveal>
             <FeaturedCards destinations={destinations} loading={loading} />
           </div>
         </HeroSection>

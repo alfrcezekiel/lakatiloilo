@@ -1,80 +1,71 @@
 "use client";
 
-import {
-  createContext,
-  useContext,
-  useEffect,
-  useState,
-  type Dispatch,
-  type ReactNode,
-  type SetStateAction,
-} from "react";
+import { createContext, useCallback, useContext, type ReactNode } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { getReviews, type Review } from "@/lib/api";
 import { StatTile } from "@/components/PlaceDetail";
 
 type PlaceType = "destination" | "accommodation";
-
-interface PlaceReviewsValue {
-  placeType: PlaceType;
-  placeId: string;
-  // null while loading.
-  reviews: Review[] | null;
-  loadError: boolean;
-  setReviews: Dispatch<SetStateAction<Review[] | null>>;
-}
+type Place = { placeType: PlaceType; placeId: string };
 
 // A "context" is React's way of sharing data with every component inside a
-// wrapper without passing it down by hand. The detail page loads the
-// reviews once here, and both the Rating tile at the top and the Reviews
-// section further down read the same list. So when a traveler posts,
-// edits or deletes a review, both update together.
-const PlaceReviewsContext = createContext<PlaceReviewsValue | null>(null);
+// wrapper without passing it down by hand. Here it only shares WHICH place
+// the page is about; the reviews themselves live in TanStack Query's cache
+// (src/components/Providers.tsx). So the Rating tile at the top and the
+// Reviews section further down read the same list, and update together.
+const PlaceContext = createContext<Place | null>(null);
 
 export function PlaceReviewsProvider({
   placeType,
   placeId,
   children,
-}: {
-  placeType: PlaceType;
-  placeId: string;
-  children: ReactNode;
-}) {
-  const [reviews, setReviews] = useState<Review[] | null>(null);
-  const [loadError, setLoadError] = useState(false);
-
-  useEffect(() => {
-    let cancelled = false;
-    async function load() {
-      try {
-        // From the NestJS backend (GET /v1/reviews), newest first.
-        const data = await getReviews(placeType, placeId);
-        if (!cancelled) setReviews(data);
-      } catch {
-        if (!cancelled) setLoadError(true);
-      }
-    }
-    load();
-    // If the traveler leaves the page before the answer arrives, ignore it.
-    return () => {
-      cancelled = true;
-    };
-  }, [placeType, placeId]);
-
+}: Place & { children: ReactNode }) {
   return (
-    <PlaceReviewsContext.Provider
-      value={{ placeType, placeId, reviews, loadError, setReviews }}
-    >
-      {children}
-    </PlaceReviewsContext.Provider>
+    <PlaceContext.Provider value={{ placeType, placeId }}>{children}</PlaceContext.Provider>
   );
 }
 
+// The cache's label for one place's reviews. Same label = same copy.
+const reviewsKey = (placeType: PlaceType, placeId: string) =>
+  ["reviews", placeType, placeId] as const;
+
 export function usePlaceReviews() {
-  const value = useContext(PlaceReviewsContext);
-  if (!value) {
+  const place = useContext(PlaceContext);
+  if (!place) {
     throw new Error("usePlaceReviews must be used inside <PlaceReviewsProvider>.");
   }
-  return value;
+  const { placeType, placeId } = place;
+  const queryClient = useQueryClient();
+
+  // From the NestJS backend (GET /v1/reviews), newest first. If this place
+  // was opened in the last minute, the cached copy shows at once and a
+  // fresh one replaces it when it arrives.
+  const query = useQuery({
+    queryKey: reviewsKey(placeType, placeId),
+    queryFn: () => getReviews(placeType, placeId),
+  });
+
+  // After a traveler writes, edits or deletes a review, the backend's
+  // answer is put straight into the cached copy, so every part of the page
+  // shows the change at once without asking the backend again.
+  const setReviews = useCallback(
+    (update: (current: Review[]) => Review[]) =>
+      queryClient.setQueryData<Review[]>(reviewsKey(placeType, placeId), (current) =>
+        update(current ?? []),
+      ),
+    [queryClient, placeType, placeId],
+  );
+
+  return {
+    placeType,
+    placeId,
+    // null while loading for the first time.
+    reviews: query.data ?? null,
+    // Only an error when there is nothing to show: if a background refresh
+    // fails, travelers keep seeing the copy they already have.
+    loadError: query.isError && !query.data,
+    setReviews,
+  };
 }
 
 // Worked out from the reviews themselves, so the database needs no extra

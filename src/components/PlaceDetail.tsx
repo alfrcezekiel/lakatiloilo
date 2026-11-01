@@ -2,6 +2,7 @@ import { ArrowLeft, MapPin } from "lucide-react";
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
+import { Reveal } from "@/components/Reveal";
 
 // The building blocks of the destination and accommodation detail pages
 // ("Option 1A" from the Detail Pages Glass design): a tall photo with a big
@@ -76,7 +77,8 @@ export function PlaceHero({
         {/* On a laptop the text stays out of the right-hand column, where
             the side panel rises into the photo. */}
         <div className="mx-auto max-w-6xl px-4 pb-8 sm:px-6 lg:pb-10 lg:pr-100">
-          <div className="flex flex-wrap gap-2 mb-3">
+          {/* Chips, then title, then address rise one after another. */}
+          <div className="flex flex-wrap gap-2 mb-3 motion-safe:animate-fade-up">
             {chips.map((chip) => (
               <span
                 key={chip}
@@ -86,8 +88,13 @@ export function PlaceHero({
               </span>
             ))}
           </div>
-          <PlaceTitle name={name} />
-          <p className="mt-3 flex items-start gap-1.5 text-sm text-white/85 sm:text-base">
+          <div className="motion-safe:animate-fade-up" style={{ animationDelay: "90ms" }}>
+            <PlaceTitle name={name} />
+          </div>
+          <p
+            className="mt-3 flex items-start gap-1.5 text-sm text-white/85 sm:text-base motion-safe:animate-fade-up"
+            style={{ animationDelay: "180ms" }}
+          >
             <MapPin aria-hidden="true" className="mt-0.5 size-4 shrink-0 sm:mt-1" />
             {address}
           </p>
@@ -169,7 +176,8 @@ export function PanelFact({ label, children }: { label: string; children: ReactN
 
 // The page body under the photo. On a laptop the side panel sits on the
 // right and rises a little into the photo; on a phone it comes straight
-// after the tiles and About, before the (long) reviews.
+// after the tiles and About, before the (long) reviews. The side panel and
+// Reviews fade in as they scroll into view (see Reveal).
 export function PlaceBody({
   main,
   aside,
@@ -184,9 +192,13 @@ export function PlaceBody({
       <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_340px] lg:gap-10">
         <div className="space-y-8 lg:col-start-1">{main}</div>
         <aside className="relative z-10 lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:-mt-36">
-          <div className="lg:sticky lg:top-6">{aside}</div>
+          {/* Reveal goes inside the sticky part, so the panel still
+              sticks while scrolling on a laptop. */}
+          <div className="lg:sticky lg:top-6">
+            <Reveal>{aside}</Reveal>
+          </div>
         </aside>
-        <div className="lg:col-start-1">{reviews}</div>
+        <Reveal className="lg:col-start-1">{reviews}</Reveal>
       </div>
     </div>
   );

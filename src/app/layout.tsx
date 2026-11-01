@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Fraunces, Inter } from "next/font/google";
 import "./globals.css";
+import { Providers } from "@/components/Providers";
 
 const fraunces = Fraunces({
   subsets: ["latin"],
@@ -25,7 +26,9 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="en" className="h-full antialiased">
-      <body className={`${fraunces.variable} ${inter.variable} min-h-full flex flex-col`}>{children}</body>
+      <body className={`${fraunces.variable} ${inter.variable} min-h-full flex flex-col`}>
+        <Providers>{children}</Providers>
+      </body>
     </html>
   );
 }

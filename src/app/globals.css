@@ -58,10 +58,33 @@
   --color-input: var(--input);
   --color-ring: var(--ring);
   --radius-base: var(--radius);
-  --font-sans: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --font-sans:
+    ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   --font-fraunces: var(--font-fraunces);
   --font-inter: var(--font-inter);
+}
+
+/* "animate-fade-up": the rise of text and cards that are on screen when a
+   page loads (see src/components/Reveal.tsx, and the detail page title).
+   Plain CSS rather than Motion on purpose: it starts as soon as the page
+   is painted, so nothing waits for the page's JavaScript to load. Used
+   with "motion-safe:", so it is skipped when the device's "reduce motion"
+   setting is on. */
+@theme {
+  --animate-fade-up: fade-up 0.8s cubic-bezier(0.22, 1, 0.36, 1) both;
+
+  @keyframes fade-up {
+    from {
+      opacity: 0;
+      transform: translateY(40px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
 }
 
 body {

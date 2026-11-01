@@ -97,8 +97,8 @@ Travelers planning weekend trips around Iloilo Province. No login required for b
 
 17. Polish round — same pages and features, with clearer icons, smoother movement and faster reviews:
    - **Icons everywhere:** the emoji on the Features cards and the category cards, the address pin, the menu's close button, the back and "View details" arrows and the footer heart become matching Lucide icons. Stars stay gold.
-   - **Detail pages:** the chips, title and address fade up gently when the page opens. The tiles, About and Reviews fade in as the traveler scrolls to them. A new review slides in at the top of the list; a deleted one shrinks away.
-   - **Home page:** the Featured and Trending cards, the category cards and each list section fade in as they scroll into view. Cards lift slightly on hover.
+   - **Detail pages:** the chips, title and address fade up when the page opens. The tiles, About, the side panel and Reviews fade in and out as described below. A new review slides in at the top of the list; a deleted one shrinks away.
+   - **Home page and detail pages, text and cards (change 2026-11-01, team request):** what is on screen rises into view when the page loads or is refreshed. Scrolling down, text and cards rise up into view (fade up); scrolling back up, they come down into view from above (fade down). This happens every time they come back on screen: they fade out when they leave. Cards in one row arrive one after another. On the home page this covers the hero text, search bar and chips, the Featured and Trending cards, Why Iloilo, the Features cards, the category cards, and every list heading and place card. Cards lift slightly on hover.
    - **Navbar menu on phones:** slides open and closed instead of appearing at once.
    - **Reviews load faster on a return visit:** going back to a place seen in the last minute shows its reviews straight away while fresh ones load quietly. After writing, editing or deleting a review, the Rating tile and the list update at once.
    - **Reduce motion:** with "reduce motion" turned on, nothing slides or fades; content just appears.
@@ -207,7 +207,7 @@ When Supabase Auth refuses, the backend answers with Supabase's own status and c
 **Frontend (Next.js):**
 - App Router + TypeScript
 - Tailwind CSS with UI components in `src/components/ui/`
-- Polish round: Lucide icons (`lucide-react`, already installed) for every icon; Motion (the `motion` package, formerly Framer Motion) for animations, set to follow the device's "reduce motion" setting; TanStack Query for the reviews fetched in the browser (reading, plus writing, editing and deleting as updates to its copy). Places stay fetched on the Next.js server, and the login keeps its own code
+- Polish round: Lucide icons (`lucide-react`, already installed) for every icon; Motion (the `motion` package, formerly Framer Motion) for animations, set to follow the device's "reduce motion" setting (the fade-up of whatever is on screen when a page loads is plain CSS instead, so it never waits for the page's JavaScript and the text is in the page from the server; Motion takes over for scrolling, and only hides what is off screen once the JavaScript has loaded); TanStack Query for the reviews fetched in the browser (reading, plus writing, editing and deleting as updates to its copy). Places stay fetched on the Next.js server, and the login keeps its own code
 - Fetches data from NestJS backend via HTTP calls (the home page on the server from the backend round, like the detail pages)
 - Deployed on Vercel
 
