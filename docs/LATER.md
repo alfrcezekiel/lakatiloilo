@@ -25,16 +25,21 @@ navigation round. Still parked:
 ### User accounts and reviews
 Accounts and reviews/ratings on detail pages moved into the spec on
 2026-10-21 (reviews and ratings round). On 2026-11-01 star ratings on the
-home page cards moved into the spec as the buttons & cards round. The
-team plans the rest as the next rounds, in this order (each about one
-session; each needs its own /to-spec before any code):
-1. Profiles & likes: a profile page per traveler (display name,
-   traveler type, their reviews) and a "helpful" like on reviews
-2. Replies, reports and photos in reviews: replying to a review,
-   reporting a review, and adding a photo to a review (Supabase Storage)
+home page cards moved into the spec as the buttons & cards round. On
+2026-11-01 the team moved the planned rounds into the spec together:
+the profiles & likes round (with Back to Home that follows you down),
+then the review extras round (replies, reports, photos). They stay two
+rounds, each about one session, built and checked live one after the
+other.
 
 Still parked:
 - Social logins
+- Changing the display name or traveler type on the profile page (every
+  old review and reply copies them, so they would all need updating)
+- Editing replies, replies to replies, and likes on replies
+- Hiding reported reviews automatically, and an admin screen for reports
+  (needs the admin UI below)
+- More than one photo per review
 
 ### Email confirmation for new accounts
 Turned off for the demo on 2026-10-21 (ticket 38). Before real launch:
@@ -57,7 +62,7 @@ login extras round (tickets 43–47). Still parked:
 - "By creating an account you agree to the Terms and Privacy Policy"
   (needs those pages first)
 - Language switch: English / Hiligaynon / Filipino
-- Changing the traveler type after sign-up (needs a profile page)
+- Changing the traveler type after sign-up (the profile page now exists but only shows it; see "User accounts and reviews")
 - A custom email sender, so reset emails are not limited to a few an hour
 
 ### From the user test (Elizabeth and Mark, 2026-10-25)

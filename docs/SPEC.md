@@ -24,6 +24,10 @@ Navigation round: moving between pages feels smoother. The new page fades in qui
 
 Buttons & cards round: every button on the detail pages gets one modern, easy-to-read style, with a warm sunset-amber main button. Every place card on the home page shows its star rating and a clear "View details" button.
 
+Profiles & likes round: every reviewer has a profile page that anyone can open from their name, with their traveler type and all their reviews. Logged-in travelers can mark other travelers' reviews as "Helpful". On the detail pages, Back to Home stays in the corner while scrolling, so leaving a place never means scrolling back up.
+
+Review extras round: logged-in travelers can reply to a review, report a review to the team, and add one photo to their own review.
+
 ## The user
 Travelers planning weekend trips around Iloilo Province. No login required for browsing; an account is needed only to write a review.
 
@@ -49,6 +53,12 @@ Travelers planning weekend trips around Iloilo Province. No login required for b
 19. As a developer, I want "who is logged in", keeping the login fresh and logging out to go through our own NestJS endpoints, so that normal pages never talk to Supabase Auth directly.
 20. As a traveler, I want the main action on a detail page to stand out, so that I know at a glance what to tap (Call, Post review).
 21. As a traveler, I want to see a place's star rating on its home page card, so that I can compare places before opening them.
+22. As a traveler reading a long detail page, I want Back to Home always in reach, so that I can leave without scrolling back up.
+23. As any visitor, I want to open a reviewer's profile and see all their reviews, so that I can judge whether their taste matches mine.
+24. As a logged-in traveler, I want to mark a review as helpful, so that the most useful reviews stand out.
+25. As a logged-in traveler, I want to reply to a review, so that I can answer a question or add a tip.
+26. As a logged-in traveler, I want to report a review that is spam or offensive, so that the team can deal with it.
+27. As a logged-in traveler, I want to add a photo to my review, so that others can see what the place is really like.
 
 ## Screens
 1. Home page hero — redesigned to match the team's mockup:
@@ -125,6 +135,17 @@ Travelers planning weekend trips around Iloilo Province. No login required for b
    - **Star rating on cards:** under the name, "★ 4.3 · 12 reviews", or "No reviews yet". Featured and Trending show it too.
    - **Reduce motion:** with "reduce motion" turned on, buttons do not lift or press; they only change colour.
 
+20. Profiles & likes round — Back to Home that follows you, traveler profiles, and "Helpful" likes:
+   - **Back to Home follows you down:** on both detail pages and their loading skeletons, the glass Back to Home pill stays pinned in the top-left corner of the screen while scrolling, on a laptop and a phone. Its glass is a little darker so it stays readable over light photos and text, and it always sits above the page content.
+   - **Traveler profile page:** opened by clicking a reviewer's name in any review. Shows the display name in large serif letters, the traveler type tag (for example "Local Ilonggo"), how many reviews they have written, and their reviews, newest first. Each review shows the place's name (linking to the place), stars, text, date and Helpful count. Email is never shown. An unknown traveler, or one with no reviews, shows "We couldn't find this traveler" and a Back to Home button.
+   - **My profile and log out:** logged in, the navbar shows a round profile icon beside Explore (on tablets and laptops). Clicking it opens a small glass dropdown headed by the traveler's name in the serif heading font, then **My profile** and **Log out**; it closes after choosing, with Escape, or by clicking anywhere else. The phone menu lists the name (also in serif), My profile and Log out directly. My profile opens the traveler's own profile; with no reviews yet, it shows their name, traveler type and "You haven't written any reviews yet." Logged out, the navbar shows "Log in" as before. (Changed on 2026-11-01 at the team's request: "Hi, <name>" and "Log out" used to sit in the bar as text; the dropdown then dropped its "Logged in as" label for the name alone.)
+   - **Helpful likes on every review:** logged in, a small glass **Helpful · 3** button with a thumbs-up icon that turns amber when marked and back when clicked again. Logged out, only the count ("3 found this helpful"). On a traveler's own review, only the count: nobody can mark their own review. With "reduce motion" turned on, the button only changes colour.
+
+21. Review extras round — replies, reports and photos in reviews:
+   - **Replies:** under each review, its replies, oldest first: the replier's name (linking to their profile), traveler type tag, text and date. Logged-in travelers get a **Reply** button that opens a small form (up to 300 characters). A traveler can delete their own replies. No replies to replies, and no editing.
+   - **Report a review:** logged-in travelers see a small "Report" link on other travelers' reviews. It opens a pop-up with four reasons (Spam, Offensive, Not about this place, Other) and an optional note, then says "Thanks — the team will take a look." Reporting the same review again says "You've already reported this review." Nothing is hidden automatically; the team reads reports in the Supabase dashboard.
+   - **A photo in a review:** the review form gets "Add a photo" (one photo, JPG, PNG or WebP, up to 2 MB), with a preview and a Remove button. Editing a review can add, swap or remove the photo. The photo shows under the review text, and clicking it opens it larger. Deleting a review deletes its photo too.
+
 ## Data
 
 **destinations table:**
@@ -188,6 +209,41 @@ Navigation round: no tables, columns or policies change, and there is no new SQL
 
 Buttons & cards round: no tables, columns or policies change, and there is no new SQL. Each place's average stars and number of reviews are worked out by the backend from the reviews table, which its database login can already read ("api can read reviews"). The Next.js server fetches them together with the places, so the home page arrives with ratings already in it.
 
+**review_likes table (profiles & likes round):**
+- review_id — the review marked helpful; the like is removed when the review is deleted
+- user_id — the traveler who marked it (from Supabase Auth)
+- created_at — timestamp
+- One like per traveler per review (review_id and user_id together are unique).
+
+Row Level Security policy for review_likes: anyone may read. Only a logged-in traveler may add a like, only with their own user_id, and never on their own review. Only that traveler may remove their like. No one may edit a like.
+
+Profiles & likes round: profiles need no new table or column. A traveler's profile is built from their reviews, which already carry user_id, reviewer_name and traveler_type; their account (Supabase Auth) is only read for their own profile, through "who is logged in". So a traveler with no reviews has no public profile.
+
+**review_replies table (review extras round):**
+- id — unique identifier for each reply
+- review_id — the review replied to; replies are removed when the review is deleted
+- user_id — the traveler who replied (from Supabase Auth)
+- replier_name and traveler_type — copied from the account by the database, the same way as on reviews, so they can never be typed in from the browser
+- comment — the reply text, 1 to 300 characters
+- created_at — timestamp
+
+Row Level Security policy for review_replies: anyone may read. Only a logged-in traveler may add a reply, and only with their own user_id. Only the traveler who wrote a reply may delete it. No one may edit a reply.
+
+**review_reports table (review extras round):**
+- id — unique identifier for each report
+- review_id — the reported review; reports are removed when the review is deleted
+- user_id — the traveler who reported it (from Supabase Auth)
+- reason — one of: "spam", "offensive", "not_about_place", "other"
+- note — optional, up to 300 characters
+- created_at — timestamp
+- One report per traveler per review (review_id and user_id together are unique).
+
+Row Level Security policy for review_reports: no one may read reports through the app; the team reads them in the Supabase dashboard. Only a logged-in traveler may add a report, only with their own user_id, and never on their own review. No one may edit or delete a report through the app.
+
+**reviews table, review extras round:** gains photo_path — where the review's photo is kept in Storage, or empty when there is no photo. Like the stars and comment, only the review's writer may set or clear it.
+
+**review-photos Storage bucket (review extras round):** anyone may view the photos. A logged-in traveler may upload only into a folder named after their own user_id, and only that traveler may replace or delete files there. Photos are JPG, PNG or WebP, up to 2 MB, so an upload stays under Vercel's 4.5 MB request limit. Uploads go through the backend as the logged-in traveler, so these Storage policies decide, like Row Level Security does for the tables.
+
 (Before the backend round, the browser read and wrote reviews directly through Supabase with the same keys and the same Row Level Security policy.)
 
 The traveler type is saved on the Supabase Auth account, next to the display name. The database copies it onto each review, the same way it copies reviewer_name, so it can never be typed in from the browser. The reviews Row Level Security policy is unchanged.
@@ -225,6 +281,21 @@ When Supabase Auth refuses, the backend answers with Supabase's own status and c
 
 **Buttons & cards round (v1):**
 - GET /v1/ratings — anyone; answers a list of { place_type, place_id, average_rating, review_count }, one entry per place that has at least one review (a place without reviews shows "No reviews yet"). Read-only, from the reviews table.
+
+**Profiles & likes round (v1):**
+- GET /v1/travelers/:id — anyone; answers { id, display_name, traveler_type, review_count, reviews } with their reviews newest first, each with its place's name and Helpful count (404 "We couldn't find this traveler." for an unknown traveler or one with no reviews). Never answers an email
+- POST /v1/reviews/:id/like — logged-in traveler; marks the review helpful and answers { helpful_count, liked: true } (401 not logged in, 404 no such review, 400 "You can't mark your own review as helpful."). Marking twice changes nothing
+- DELETE /v1/reviews/:id/like — logged-in traveler; removes their own like and answers { helpful_count, liked: false }
+- GET /v1/reviews — each review also carries helpful_count, and liked_by_me when the request carries a login
+
+**Review extras round (v1):**
+- POST /v1/reviews/:id/replies — logged-in traveler; adds a reply (1–300 characters) and answers with it (401, 404 no such review, 400 outside the limits)
+- DELETE /v1/replies/:id — logged-in traveler; deletes their own reply (200 { id, message: "Your reply has been deleted." }; 404 "We couldn't find that reply among yours.")
+- POST /v1/reviews/:id/report — logged-in traveler; reports a review with a reason and optional note (201 { message: "Thanks — the team will take a look." }; 409 "You've already reported this review."; 400 for your own review or an unknown reason)
+- POST /v1/reviews and PATCH /v1/reviews/:id — also accept one photo (JPG, PNG or WebP, up to 2 MB; 400 "Please choose a JPG, PNG or WebP photo up to 2 MB.") and, when editing, removing it
+- GET /v1/reviews — each review also carries its replies (oldest first) and its photo's address
+
+All writes in these rounds run as the logged-in traveler (the asTraveler step), so Row Level Security and the Storage policies decide. The backend never uses the service_role key.
 
 **Version 2 (/v2):**
 - Reserved for future API changes. v1 remains available to prevent breaking existing clients.
@@ -267,6 +338,8 @@ Backend round: signing up and logging in go through the backend's endpoints, whi
 Own login round: the website keeps its own copy of the login. "Who is logged in", renewing the login (about once an hour) and logging out go through the backend; log out ends the login on this device only. Password reset stays in the browser with Supabase.
 
 Navigation round: no change for travelers. "Who is logged in" is shared through TanStack Query; renewal (about once an hour, one tab at a time, retrying every 30 seconds) keeps its own code.
+
+Profiles & likes and review extras rounds: browsing, profiles, likes counts, replies and photos are visible to everyone. Marking a review helpful, replying, reporting and adding a photo need an account, like writing a review.
 
 ## Done for the demo
 - [x] NestJS backend project structure created in `backend/` directory
@@ -350,12 +423,28 @@ Navigation round: no change for travelers. "Who is logged in" is shared through 
 - [x] Writing a review, then going back home, updates that card's rating
 - [x] With "reduce motion" turned on, buttons do not move
 
+**Profiles & likes round (live URL):**
+- [ ] On both detail pages, Back to Home stays in the top-left corner while scrolling, on a laptop and a phone, and is readable over the photo and the text
+- [ ] Clicking a reviewer's name opens their profile with their traveler type and all their reviews, and each place name opens that place
+- [ ] The profile icon beside Explore opens a dropdown whose My profile opens the traveler's own profile (including when they have no reviews) and whose Log out logs them out; on a phone the menu lists both
+- [ ] A logged-in traveler can mark another traveler's review Helpful and unmark it; the count updates, and it is still marked after a refresh
+- [ ] A traveler cannot mark their own review, and the database refuses it even when asked directly (Row Level Security)
+- [ ] Logged out, the Helpful counts show but nothing can be clicked
+
+**Review extras round (live URL):**
+- [ ] A logged-in traveler can reply to a review and delete their own reply; replies show to everyone
+- [ ] Reporting a review shows the thank-you message, reporting it again says it was already reported, and the report appears in the Supabase dashboard
+- [ ] A traveler can add a photo to a review, swap it and remove it, and deleting the review deletes the photo from Storage
+- [ ] A photo over 2 MB, or not a JPG, PNG or WebP, is refused with a clear message
+- [ ] Deleting someone else's reply, or uploading into someone else's photo folder, is refused by the database or Storage, not just hidden in the page
+
 ## Out of scope
 - Navigation round: login renewal through TanStack Query, the old page animating out, and the experimental "view transitions" setting (parked in docs/LATER.md)
 - Polish round: fetching places in the browser (parked in docs/LATER.md); "who is logged in" and page transitions moved into the navigation round
 - Login for anything other than reviews (browsing stays open to everyone)
-- Changing the traveler type after sign-up (needs a profile page), and a custom email sender for reset emails
-- Social logins, profile pages, photos in reviews, replies, likes or reporting reviews (profiles and likes, then replies, reports and photos, are planned as the next rounds in docs/LATER.md)
+- Changing the display name or traveler type after sign-up (the profile page shows them but cannot change them: every old review copies them too), and a custom email sender for reset emails
+- Social logins
+- Profiles & likes and review extras rounds: editing replies, replies to replies, likes on replies, hiding reported reviews automatically, any admin screen for reports, more than one photo per review, and photos over 2 MB
 - Buttons & cards round: email confirmation for new accounts (parked: a custom email sender needs an outside service the team has not agreed to), and a "Get directions in Google Maps" button on destinations
 - Filtering or sorting by rating (star ratings on the home page cards moved into the buttons & cards round)
 - Booking/payments for any services
