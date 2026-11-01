@@ -1,4 +1,6 @@
+import { Mail, Phone } from "lucide-react";
 import { getAccommodation } from "@/lib/api";
+import { pillButton } from "@/components/ui/button";
 import type { Accommodation } from "@/lib/api";
 import { accommodationTypeLabels, locationLabels } from "@/lib/labels";
 import { cn } from "@/lib/utils";
@@ -77,16 +79,18 @@ export default async function AccommodationDetailPage({
                   {accommodation.phone && (
                     <a
                       href={`tel:${accommodation.phone.replace(/[^\d+]/g, "")}`}
-                      className="flex h-11 w-full items-center justify-center rounded-lg bg-white px-4 text-sm font-semibold text-indigo-900 transition-colors hover:bg-white/90"
+                      className={cn(pillButton({ kind: "main" }), "w-full")}
                     >
+                      <Phone aria-hidden="true" />
                       Call {accommodation.phone}
                     </a>
                   )}
                   {accommodation.email && (
                     <a
                       href={`mailto:${accommodation.email}`}
-                      className="flex h-11 w-full items-center justify-center rounded-lg border border-white/25 bg-white/15 px-4 text-sm font-semibold text-white transition-colors hover:bg-white/25"
+                      className={cn(pillButton({ kind: "glass" }), "w-full")}
                     >
+                      <Mail aria-hidden="true" />
                       Email the front desk
                     </a>
                   )}

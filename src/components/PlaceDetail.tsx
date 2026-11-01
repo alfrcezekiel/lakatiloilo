@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { Reveal } from "@/components/Reveal";
+import { pillButton } from "@/components/ui/button";
 
 // The building blocks of the destination and accommodation detail pages
 // ("Option 1A" from the Detail Pages Glass design): a tall photo with a big
@@ -31,14 +32,8 @@ export const glassPill =
 
 export function BackLink() {
   return (
-    <Link
-      href="/"
-      className={cn(
-        glassPill,
-        "h-9 gap-1.5 px-4 text-sm font-medium transition-colors hover:bg-white/25 focus-visible:outline-2 focus-visible:outline-white",
-      )}
-    >
-      <ArrowLeft aria-hidden="true" className="size-4" />
+    <Link href="/" className={pillButton({ kind: "glass" })}>
+      <ArrowLeft aria-hidden="true" />
       Back to Home
     </Link>
   );
