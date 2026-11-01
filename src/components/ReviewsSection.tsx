@@ -1,10 +1,11 @@
 "use client";
 
-import { Check } from "lucide-react";
+import { Check, LogIn } from "lucide-react";
 import { useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { pillButton } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { Review } from "@/lib/api";
@@ -121,14 +122,13 @@ export function ReviewsSection() {
 
           {/* Logged out: invite them to log in and come back here. */}
           {ready && !user && (
-            <p className="text-white/90">
-              <Link
-                href={`/login?next=${encodeURIComponent(pathname)}`}
-                className="font-semibold text-white underline underline-offset-2 hover:text-white/80"
-              >
-                Log in to write a review
-              </Link>
-            </p>
+            <Link
+              href={`/login?next=${encodeURIComponent(pathname)}`}
+              className={pillButton({ kind: "main" })}
+            >
+              <LogIn aria-hidden="true" />
+              Log in to write a review
+            </Link>
           )}
 
           {reviews.length > 0 && (

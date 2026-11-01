@@ -1,6 +1,9 @@
 "use client";
 
+import { Pencil, Trash2, X } from "lucide-react";
 import { useState } from "react";
+import { pillButton } from "@/components/ui/button";
+import { Spinner } from "@/components/ui/spinner";
 import { Card, CardContent } from "@/components/ui/card";
 import { backendMessage, deleteReview as deleteReviewOnBackend } from "@/lib/api";
 import { loginToken } from "@/lib/login";
@@ -92,13 +95,15 @@ export function MyReviewBox({
           <div className="space-y-3 rounded-xl bg-teal-950/40 p-4">
             <p className="font-semibold">Delete your review? This can&apos;t be undone.</p>
             <div className="flex flex-wrap gap-3">
+              {/* The only solid red button: the final, can't-undo step. */}
               <button
                 type="button"
                 onClick={deleteReview}
                 disabled={deleting}
-                className="h-10 rounded-full bg-red-500 px-5 text-sm font-semibold text-white hover:bg-red-600 disabled:opacity-60"
+                className={pillButton({ kind: "dangerSolid" })}
               >
-                {deleting ? "Deleting…" : "Delete"}
+                {deleting ? <Spinner /> : <Trash2 aria-hidden="true" />}
+                {deleting ? "Deleting…" : "Yes, delete"}
               </button>
               <button
                 type="button"
@@ -107,8 +112,9 @@ export function MyReviewBox({
                   setDeleteError(null);
                 }}
                 disabled={deleting}
-                className="h-10 rounded-full border border-white/40 px-5 text-sm font-semibold hover:bg-white/10"
+                className={pillButton({ kind: "glass" })}
               >
+                <X aria-hidden="true" />
                 Cancel
               </button>
             </div>
@@ -118,15 +124,17 @@ export function MyReviewBox({
             <button
               type="button"
               onClick={() => setEditing(true)}
-              className="h-10 rounded-full bg-white px-5 text-sm font-semibold text-teal-900 hover:bg-white/90"
+              className={pillButton({ kind: "glass" })}
             >
+              <Pencil aria-hidden="true" />
               Edit
             </button>
             <button
               type="button"
               onClick={() => setConfirmingDelete(true)}
-              className="h-10 rounded-full border border-white/40 px-5 text-sm font-semibold hover:bg-white/10"
+              className={pillButton({ kind: "danger" })}
             >
+              <Trash2 aria-hidden="true" />
               Delete
             </button>
           </div>

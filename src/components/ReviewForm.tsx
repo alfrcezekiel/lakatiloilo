@@ -1,7 +1,8 @@
 "use client";
 
+import { Check, Send, X } from "lucide-react";
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
+import { pillButton } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -172,12 +173,9 @@ export function ReviewForm({ placeType, placeId, onSaved, existing, onCancel }: 
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
-            <Button
-              type="submit"
-              disabled={busy}
-              className="h-11 rounded-full bg-white px-6 font-semibold text-teal-900 hover:bg-white/90 hover:opacity-100"
-            >
-              {busy && <Spinner />}
+            {/* disabled while saving, so it cannot be sent twice. */}
+            <button type="submit" disabled={busy} className={pillButton({ kind: "main" })}>
+              {busy ? <Spinner /> : isEdit ? <Check aria-hidden="true" /> : <Send aria-hidden="true" />}
               {busy
                 ? isEdit
                   ? "Saving…"
@@ -185,14 +183,15 @@ export function ReviewForm({ placeType, placeId, onSaved, existing, onCancel }: 
                 : isEdit
                   ? "Save changes"
                   : "Post review"}
-            </Button>
+            </button>
             {isEdit && (
               <button
                 type="button"
                 onClick={onCancel}
                 disabled={busy}
-                className="h-11 rounded-full border border-white/40 px-6 text-sm font-semibold text-white hover:bg-white/10"
+                className={pillButton({ kind: "glass" })}
               >
+                <X aria-hidden="true" />
                 Cancel
               </button>
             )}
