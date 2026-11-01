@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useSyncExternalStore } from "react";
+import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import { getMe, logOutThroughBackend, refreshLogin, type Traveler } from "@/lib/api";
 import { endPasswordReset } from "@/lib/auth";
@@ -90,55 +91,61 @@ export async function logOut() {
 // "Log in" at someone who is already logged in.
 //
 // The traveler's details (name, traveler type) come from the backend's
-// "who is logged in" endpoint. It runs again whenever the login changes,
-// in this tab or another one.
+// "who is logged in" endpoint, through TanStack Query (navigation round,
+// ticket 63). Its cache keeps one answer per login, shared by every
+// component (the navbar, the Reviews section, ...). So after the first
+// check, moving between pages shows the name straight away. Logging in or
+// out, in this tab or another, changes the login, which asks again.
 export function useCurrentUser() {
-  const [user, setUser] = useState<Traveler | null>(null);
-  const [ready, setReady] = useState(false);
+  // The current login token: null when logged out, undefined while the
+  // page is still being built on the server (it cannot read this browser).
+  const token = useSyncExternalStore(subscribeToLogin, currentToken, () => undefined);
 
+  const query = useQuery({
+    queryKey: ["who-is-logged-in", token],
+    queryFn: () => travelerFor(token as string),
+    enabled: typeof token === "string",
+    // The answer only changes when the login changes, and a new login is a
+    // new key. So never ask again for the same login, and keep the answer
+    // for as long as the page is open.
+    staleTime: Infinity,
+    gcTime: Infinity,
+    // When the login is renewed (about once an hour) the token changes but
+    // the traveler is the same: keep showing their name meanwhile, instead
+    // of a brief "checking" moment. Never for a different traveler.
+    placeholderData: (previous) =>
+      previous && typeof token === "string" && previous.id === accountIdOf(token)
+        ? previous
+        : undefined,
+  });
+
+  // Once per page: end any old Supabase login, and start the renewal timer.
   useEffect(() => {
-    let cancelled = false;
-    // Counts login changes, so an older answer from the backend never
-    // replaces a newer one (for example, logging out while it answers).
-    let latest = 0;
-
-    const check = async () => {
-      const change = ++latest;
-      // Renews the login first if it has run out (for example, the site
-      // was opened again the next day).
-      const token = await freshToken();
-      // Renewal failed for a passing reason (Supabase busy or down) and the
-      // login has run out: keep the traveler logged in with the name inside
-      // the login, and let the renewal timer try again. Asking the backend
-      // with a run-out login would answer 401 and log them out by mistake.
-      const saved = readLogin();
-      const stale = !!token && !!saved && hasRunOut(saved);
-      const traveler = !token ? null : stale ? travelerFromToken(token) : await travelerFor(token);
-      if (cancelled || change !== latest) return;
-      // The backend says this login is no longer valid: forget it.
-      if (token && !traveler) forgetLogin();
-      setUser(traveler);
-      setReady(true);
-    };
-
-    const onStorage = (event: StorageEvent) => {
-      if (event.key === LOGIN_KEY || event.key === null) check();
-    };
-
     endOldSupabaseLogin();
-
-    check();
     scheduleRenewal();
-    window.addEventListener(LOGIN_CHANGED, check);
-    window.addEventListener("storage", onStorage);
-    return () => {
-      cancelled = true;
-      window.removeEventListener(LOGIN_CHANGED, check);
-      window.removeEventListener("storage", onStorage);
-    };
   }, []);
 
-  return { user, ready };
+  if (token === undefined) return { user: null, ready: false };
+  if (token === null) return { user: null, ready: true };
+  return { user: query.data ?? null, ready: query.data !== undefined };
+}
+
+// Lets React re-read the login when it changes: in this tab (our own
+// event) or in another tab (the browser's "storage" event).
+function subscribeToLogin(onChange: () => void) {
+  const onStorage = (event: StorageEvent) => {
+    if (event.key === LOGIN_KEY || event.key === null) onChange();
+  };
+  window.addEventListener(LOGIN_CHANGED, onChange);
+  window.addEventListener("storage", onStorage);
+  return () => {
+    window.removeEventListener(LOGIN_CHANGED, onChange);
+    window.removeEventListener("storage", onStorage);
+  };
+}
+
+function currentToken() {
+  return readLogin()?.access_token ?? null;
 }
 
 // The logged-in traveler's login token, which the backend needs to add,
@@ -262,25 +269,45 @@ export function displayNameOf(user: Traveler) {
   return user.display_name;
 }
 
-// One "who is logged in" request per login, shared by every component on
-// the page (the navbar, the Reviews section, ...), so the backend is asked
-// once, not once per component. Answers null when the backend says the
-// login is no longer valid (401).
-let meRequest: { token: string; answer: Promise<Traveler | null> } | null = null;
-
-function travelerFor(token: string): Promise<Traveler | null> {
-  if (meRequest?.token !== token) {
-    meRequest = {
-      token,
-      answer: getMe(token).catch((error) => {
-        if (axios.isAxiosError(error) && error.response?.status === 401) return null;
-        // The backend cannot be reached: fall back to the details inside
-        // the login itself, so the navbar still works.
-        return travelerFromToken(token);
-      }),
-    };
+// Asks the backend who this login belongs to. TanStack Query calls it once
+// per login. Answers null when the backend says the login is no longer
+// valid (401): the login is then forgotten, and the page shows "Log in".
+async function travelerFor(token: string): Promise<Traveler | null> {
+  // The login has run out and renewal has not managed yet (for example,
+  // the site was opened again the next day, or Supabase is busy). Asking
+  // the backend now would answer 401 and log the traveler out by mistake.
+  // Show the name inside the login and renew; the renewed login is a new
+  // key, so it is asked about properly then.
+  const saved = readLogin();
+  if (saved?.access_token === token && hasRunOut(saved)) {
+    void freshToken();
+    return fromTokenOrForget(token);
   }
-  return meRequest.answer;
+  try {
+    return await getMe(token);
+  } catch (error) {
+    if (axios.isAxiosError(error) && error.response?.status === 401) {
+      forgetLogin();
+      return null;
+    }
+    // The backend cannot be reached: fall back to the details inside the
+    // login itself, so the navbar still works.
+    return fromTokenOrForget(token);
+  }
+}
+
+// The details inside the login; a login that cannot even be read is
+// forgotten, as before.
+function fromTokenOrForget(token: string) {
+  const traveler = travelerFromToken(token);
+  if (!traveler) forgetLogin();
+  return traveler;
+}
+
+// The account id inside a login token, to tell whether two logins belong
+// to the same traveler.
+function accountIdOf(token: string) {
+  return travelerFromToken(token)?.id ?? null;
 }
 
 // The traveler's details from inside the login token (Supabase writes the

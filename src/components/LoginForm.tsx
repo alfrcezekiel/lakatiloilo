@@ -72,10 +72,12 @@ export function LoginForm() {
   } | null>(null);
   const [busy, setBusy] = useState(false);
   // True once this form has logged the traveler in and is sending them on.
-  // Supabase says "logged in" a moment before the next page appears; this
-  // keeps the form (with its spinner) on screen in that gap, instead of
-  // flashing the "You're logged in as …" box meant for visitors who open
-  // /login while already logged in.
+  // The page hears about the new login straight away, a moment before the
+  // next page appears. This keeps the form (with its spinner) on screen in
+  // that gap, instead of the "Checking whether you are logged in" skeleton
+  // or the "You're logged in as …" box, which are meant only for visitors
+  // who open /login while already logged in. It is set BEFORE the login is
+  // saved, because saving it updates the page at once.
   const [leaving, setLeaving] = useState(false);
 
   const switchMode = (newMode: Mode) => {
@@ -173,12 +175,13 @@ export function LoginForm() {
         setErrors({ form: fallbackError });
         return;
       }
-      // Keep the login the backend handed back in the website's own copy
-      // (not Supabase's browser library, which would check it with
-      // Supabase straight away). The navbar and reviews pick it up.
+      // First mark the form as leaving (see `leaving` above), then keep the
+      // login the backend handed back in the website's own copy (not
+      // Supabase's browser library, which would check it with Supabase
+      // straight away). The navbar and reviews pick it up.
+      setLeaving(true);
       saveLogin(data.session);
       rememberEmail(rememberMyEmail, email);
-      setLeaving(true);
       router.replace(next);
     } catch {
       // For example, no internet connection.
@@ -200,9 +203,10 @@ export function LoginForm() {
       }
     >
 
-      {!ready ? (
-        // Still checking the login cookie (a split second). Showing the
-        // form here would flash it at travelers who are logged in.
+      {!ready && !leaving ? (
+        // Still checking the login (a split second). Showing the form here
+        // would flash it at travelers who are logged in. Not while this
+        // form is sending the traveler on: it stays on screen then.
         <div className="space-y-3">
           <p role="status" className="sr-only">
             Checking whether you are logged in

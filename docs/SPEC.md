@@ -20,6 +20,8 @@ Own login round: the website keeps its own copy of the traveler's login instead 
 
 Polish round: the same pages and features, made clearer and smoother. Every icon comes from one icon set (Lucide) instead of emoji, cards and sections move gently into view (and stay still for travelers who turn on "reduce motion"), and a place's reviews show straight away when a traveler comes back to it.
 
+Navigation round: moving between pages feels smoother. The new page fades in quickly, and the logged-in parts of the page (the navbar's name, the review form and Edit/Delete buttons) show straight away after the first check instead of after a brief wait. Login renewal works exactly as before.
+
 ## The user
 Travelers planning weekend trips around Iloilo Province. No login required for browsing; an account is needed only to write a review.
 
@@ -103,6 +105,11 @@ Travelers planning weekend trips around Iloilo Province. No login required for b
    - **Reviews load faster on a return visit:** going back to a place seen in the last minute shows its reviews straight away while fresh ones load quietly. After writing, editing or deleting a review, the Rating tile and the list update at once.
    - **Reduce motion:** with "reduce motion" turned on, nothing slides or fades; content just appears.
 
+18. Navigation round — same pages and features, with smoother moves between pages:
+   - **Moving between pages:** opening a place, going back home, or opening the login or photo credits page makes the new page fade in quickly (about a third of a second). The fade-ups inside each page still play as before.
+   - **Logged-in parts show at once:** after the first check, moving between pages shows the navbar's "Hi, <name>" and the Reviews section's form or Edit/Delete buttons straight away, without a brief wait. Logging in or out in another tab still updates this tab.
+   - **Reduce motion:** with "reduce motion" turned on, pages just appear.
+
 ## Data
 
 **destinations table:**
@@ -162,6 +169,8 @@ Own login round: no tables, columns or policies change, and there is no new SQL.
 
 Polish round: no tables, columns or policies change, and there is no new SQL. Reviews are still read and written through the backend; the browser only keeps a short-lived copy (about a minute) so a place's reviews show straight away on a return visit.
 
+Navigation round: no tables, columns or policies change, and there is no new SQL. "Who is logged in" still comes from the backend's endpoint; the browser only keeps a copy for as long as the same login is in use.
+
 (Before the backend round, the browser read and wrote reviews directly through Supabase with the same keys and the same Row Level Security policy.)
 
 The traveler type is saved on the Supabase Auth account, next to the display name. The database copies it onto each review, the same way it copies reviewer_name, so it can never be typed in from the browser. The reviews Row Level Security policy is unchanged.
@@ -208,6 +217,7 @@ When Supabase Auth refuses, the backend answers with Supabase's own status and c
 - App Router + TypeScript
 - Tailwind CSS with UI components in `src/components/ui/`
 - Polish round: Lucide icons (`lucide-react`, already installed) for every icon; Motion (the `motion` package, formerly Framer Motion) for animations, set to follow the device's "reduce motion" setting (the fade-up of whatever is on screen when a page loads is plain CSS instead, so it never waits for the page's JavaScript and the text is in the page from the server; Motion takes over for scrolling, and only hides what is off screen once the JavaScript has loaded); TanStack Query for the reviews fetched in the browser (reading, plus writing, editing and deleting as updates to its copy). Places stay fetched on the Next.js server, and the login keeps its own code
+- Navigation round: "who is logged in" is read through TanStack Query, kept per login, so every component shares one copy and logging in or out (in this tab or another) refreshes it. Login renewal (the timer, the one-tab-at-a-time lock and the retries) keeps its own code. The fade between pages is opacity only, with no movement, because a moving page wrapper would stop the floating navbar and scroll-to-top button from staying in place; the old page does not animate out (the App Router cannot keep it on screen without an experimental setting)
 - Fetches data from NestJS backend via HTTP calls (the home page on the server from the backend round, like the detail pages)
 - Deployed on Vercel
 
@@ -235,6 +245,8 @@ Login extras round: travelers can reset a forgotten password through Supabase's 
 Backend round: signing up and logging in go through the backend's endpoints, which call Supabase Auth. Signing up does not log the traveler in; after logging in, the browser keeps the login as before. Password reset and log-out stay in the browser (the reset link only works in the browser that asked for it).
 
 Own login round: the website keeps its own copy of the login. "Who is logged in", renewing the login (about once an hour) and logging out go through the backend; log out ends the login on this device only. Password reset stays in the browser with Supabase.
+
+Navigation round: no change for travelers. "Who is logged in" is shared through TanStack Query; renewal (about once an hour, one tab at a time, retrying every 30 seconds) keeps its own code.
 
 ## Done for the demo
 - [x] NestJS backend project structure created in `backend/` directory
@@ -303,8 +315,17 @@ Own login round: the website keeps its own copy of the login. "Who is logged in"
 - [x] Writing, editing and deleting a review still work, and the Rating tile updates each time
 - [x] Logging in, logging out and staying logged in still work
 
+**Navigation round (live URL):**
+- [ ] Moving between home, a detail page, login and photo credits fades the new page in, on a laptop and a phone
+- [ ] The floating navbar and scroll-to-top button stay in place during the fade
+- [ ] With "reduce motion" turned on, pages just appear
+- [ ] After logging in, moving between pages shows "Hi, <name>" and the review buttons at once
+- [ ] Logging in or out in one tab updates another open tab
+- [ ] Staying logged in for over an hour, writing reviews and logging out still work
+
 ## Out of scope
-- Polish round: moving "who is logged in" and login renewal to TanStack Query, animated transitions between pages, and fetching places in the browser (parked in docs/LATER.md)
+- Navigation round: login renewal through TanStack Query, the old page animating out, and the experimental "view transitions" setting (parked in docs/LATER.md)
+- Polish round: fetching places in the browser (parked in docs/LATER.md); "who is logged in" and page transitions moved into the navigation round
 - Login for anything other than reviews (browsing stays open to everyone)
 - Changing the traveler type after sign-up (needs a profile page), and a custom email sender for reset emails
 - Social logins, profile pages, photos in reviews, replies, likes or reporting reviews

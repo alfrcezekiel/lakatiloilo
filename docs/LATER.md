@@ -8,12 +8,17 @@ stays small enough to actually ship by Session 3.
 ## Future features
 
 ### Polish round leftovers
-The polish round (2026-11-01) brings Lucide icons, Motion animations and
-TanStack Query for reviews. Still parked:
-- "Who is logged in" and login renewal through TanStack Query (the
-  current login code works and passed the live checks; rewriting it is
-  risky)
-- Animated transitions between pages
+The polish round (2026-11-01) brought Lucide icons, Motion animations and
+TanStack Query for reviews. On 2026-11-01 "who is logged in" through
+TanStack Query and page transitions moved into the spec as the
+navigation round. Still parked:
+- Login renewal through TanStack Query. Renewal is a timer with a
+  one-tab-at-a-time lock and retries, not data fetching, which is what
+  TanStack Query is for; the current code works and passed the live
+  checks, so rewriting it only adds risk
+- The old page animating out when moving between pages (the App Router
+  cannot keep it on screen without an experimental setting), and that
+  experimental "view transitions" setting itself
 - Fetching places in the browser (they stay on the Next.js server, so
   the home page arrives already filled in)
 
