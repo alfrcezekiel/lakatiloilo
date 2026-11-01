@@ -22,6 +22,8 @@ Polish round: the same pages and features, made clearer and smoother. Every icon
 
 Navigation round: moving between pages feels smoother. The new page fades in quickly, and the logged-in parts of the page (the navbar's name, the review form and Edit/Delete buttons) show straight away after the first check instead of after a brief wait. Login renewal works exactly as before.
 
+Buttons & cards round: every button on the detail pages gets one modern, easy-to-read style, with a warm sunset-amber main button. Every place card on the home page shows its star rating and a clear "View details" button.
+
 ## The user
 Travelers planning weekend trips around Iloilo Province. No login required for browsing; an account is needed only to write a review.
 
@@ -45,6 +47,8 @@ Travelers planning weekend trips around Iloilo Province. No login required for b
 17. As a traveler, I want the home page to arrive with places already in it, so that it feels fast on my phone.
 18. As a developer, I want reviews and log-in to go through our own NestJS endpoints, so that all the app's data requests are in one place I can read and check.
 19. As a developer, I want "who is logged in", keeping the login fresh and logging out to go through our own NestJS endpoints, so that normal pages never talk to Supabase Auth directly.
+20. As a traveler, I want the main action on a detail page to stand out, so that I know at a glance what to tap (Call, Post review).
+21. As a traveler, I want to see a place's star rating on its home page card, so that I can compare places before opening them.
 
 ## Screens
 1. Home page hero — redesigned to match the team's mockup:
@@ -110,6 +114,17 @@ Travelers planning weekend trips around Iloilo Province. No login required for b
    - **Logged-in parts show at once:** after the first check, moving between pages shows the navbar's "Hi, <name>" and the Reviews section's form or Edit/Delete buttons straight away, without a brief wait. Logging in or out in another tab still updates this tab.
    - **Reduce motion:** with "reduce motion" turned on, pages just appear.
 
+19. Buttons & cards round — modern buttons on the detail pages, and ratings plus "View details" on the home page cards:
+   - **One button style for both detail pages**, in three kinds:
+     - **Main:** solid sunset amber with dark lettering, pill-shaped, at least 44 px tall so it is easy to tap, with a Lucide icon on the left. It lifts slightly on hover, presses in when clicked, and shows a clear outline when reached with the keyboard. While saving it shows a spinner and a word like "Posting…".
+     - **Second:** glass (see-through white) with white lettering, same shape.
+     - **Danger:** red outline; it turns solid red only on the "Yes, delete" step.
+   - **Lettering:** the site's normal font, semibold, slightly larger than before, in sentence case ("Post review", not "POST REVIEW").
+   - **Which buttons change:** Back to Home; on accommodations, Call (main) and Email the front desk (second); on both pages, Post review, Cancel, Edit, Delete and "Log in to write a review".
+   - **Home page cards:** every destination and accommodation card in the list sections gets an amber **View details →** button at the bottom. The whole card stays clickable; the button just makes that obvious. The Featured and Trending "View details" links get the same look.
+   - **Star rating on cards:** under the name, "★ 4.3 · 12 reviews", or "No reviews yet". Featured and Trending show it too.
+   - **Reduce motion:** with "reduce motion" turned on, buttons do not lift or press; they only change colour.
+
 ## Data
 
 **destinations table:**
@@ -171,6 +186,8 @@ Polish round: no tables, columns or policies change, and there is no new SQL. Re
 
 Navigation round: no tables, columns or policies change, and there is no new SQL. "Who is logged in" still comes from the backend's endpoint; the browser only keeps a copy for as long as the same login is in use.
 
+Buttons & cards round: no tables, columns or policies change, and there is no new SQL. Each place's average stars and number of reviews are worked out by the backend from the reviews table, which its database login can already read ("api can read reviews"). The Next.js server fetches them together with the places, so the home page arrives with ratings already in it.
+
 (Before the backend round, the browser read and wrote reviews directly through Supabase with the same keys and the same Row Level Security policy.)
 
 The traveler type is saved on the Supabase Auth account, next to the display name. The database copies it onto each review, the same way it copies reviewer_name, so it can never be typed in from the browser. The reviews Row Level Security policy is unchanged.
@@ -205,6 +222,9 @@ When Supabase Auth refuses, the backend answers with Supabase's own status and c
 - POST /v1/auth/logout — logged-in traveler; ends their login on this device only, so its renewal code stops working, and answers 200 { message: "You're logged out." } (401 without a valid login)
 
 "Logged-in traveler" means the request carries the traveler's login token; the backend passes it on to Supabase, where Row Level Security checks it. Password reset and log-out stay in the browser.
+
+**Buttons & cards round (v1):**
+- GET /v1/ratings — anyone; answers a list of { place_type, place_id, average_rating, review_count }, one entry per place that has at least one review (a place without reviews shows "No reviews yet"). Read-only, from the reviews table.
 
 **Version 2 (/v2):**
 - Reserved for future API changes. v1 remains available to prevent breaking existing clients.
@@ -323,13 +343,21 @@ Navigation round: no change for travelers. "Who is logged in" is shared through 
 - [x] Logging in or out in one tab updates another open tab
 - [x] Staying logged in for over an hour, writing reviews and logging out still work
 
+**Buttons & cards round (live URL):**
+- [ ] The detail-page buttons use the new style on a laptop and a phone, and the amber main button is easy to read on both the teal and the blue pages
+- [ ] Moving through the page with the Tab key shows a clear outline on every button
+- [ ] Every home page card shows "View details" and its rating, and the rating matches the place's detail page
+- [ ] Writing a review, then going back home, updates that card's rating
+- [ ] With "reduce motion" turned on, buttons do not move
+
 ## Out of scope
 - Navigation round: login renewal through TanStack Query, the old page animating out, and the experimental "view transitions" setting (parked in docs/LATER.md)
 - Polish round: fetching places in the browser (parked in docs/LATER.md); "who is logged in" and page transitions moved into the navigation round
 - Login for anything other than reviews (browsing stays open to everyone)
 - Changing the traveler type after sign-up (needs a profile page), and a custom email sender for reset emails
-- Social logins, profile pages, photos in reviews, replies, likes or reporting reviews
-- Star ratings on the home page cards, and filtering or sorting by rating
+- Social logins, profile pages, photos in reviews, replies, likes or reporting reviews (profiles and likes, then replies, reports and photos, are planned as the next rounds in docs/LATER.md)
+- Buttons & cards round: email confirmation for new accounts (parked: a custom email sender needs an outside service the team has not agreed to), and a "Get directions in Google Maps" button on destinations
+- Filtering or sorting by rating (star ratings on the home page cards moved into the buttons & cards round)
 - Booking/payments for any services
 - Map integration (PostGIS added for future use, but no map UI in MVP). A Mapbox map is parked in docs/LATER.md until the team decides on it
 - A full search results page, advanced filters, or searching inside descriptions (live suggestions match names and addresses only)

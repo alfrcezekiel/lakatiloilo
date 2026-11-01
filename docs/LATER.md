@@ -24,15 +24,29 @@ navigation round. Still parked:
 
 ### User accounts and reviews
 Accounts and reviews/ratings on detail pages moved into the spec on
-2026-10-21 (reviews and ratings round). Still parked:
-- Star ratings on the home page cards
-- Social logins, profile pages, photos in reviews, replies, likes, reporting reviews
+2026-10-21 (reviews and ratings round). On 2026-11-01 star ratings on the
+home page cards moved into the spec as the buttons & cards round. The
+team plans the rest as the next rounds, in this order (each about one
+session; each needs its own /to-spec before any code):
+1. Profiles & likes: a profile page per traveler (display name,
+   traveler type, their reviews) and a "helpful" like on reviews
+2. Replies, reports and photos in reviews: replying to a review,
+   reporting a review, and adding a photo to a review (Supabase Storage)
+
+Still parked:
+- Social logins
 
 ### Email confirmation for new accounts
 Turned off for the demo on 2026-10-21 (ticket 38). Before real launch:
 turn "Confirm email" back on in Supabase, set up a custom email sender
 (the built-in one allows only a few emails per hour), and add a page
-that handles the confirmation link.
+that handles the confirmation link. On 2026-11-01 the team kept this
+parked: a custom email sender needs an outside email service (for
+example Resend or Brevo), which is outside the pinned stack, so everyone
+has to agree to add it first.
+
+### From the buttons & cards round (2026-11-01)
+- A "Get directions in Google Maps" button on destination pages
 
 ### Extras from the login design (option 1a)
 The login page uses the look of option 1a from the "Lakat Auth" design
