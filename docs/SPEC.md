@@ -316,12 +316,12 @@ Navigation round: no change for travelers. "Who is logged in" is shared through 
 - [x] Logging in, logging out and staying logged in still work
 
 **Navigation round (live URL):**
-- [ ] Moving between home, a detail page, login and photo credits fades the new page in, on a laptop and a phone
-- [ ] The floating navbar and scroll-to-top button stay in place during the fade
-- [ ] With "reduce motion" turned on, pages just appear
-- [ ] After logging in, moving between pages shows "Hi, <name>" and the review buttons at once
-- [ ] Logging in or out in one tab updates another open tab
-- [ ] Staying logged in for over an hour, writing reviews and logging out still work
+- [x] Moving between home, a detail page, login and photo credits fades the new page in, on a laptop and a phone
+- [x] The floating navbar and scroll-to-top button stay in place during the fade
+- [x] With "reduce motion" turned on, pages just appear
+- [x] After logging in, moving between pages shows "Hi, <name>" and the review buttons at once
+- [x] Logging in or out in one tab updates another open tab
+- [x] Staying logged in for over an hour, writing reviews and logging out still work
 
 ## Out of scope
 - Navigation round: login renewal through TanStack Query, the old page animating out, and the experimental "view transitions" setting (parked in docs/LATER.md)
