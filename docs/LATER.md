@@ -40,6 +40,10 @@ Still parked:
 - Hiding reported reviews automatically, and an admin screen for reports
   (needs the admin UI below)
 - More than one photo per review
+- A 404 ("not found") status for an unknown traveler's profile page. It
+  answers 200 today; Next.js's notFound() showed its own default page
+  instead of ours (tried 2026-11-01, see ticket 75). Untried idea: a
+  pass-through layout.tsx in the travelers folder
 
 ### Email confirmation for new accounts
 Turned off for the demo on 2026-10-21 (ticket 38). Before real launch:

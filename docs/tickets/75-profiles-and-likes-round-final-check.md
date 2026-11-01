@@ -34,3 +34,12 @@ Checked on localhost (one preview tab only; pretend login and pretend answers fo
 Left as they are (team's choice): 4 (the extra Supabase Auth check on logged-in reviews reads) and 5 (small copies; two files just past 300 lines).
 
 **Checked by the team on the live URL (2026-11-01):** every item in the "Profiles & likes round" checklist passed on a laptop and a phone, and the existing features (search, reviews, ratings on cards, sign-up, log-in, log-out, password reset) still work. Review findings 1–3 were fixed before the push; 4 and 5 were left as they are.
+
+**Second /code-review (2026-11-01, from b001b93, after the push):** no must-fix findings. Fixed at the team's request:
+1. A Helpful count of 0 was not shown at all, so visitors could not tell the feature was there. Reviews (logged out, or your own) and profile reviews now say "No one has marked this helpful yet" for 0, and "3 travelers found this helpful" otherwise; one shared HelpfulCount piece is used in both places. The spec's screen 20 now says so.
+2. An unknown traveler's page showed a blank teal screen while the login was checked. It now arrives with a grey placeholder shaped like the profile (with Back to Home), then shows "We couldn't find this traveler", or the traveler's own empty profile if the id is theirs. Not fixed: the page still answers status 200 instead of 404. Calling Next.js's notFound() made Next.js show its own default "This page could not be found" screen instead of ours, both with not-found.tsx next to the page and one folder up; after the same result twice the page was put back to rendering its own screen (status 200). Untried next step, if the team wants the 404: add a pass-through layout.tsx to the travelers folder, since Next.js may only place a folder's not-found screen where that folder has a layout.
+
+Checked on localhost: curl showed /travelers/hello arriving with the placeholder ("Loading profile", Back to Home, grey blocks) instead of a blank page; in the browser it ended on "We couldn't find this traveler"; Seda Atria's reviews (logged out) and all 15 reviews on Red's profile said "No one has marked this helpful yet". Type-check, lint and `npm run build` pass. Not checked: the live URL (not pushed yet).
+Still left as they are (team's choice): the extra Supabase Auth check on logged-in reviews reads, and the small copies.
+
+**Decision (2026-11-01, team):** leave the unknown-traveler page at status 200 for now; the 404 is parked in docs/LATER.md.

@@ -9,13 +9,26 @@ import { loginToken } from "@/lib/login";
 
 const travelers = (n: number) => `${n} traveler${n === 1 ? "" : "s"}`;
 
+// A review's Helpful count as a line of text, for anyone who cannot mark
+// it (logged out, or their own review) and on profile pages: "3 travelers
+// found this helpful", or "No one has marked this helpful yet" for 0, so a
+// visitor can tell the feature is there even before anyone has used it.
+export function HelpfulCount({ count }: { count: number }) {
+  return (
+    <p className="flex items-center gap-1.5 text-sm text-white/75">
+      <ThumbsUp aria-hidden="true" className="size-4 shrink-0" />
+      {count > 0 ? `${travelers(count)} found this helpful` : "No one has marked this helpful yet"}
+    </p>
+  );
+}
+
 // "Helpful" on one review (profiles & likes round, ticket 72).
 //
 // - Logged in, on someone else's review: a glass "Helpful · 3" button that
 //   turns amber when this traveler has marked it, and back when clicked
 //   again. aria-pressed tells screen readers whether it is marked.
 // - Logged out, or on the traveler's own review: only the count, as text
-//   ("3 travelers found this helpful"), or nothing when it is 0.
+//   (HelpfulCount above).
 //
 // The backend answers the new count, which goes straight into the page's
 // copy of the reviews (onChange), so the count updates at once.
@@ -34,12 +47,7 @@ export function HelpfulButton({
   const liked = review.liked_by_me ?? false;
 
   if (!user || review.user_id === user.id) {
-    return count > 0 ? (
-      <p className="flex items-center gap-1.5 text-sm text-white/75">
-        <ThumbsUp aria-hidden="true" className="size-4 shrink-0" />
-        {travelers(count)} found this helpful
-      </p>
-    ) : null;
+    return <HelpfulCount count={count} />;
   }
 
   const toggle = async () => {
