@@ -137,7 +137,7 @@ export function CategoryExploreSection({
                   }}
                 >
                   <div
-                    className="absolute inset-0 bg-cover bg-center transition-transform duration-300 group-hover:scale-110"
+                    className="absolute inset-0 bg-cover bg-center transition-transform duration-300 motion-safe:group-hover:scale-110"
                     style={{ backgroundImage: `url(${imageUrl})` }}
                   />
                   <div className="absolute inset-0 bg-linear-to-t from-black/70 via-black/30 to-transparent" />

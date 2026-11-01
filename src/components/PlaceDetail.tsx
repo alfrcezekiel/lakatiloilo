@@ -177,16 +177,21 @@ export function PanelFact({ label, children }: { label: string; children: ReactN
 // The page body under the photo. On a laptop the side panel sits on the
 // right and rises a little into the photo; on a phone it comes straight
 // after the tiles and About, before the (long) reviews. The side panel and
-// Reviews fade in as they scroll into view (see Reveal).
+// Reviews fade in as they scroll into view (see Reveal). The loading
+// skeleton passes animate={false}, so it stays still and only the real page
+// rises in, once.
 export function PlaceBody({
   main,
   aside,
   reviews,
+  animate = true,
 }: {
   main: ReactNode;
   aside: ReactNode;
   reviews: ReactNode;
+  animate?: boolean;
 }) {
+  const Wrap = animate ? Reveal : "div";
   return (
     <div className="mx-auto max-w-6xl px-4 pb-16 pt-6 sm:px-6 lg:pt-8">
       <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_340px] lg:gap-10">
@@ -195,10 +200,10 @@ export function PlaceBody({
           {/* Reveal goes inside the sticky part, so the panel still
               sticks while scrolling on a laptop. */}
           <div className="lg:sticky lg:top-6">
-            <Reveal>{aside}</Reveal>
+            <Wrap>{aside}</Wrap>
           </div>
         </aside>
-        <Reveal className="lg:col-start-1">{reviews}</Reveal>
+        <Wrap className="lg:col-start-1">{reviews}</Wrap>
       </div>
     </div>
   );

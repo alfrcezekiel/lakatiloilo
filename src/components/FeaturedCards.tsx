@@ -73,7 +73,7 @@ export function FeaturedCards({ destinations, loading }: FeaturedCardsProps) {
               <img
                 src={place.photo_url}
                 alt={place.name}
-                className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                className="h-full w-full object-cover transition-transform duration-300 motion-safe:group-hover:scale-105"
               />
             </div>
             <div className="min-w-0">
@@ -89,7 +89,7 @@ export function FeaturedCards({ destinations, loading }: FeaturedCardsProps) {
                 View details{" "}
                 <ArrowRight
                   aria-hidden="true"
-                  className="inline-block size-4 align-[-0.125em] transition-transform group-hover:translate-x-1"
+                  className="inline-block size-4 align-[-0.125em] transition-transform motion-safe:group-hover:translate-x-1"
                 />
               </p>
             </div>

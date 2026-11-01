@@ -22,6 +22,14 @@ export const categoryLabels: Record<string, string> = Object.fromEntries(
   categoryChips.map((chip) => [chip.id, chip.label]),
 );
 
+// One accommodation's type, for its detail page: "hotel" -> "Hotel". (The
+// chips above use the plural, "Hotels".) The ids match the `type` column of
+// accommodations.
+export const accommodationTypeLabels: Record<string, string> = {
+  hotel: "Hotel",
+  condominium: "Condominium",
+};
+
 // The `location_type` column of both tables.
 export const locationLabels: Record<string, string> = {
   iloilo_city: "Iloilo City",

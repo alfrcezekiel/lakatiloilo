@@ -42,6 +42,7 @@ export function DetailPageSkeleton({
       </div>
 
       <PlaceBody
+        animate={false}
         main={
           <>
             <div className="grid grid-cols-3 gap-2 sm:gap-3">

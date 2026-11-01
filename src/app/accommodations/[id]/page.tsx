@@ -1,6 +1,6 @@
 import { getAccommodation } from "@/lib/api";
 import type { Accommodation } from "@/lib/api";
-import { categoryLabels, locationLabels } from "@/lib/labels";
+import { accommodationTypeLabels, locationLabels } from "@/lib/labels";
 import { cn } from "@/lib/utils";
 import { ReviewsSection } from "@/components/ReviewsSection";
 import { Reveal } from "@/components/Reveal";
@@ -15,12 +15,6 @@ import {
   StatTile,
   tones,
 } from "@/components/PlaceDetail";
-
-// "hotel" -> "Hotel" (the chip labels are plural: "Hotels").
-const typeLabels: Record<string, string> = {
-  hotel: "Hotel",
-  condominium: "Condominium",
-};
 
 export default async function AccommodationDetailPage({
   params,
@@ -40,7 +34,7 @@ export default async function AccommodationDetailPage({
     return <PlaceNotFound tone="accommodation" what="Accommodation" message={error?.message} />;
   }
 
-  const type = typeLabels[accommodation.type] ?? categoryLabels[accommodation.type] ?? accommodation.type;
+  const type = accommodationTypeLabels[accommodation.type] ?? accommodation.type;
   const area = locationLabels[accommodation.location_type] ?? accommodation.location_type;
   const hasContact = Boolean(accommodation.phone || accommodation.email);
 

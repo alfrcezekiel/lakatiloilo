@@ -153,9 +153,9 @@ export function DockNavbar() {
             aria-expanded={isOpen}
             className="sm:hidden flex flex-col gap-1.5 p-2 cursor-pointer group"
           >
-            <span className={`block w-5 h-0.5 bg-white transition-all duration-300 ${isOpen ? 'rotate-45 translate-y-1.5' : ''}`}></span>
-            <span className={`block w-5 h-0.5 bg-white transition-all duration-300 ${isOpen ? 'opacity-0' : ''}`}></span>
-            <span className={`block w-5 h-0.5 bg-white transition-all duration-300 ${isOpen ? '-rotate-45 -translate-y-1.5' : ''}`}></span>
+            <span className={`block w-5 h-0.5 bg-white motion-safe:transition-all motion-safe:duration-300 ${isOpen ? 'rotate-45 translate-y-1.5' : ''}`}></span>
+            <span className={`block w-5 h-0.5 bg-white motion-safe:transition-all motion-safe:duration-300 ${isOpen ? 'opacity-0' : ''}`}></span>
+            <span className={`block w-5 h-0.5 bg-white motion-safe:transition-all motion-safe:duration-300 ${isOpen ? '-rotate-45 -translate-y-1.5' : ''}`}></span>
           </button>
         </div>
       </nav>
