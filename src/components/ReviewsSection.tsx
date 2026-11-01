@@ -151,8 +151,10 @@ export function ReviewsSection() {
                     <Card className={glassCard}>
                       <CardContent className="p-5 space-y-2">
                         <div className="flex flex-wrap items-center justify-between gap-2">
-                          <span className="flex items-center gap-2 font-semibold">
-                            {review.reviewer_name}
+                          {/* min-w-0 and flex-wrap let a long name and its
+                              tags wrap onto a second line on narrow phones. */}
+                          <span className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 font-semibold">
+                            <span className="wrap-anywhere">{review.reviewer_name}</span>
                             {review.traveler_type && travelerTypeLabels[review.traveler_type] && (
                               <span className="font-normal text-white/75">
                                 · {travelerTypeLabels[review.traveler_type]}
@@ -169,7 +171,11 @@ export function ReviewsSection() {
                           </time>
                         </div>
                         <Stars rating={review.rating} />
-                        <p className="whitespace-pre-line text-white/90 leading-relaxed">
+                        {/* wrap-anywhere: a word longer than the card (for
+                            example a long link, or letters typed without
+                            spaces) breaks onto the next line instead of
+                            running off the side. */}
+                        <p className="whitespace-pre-line wrap-anywhere text-white/90 leading-relaxed">
                           {review.comment}
                         </p>
                       </CardContent>

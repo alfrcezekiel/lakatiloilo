@@ -194,7 +194,10 @@ export function PlaceBody({
   const Wrap = animate ? Reveal : "div";
   return (
     <div className="mx-auto max-w-6xl px-4 pb-16 pt-6 sm:px-6 lg:pt-8">
-      <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_340px] lg:gap-10">
+      {/* grid-cols-1 on phones: the one column is exactly the screen's
+          width. Without it, the column grew to fit its widest content, so
+          one long word in a review made the whole page scroll sideways. */}
+      <div className="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1fr)_340px] lg:gap-10">
         <div className="space-y-8 lg:col-start-1">{main}</div>
         <aside className="relative z-10 lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:-mt-36">
           {/* Reveal goes inside the sticky part, so the panel still
