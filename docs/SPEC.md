@@ -296,12 +296,12 @@ Own login round: the website keeps its own copy of the login. "Who is logged in"
 - [x] Forgot password and "Remember my email" still work
 
 **Polish round (live URL):**
-- [ ] No emoji icons are left on the home page, detail pages, navbar or footer
-- [ ] Detail pages and home sections animate as described, on a laptop and a phone
-- [ ] With "reduce motion" turned on, nothing moves
-- [ ] Opening a place, going back, and opening it again shows its reviews straight away
-- [ ] Writing, editing and deleting a review still work, and the Rating tile updates each time
-- [ ] Logging in, logging out and staying logged in still work
+- [x] No emoji icons are left on the home page, detail pages, navbar or footer
+- [x] Detail pages and home sections animate as described, on a laptop and a phone
+- [x] With "reduce motion" turned on, nothing moves
+- [x] Opening a place, going back, and opening it again shows its reviews straight away
+- [x] Writing, editing and deleting a review still work, and the Rating tile updates each time
+- [x] Logging in, logging out and staying logged in still work
 
 ## Out of scope
 - Polish round: moving "who is logged in" and login renewal to TanStack Query, animated transitions between pages, and fetching places in the browser (parked in docs/LATER.md)
