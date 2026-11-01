@@ -1,6 +1,6 @@
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
-import { BackLink, PlaceBody, tones } from "@/components/PlaceDetail";
+import { FloatingBackLink, PlaceBody, tones } from "@/components/PlaceDetail";
 
 const glassTile = "rounded-xl border border-white/20 bg-white/10 p-3 sm:p-4";
 
@@ -25,9 +25,7 @@ export function DetailPageSkeleton({
         <Skeleton className="absolute inset-0 h-full w-full rounded-none" />
 
         {/* A real link, so travelers can leave before the page finishes. */}
-        <div className="absolute top-5 left-4 sm:left-6">
-          <BackLink />
-        </div>
+        <FloatingBackLink />
 
         <div className="absolute inset-x-0 bottom-0">
           <div className="mx-auto max-w-6xl px-4 pb-8 sm:px-6 lg:pb-10 lg:pr-100">

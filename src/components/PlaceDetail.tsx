@@ -30,12 +30,28 @@ export const tones: Record<Tone, { page: string; fade: string }> = {
 export const glassPill =
   "inline-flex items-center rounded-full border border-white/25 bg-white/15 text-white backdrop-blur-md";
 
-export function BackLink() {
+export function BackLink({ className }: { className?: string }) {
   return (
-    <Link href="/" className={pillButton({ kind: "glass" })}>
+    <Link href="/" className={cn(pillButton({ kind: "glass" }), className)}>
       <ArrowLeft aria-hidden="true" />
       Back to Home
     </Link>
+  );
+}
+
+// Back to Home on the detail pages and their loading skeletons (profiles &
+// likes round, ticket 71). "fixed" pins it to the screen instead of the
+// photo, so it stays in the top-left corner while the traveler scrolls and
+// leaving a place never means scrolling back up. At the top of the page it
+// sits exactly where it used to (top-5, left-4 / left-6). z-40 keeps it
+// above the side panel (z-10) and below the scroll-to-top button (z-50).
+// Its glass is darker than the other glass buttons (black instead of white
+// tint), so it stays readable over white text and light photos.
+export function FloatingBackLink() {
+  return (
+    <div className="fixed top-5 left-4 z-40 sm:left-6">
+      <BackLink className="border-white/25 bg-black/35 hover:bg-black/50" />
+    </div>
   );
 }
 
@@ -64,9 +80,7 @@ export function PlaceHero({
         className={cn("absolute inset-0 bg-linear-to-t to-transparent", tones[tone].fade)}
       />
 
-      <div className="absolute top-5 left-4 sm:left-6">
-        <BackLink />
-      </div>
+      <FloatingBackLink />
 
       <div className="absolute inset-x-0 bottom-0">
         {/* On a laptop the text stays out of the right-hand column, where
