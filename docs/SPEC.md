@@ -344,11 +344,11 @@ Navigation round: no change for travelers. "Who is logged in" is shared through 
 - [x] Staying logged in for over an hour, writing reviews and logging out still work
 
 **Buttons & cards round (live URL):**
-- [ ] The detail-page buttons use the new style on a laptop and a phone, and the amber main button is easy to read on both the teal and the blue pages
-- [ ] Moving through the page with the Tab key shows a clear outline on every button
-- [ ] Every home page card shows "View details" and its rating, and the rating matches the place's detail page
-- [ ] Writing a review, then going back home, updates that card's rating
-- [ ] With "reduce motion" turned on, buttons do not move
+- [x] The detail-page buttons use the new style on a laptop and a phone, and the amber main button is easy to read on both the teal and the blue pages
+- [x] Moving through the page with the Tab key shows a clear outline on every button
+- [x] Every home page card shows "View details" and its rating, and the rating matches the place's detail page
+- [x] Writing a review, then going back home, updates that card's rating
+- [x] With "reduce motion" turned on, buttons do not move
 
 ## Out of scope
 - Navigation round: login renewal through TanStack Query, the old page animating out, and the experimental "view transitions" setting (parked in docs/LATER.md)
