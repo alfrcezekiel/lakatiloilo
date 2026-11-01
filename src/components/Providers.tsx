@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { MotionConfig, useReducedMotion } from "motion/react";
+import { endOldSupabaseLogin } from "@/lib/old-supabase-login";
 
 // Wraps the whole site (see src/app/layout.tsx).
 //
@@ -14,6 +15,9 @@ import { MotionConfig, useReducedMotion } from "motion/react";
 // Motion's settings: every animation follows the device's "reduce motion"
 // setting. When it is on, animations finish instantly, so nothing slides
 // or fades.
+//
+// Once per page load it also ends any old Supabase login left in this
+// browser (see src/lib/old-supabase-login.ts).
 export function Providers({ children }: { children: ReactNode }) {
   // One cache per browser tab, made once. (Made inside the component, not
   // at the top of the file, so two visitors never share one on the server.)
@@ -35,6 +39,10 @@ export function Providers({ children }: { children: ReactNode }) {
       }),
   );
   const reduceMotion = useReducedMotion();
+
+  useEffect(() => {
+    endOldSupabaseLogin();
+  }, []);
 
   return (
     <QueryClientProvider client={queryClient}>

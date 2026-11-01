@@ -99,8 +99,18 @@
   }
 }
 
+/* The colour behind every page: the site's dark teal (Tailwind's teal-950).
+   Every page paints its own gradient on top, so this only shows while a
+   new page fades in (src/app/template.tsx) and when a phone scrolls past
+   the edge. It used to be the plain --background (white, or near-black in
+   dark mode), which made each page flash light as it faded in. The
+   --background token itself stays as it is: text boxes use it. */
+html,
 body {
-  background: var(--background);
+  background: #042f2e;
+}
+
+body {
   color: var(--foreground);
   font-family: var(--font-sans);
 }

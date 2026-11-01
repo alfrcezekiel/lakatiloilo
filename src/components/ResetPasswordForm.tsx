@@ -72,7 +72,7 @@ export function ResetPasswordForm() {
 
       if (next === "ready") {
         // This login is for resetting only, until the new password is
-        // saved. Any other page ends it (see endOldSupabaseLogin in src/lib/login.ts).
+        // saved. Any other page ends it (see endOldSupabaseLogin in src/lib/old-supabase-login.ts).
         startPasswordReset();
       } else if (resetIsPending()) {
         // A reset link left a login behind (for example, the link was

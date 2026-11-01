@@ -4,7 +4,6 @@ import { useEffect, useSyncExternalStore } from "react";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import { getMe, logOutThroughBackend, refreshLogin, type Traveler } from "@/lib/api";
-import { endPasswordReset } from "@/lib/auth";
 
 export type { Traveler };
 
@@ -119,9 +118,9 @@ export function useCurrentUser() {
         : undefined,
   });
 
-  // Once per page: end any old Supabase login, and start the renewal timer.
+  // Start the renewal timer. (Old Supabase logins are ended by
+  // src/lib/old-supabase-login.ts, run once per page from Providers.)
   useEffect(() => {
-    endOldSupabaseLogin();
     scheduleRenewal();
   }, []);
 
@@ -179,8 +178,9 @@ function expiresAt(login: SavedLogin): number | null {
   }
 }
 
-// True once the login has run out (renewal is then overdue).
-function hasRunOut(login: SavedLogin) {
+// True once the login has run out (renewal is then overdue). Also used by
+// src/lib/old-supabase-login.ts.
+export function hasRunOut(login: SavedLogin) {
   const expires = expiresAt(login);
   return expires !== null && expires <= Date.now() / 1000;
 }
@@ -331,70 +331,4 @@ function travelerFromToken(token: string): Traveler | null {
   } catch {
     return null;
   }
-}
-
-// Old Supabase logins (own login round, code review).
-//
-// Before this round, Supabase's browser library kept the login in a
-// "sb-<project>-auth-token" cookie. A reset link still leaves one behind
-// for the Set new password page. Its renewal code never runs out by
-// itself, so once per page load, anywhere except the password-reset pages,
-// the website ends that login through the backend and deletes the cookie.
-let oldLoginChecked = false;
-
-function endOldSupabaseLogin() {
-  if (oldLoginChecked || typeof document === "undefined") return;
-  oldLoginChecked = true;
-  const path = window.location.pathname;
-  if (path.startsWith("/reset-password") || path.startsWith("/forgot-password")) return;
-
-  // The cookie may be split into numbered parts: sb-…-auth-token.0, .1, …
-  const parts = document.cookie
-    .split("; ")
-    .map((pair) => {
-      const at = pair.indexOf("=");
-      return { name: pair.slice(0, at), value: pair.slice(at + 1) };
-    })
-    .filter(({ name }) => /^sb-.+-auth-token(\.\d+)?$/.test(name))
-    .sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }));
-  if (parts.length === 0) {
-    endPasswordReset();
-    return;
-  }
-
-  const old = readOldLogin(parts.map((part) => decodeURIComponent(part.value)).join(""));
-  for (const { name } of parts) {
-    document.cookie = `${name}=; Max-Age=0; path=/`;
-  }
-  endPasswordReset();
-  if (!old) return;
-  // Renew first if needed (Supabase only ends a login it still accepts),
-  // then end it. Any failure is fine: the cookie is already gone.
-  const token = hasRunOut({ ...old, expires_at: old.expires_at ?? null })
-    ? refreshLogin(old.refresh_token).then(({ session }) => session?.access_token ?? null)
-    : Promise.resolve(old.access_token);
-  token
-    .then((accessToken) => (accessToken ? logOutThroughBackend(accessToken) : undefined))
-    .catch(() => {});
-}
-
-// Reads Supabase's cookie value: JSON, sometimes written as
-// "base64-" followed by the JSON in base64.
-function readOldLogin(raw: string): SavedLogin | null {
-  try {
-    const text = raw.startsWith("base64-")
-      ? atob(raw.slice(7).replace(/-/g, "+").replace(/_/g, "/"))
-      : raw;
-    const value = JSON.parse(text);
-    if (typeof value?.access_token === "string" && typeof value?.refresh_token === "string") {
-      return {
-        access_token: value.access_token,
-        refresh_token: value.refresh_token,
-        expires_at: typeof value.expires_at === "number" ? value.expires_at : null,
-      };
-    }
-  } catch {
-    // Not readable: the cookie is deleted anyway.
-  }
-  return null;
 }

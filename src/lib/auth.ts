@@ -52,7 +52,7 @@ export function rememberedEmail() {
 // the reset is in progress we remember RESET_PENDING. The website's own
 // login (src/lib/login.ts) never uses that Supabase login, and if the traveler leaves
 // without saving, any other page ends it through the backend (see
-// endOldSupabaseLogin in src/lib/login.ts).
+// endOldSupabaseLogin in src/lib/old-supabase-login.ts).
 const RESET_PENDING = "lakat-reset-pending";
 
 // The reset link worked: the login it made is for resetting only.
