@@ -13,9 +13,17 @@ export const cardLink =
 // card's link, because a link inside a link is not allowed and would make
 // keyboard users stop twice per card. mt-auto pushes it to the bottom, so
 // the buttons line up across a row even when descriptions differ.
+// shadow-none: the main pill's amber glow showed as a haze on the
+// see-through cards when hovering, so the card pill has no shadow.
 export function ViewDetails({ className }: { className?: string }) {
   return (
-    <span className={cn(pillButton({ kind: "main" }), "mt-auto self-start", className)}>
+    <span
+      className={cn(
+        pillButton({ kind: "main" }),
+        "mt-auto self-start shadow-none hover:shadow-none",
+        className,
+      )}
+    >
       View details
       <ArrowRight
         aria-hidden="true"
