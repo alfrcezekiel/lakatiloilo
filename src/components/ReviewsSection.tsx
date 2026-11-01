@@ -1,69 +1,42 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Check } from "lucide-react";
+import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { getReviews, type Review } from "@/lib/api";
+import type { Review } from "@/lib/api";
 import { useCurrentUser } from "@/lib/login";
 import { ReviewForm } from "@/components/ReviewForm";
 import { MyReviewBox } from "@/components/MyReviewBox";
+import { SectionHeading } from "@/components/PlaceDetail";
+import { averageRating, usePlaceReviews } from "@/components/PlaceReviews";
 import { travelerTypeLabels } from "@/lib/labels";
 
 // The review type lives with the backend calls; other components import it
 // from here.
 export type { Review };
 
-interface ReviewsSectionProps {
-  placeType: "destination" | "accommodation";
-  placeId: string;
-}
+const glassCard = "rounded-xl bg-white/10 backdrop-blur-md border border-white/20 text-white";
 
-const glassCard = "bg-white/15 backdrop-blur-md border border-white/25 text-white";
-
-// The Reviews part of a destination or accommodation page. It reads the
-// reviews from the NestJS backend, which reads them from Supabase: Row
-// Level Security lets anyone read them, so no login is needed to see them.
-// Only the reviewer's display name is shown, never their email. Writing,
+// The Reviews part of a destination or accommodation page. The reviews
+// come from <PlaceReviewsProvider> (src/components/PlaceReviews.tsx), which
+// reads them from the NestJS backend once for the whole page: Row Level
+// Security lets anyone read them, so no login is needed to see them. Only
+// the reviewer's display name is shown, never their email. Writing,
 // editing and deleting go through the backend too.
-export function ReviewsSection({ placeType, placeId }: ReviewsSectionProps) {
+export function ReviewsSection() {
   const pathname = usePathname();
   const { user, ready } = useCurrentUser();
-  // null while loading.
-  const [reviews, setReviews] = useState<Review[] | null>(null);
-  const [loadError, setLoadError] = useState(false);
+  const { placeType, placeId, reviews, loadError, setReviews } = usePlaceReviews();
   // True right after this traveler posts, to say thank you.
   const [justPosted, setJustPosted] = useState(false);
   // The backend's message right after this traveler deletes their review,
   // for example "Your review has been deleted."
   const [deletedMessage, setDeletedMessage] = useState<string | null>(null);
 
-  useEffect(() => {
-    let cancelled = false;
-    async function load() {
-      try {
-        // From the NestJS backend (GET /v1/reviews), newest first.
-        const data = await getReviews(placeType, placeId);
-        if (cancelled) return;
-        setReviews(data);
-      } catch {
-        if (!cancelled) setLoadError(true);
-      }
-    }
-    load();
-    // If the traveler leaves the page before the answer arrives, ignore it.
-    return () => {
-      cancelled = true;
-    };
-  }, [placeType, placeId]);
-
-  // Worked out here from the reviews themselves, so the database needs no
-  // extra columns to keep in step.
-  const average =
-    reviews && reviews.length > 0
-      ? reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length
-      : null;
+  const average = reviews ? averageRating(reviews) : null;
 
   // This traveler's own review of this place, if they wrote one.
   const myReview = user ? reviews?.find((r) => r.user_id === user.id) : undefined;
@@ -71,9 +44,7 @@ export function ReviewsSection({ placeType, placeId }: ReviewsSectionProps) {
 
   return (
     <section aria-labelledby="reviews-heading">
-      <h2 id="reviews-heading" className="text-2xl font-semibold text-white mb-4">
-        Reviews
-      </h2>
+      <SectionHeading id="reviews-heading">Reviews</SectionHeading>
 
       {loadError ? (
         <p className="text-white/80">We couldn&apos;t load reviews right now.</p>
@@ -127,9 +98,10 @@ export function ReviewsSection({ placeType, placeId }: ReviewsSectionProps) {
                 {deletedMessage && (
                   <p
                     role="status"
-                    className="rounded-xl border border-white/25 bg-white/15 px-4 py-3 font-semibold text-white backdrop-blur-md"
+                    className="flex items-start gap-2 rounded-xl border border-white/25 bg-white/15 px-4 py-3 font-semibold text-white backdrop-blur-md"
                   >
-                    ✓ {deletedMessage} You can write a new one below.
+                    <Check aria-hidden="true" className="mt-0.5 size-5 shrink-0" />
+                    <span>{deletedMessage} You can write a new one below.</span>
                   </p>
                 )}
                 <ReviewForm

@@ -1,3 +1,4 @@
+import { ArrowLeft } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -15,7 +16,8 @@ export default function CreditsPage() {
       <div className="mx-auto max-w-4xl px-4 py-16 sm:px-6">
         <Link href="/">
           <Button className="mb-8 border border-white/25 bg-white/20 text-white backdrop-blur-md hover:bg-white/30">
-            ← Back to Home
+            <ArrowLeft aria-hidden="true" className="size-4" />
+            Back to Home
           </Button>
         </Link>
 

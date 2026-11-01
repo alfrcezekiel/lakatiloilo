@@ -18,6 +18,8 @@ Backend round: every request for the app's own data goes through the NestJS back
 
 Own login round: the website keeps its own copy of the traveler's login instead of handing it to Supabase's browser library. "Who is logged in", keeping the login fresh, and logging out go through the NestJS backend's own endpoints, so normal pages no longer send requests to Supabase Auth. Travelers see the same screens.
 
+Polish round: the same pages and features, made clearer and smoother. Every icon comes from one icon set (Lucide) instead of emoji, cards and sections move gently into view (and stay still for travelers who turn on "reduce motion"), and a place's reviews show straight away when a traveler comes back to it.
+
 ## The user
 Travelers planning weekend trips around Iloilo Province. No login required for browsing; an account is needed only to write a review.
 
@@ -56,12 +58,13 @@ Travelers planning weekend trips around Iloilo Province. No login required for b
 2. Home page (rest) — shows welcome text, navigation bar, About Iloilo section, Features section, category cards (mountains, food, walking, festivals, nature, heritage, hotels, condominiums) with location filter (All/Iloilo City/Iloilo Province), separate list sections for each destination category, and accommodations list. Clicking a category card scrolls to that category's section; all sections are always visible. The category cards use real photos from Iloilo City and Province. Frontend calls NestJS API to fetch data.
 3. Destination detail page — shows destination name, address, coordinates, photo, and description. Data fetched from NestJS API.
 4. Accommodation detail page — shows accommodation name, address, phone, email, photo, and description. Data fetched from NestJS API.
+   - **Look (both detail pages, "Option 1A" of the Detail Pages Glass design):** a tall photo with two glass chips (category or type, and Iloilo City / Iloilo Province), the name in large Fraunces letters with the last word in italics, and the address. Under it, three glass tiles (Category or Type, Area, Rating with the average stars and review count), then About and Reviews with serif headings. A glass side panel sits on the right on a laptop and rises into the photo; on a phone it comes after About. Accommodations: "Get in touch" with a white Call button, a glass "Email the front desk" button, then address, phone and email (buttons only for the contacts that exist). Destinations: "Plan your visit" with address and coordinates. Accommodations use a blue/indigo background, destinations teal/emerald.
 5. Footer — shows Lakat Iloilo branding with platform name, copyright information, navigation links (Home, About, Features, Explore), and legal section with a "Photo credits" link. Background uses teal/emerald gradient to match the overall theme.
 6. Photo credits page — lists the photographer and licence of every real Iloilo photo the site uses, as their Creative Commons licences require. Reached from the footer.
 7. Loading skeletons — shown only while the NestJS backend requests are still in flight:
    - **Home page:** the hero text, chips, About and Features sections appear straight away (they need no data). The Featured and Trending cards each show a skeleton card the same size as the real one. Every list section (the six destination categories and Accommodations) shows its title and 3 skeleton cards. The category cards show a placeholder instead of their place count, never "0". Typing in Where to? says "Loading places…" instead of "No matches".
    - When the data arrives, each skeleton is replaced by the real card in the same spot. If loading fails, the skeletons disappear and the existing "We couldn't load places" message shows. A section that turns out to have no places stays hidden, as today.
-   - **Destination and Accommodation detail pages:** while the page loads, a skeleton laid out like the real page — photo block, title bar, a few text lines and the back button.
+   - **Destination and Accommodation detail pages:** while the page loads, a skeleton laid out like the real page — photo block with chips, title and address, three tiles, a few text lines, the side panel and the back button.
    - Screen readers announce "Loading places". For visitors with "reduce motion" turned on, the skeletons stay still instead of pulsing.
 8. Sign up / Log in page — one page with two modes. Sign up asks for a display name, email and password; Log in asks for email and password. After logging in, the traveler goes back to the page they came from. The navbar shows "Log in" when logged out, and the display name with "Log out" when logged in. Browsing never asks anyone to log in.
 9. Reviews section — on every destination detail page (including Foods & Dine-ins) and every accommodation detail page, below the existing details:
@@ -91,6 +94,14 @@ Travelers planning weekend trips around Iloilo Province. No login required for b
    - **Other open tabs** notice logging in and out, as before.
    - **Forgot password and Set new password:** no change; they still talk to Supabase from the browser.
    - **Once, after this goes live:** travelers who are logged in will need to log in again, because the website stops reading Supabase's old copy of the login. Their old Supabase login is ended through the backend and removed from the browser at the same time.
+
+17. Polish round — same pages and features, with clearer icons, smoother movement and faster reviews:
+   - **Icons everywhere:** the emoji on the Features cards and the category cards, the address pin, the menu's close button, the back and "View details" arrows and the footer heart become matching Lucide icons. Stars stay gold.
+   - **Detail pages:** the chips, title and address fade up gently when the page opens. The tiles, About and Reviews fade in as the traveler scrolls to them. A new review slides in at the top of the list; a deleted one shrinks away.
+   - **Home page:** the Featured and Trending cards, the category cards and each list section fade in as they scroll into view. Cards lift slightly on hover.
+   - **Navbar menu on phones:** slides open and closed instead of appearing at once.
+   - **Reviews load faster on a return visit:** going back to a place seen in the last minute shows its reviews straight away while fresh ones load quietly. After writing, editing or deleting a review, the Rating tile and the list update at once.
+   - **Reduce motion:** with "reduce motion" turned on, nothing slides or fades; content just appears.
 
 ## Data
 
@@ -149,6 +160,8 @@ Backend round: the browser no longer reads or writes reviews directly. It calls 
 
 Own login round: no tables, columns or policies change, and there is no new SQL. Account details stay in Supabase Auth; the backend talks to it with the publishable key and the traveler's own login only. The website's copy of the login is kept in this browser's storage, never in the database (Supabase's library also kept it where the page can read it, so this is no less safe). Every logged-in traveler's hourly renewal now reaches Supabase from the backend's one address, so the team raises Supabase's "token refreshes" rate limit if travelers start being logged out early.
 
+Polish round: no tables, columns or policies change, and there is no new SQL. Reviews are still read and written through the backend; the browser only keeps a short-lived copy (about a minute) so a place's reviews show straight away on a return visit.
+
 (Before the backend round, the browser read and wrote reviews directly through Supabase with the same keys and the same Row Level Security policy.)
 
 The traveler type is saved on the Supabase Auth account, next to the display name. The database copies it onto each review, the same way it copies reviewer_name, so it can never be typed in from the browser. The reviews Row Level Security policy is unchanged.
@@ -194,6 +207,7 @@ When Supabase Auth refuses, the backend answers with Supabase's own status and c
 **Frontend (Next.js):**
 - App Router + TypeScript
 - Tailwind CSS with UI components in `src/components/ui/`
+- Polish round: Lucide icons (`lucide-react`, already installed) for every icon; Motion (the `motion` package, formerly Framer Motion) for animations, set to follow the device's "reduce motion" setting; TanStack Query for the reviews fetched in the browser (reading, plus writing, editing and deleting as updates to its copy). Places stay fetched on the Next.js server, and the login keeps its own code
 - Fetches data from NestJS backend via HTTP calls (the home page on the server from the backend round, like the detail pages)
 - Deployed on Vercel
 
@@ -281,7 +295,16 @@ Own login round: the website keeps its own copy of the login. "Who is logged in"
 - [x] Writing, editing and deleting a review still work, and other open tabs notice logging in and out
 - [x] Forgot password and "Remember my email" still work
 
+**Polish round (live URL):**
+- [ ] No emoji icons are left on the home page, detail pages, navbar or footer
+- [ ] Detail pages and home sections animate as described, on a laptop and a phone
+- [ ] With "reduce motion" turned on, nothing moves
+- [ ] Opening a place, going back, and opening it again shows its reviews straight away
+- [ ] Writing, editing and deleting a review still work, and the Rating tile updates each time
+- [ ] Logging in, logging out and staying logged in still work
+
 ## Out of scope
+- Polish round: moving "who is logged in" and login renewal to TanStack Query, animated transitions between pages, and fetching places in the browser (parked in docs/LATER.md)
 - Login for anything other than reviews (browsing stays open to everyone)
 - Changing the traveler type after sign-up (needs a profile page), and a custom email sender for reset emails
 - Social logins, profile pages, photos in reviews, replies, likes or reporting reviews

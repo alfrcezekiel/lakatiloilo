@@ -1,3 +1,4 @@
+import { ArrowRight } from "lucide-react";
 import Link from "next/link";
 import type { Destination } from "@/lib/api";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -85,12 +86,10 @@ export function FeaturedCards({ destinations, loading }: FeaturedCardsProps) {
             </h3>
             <p className="mt-1 text-sm text-white/80">
               View details{" "}
-              <span
+              <ArrowRight
                 aria-hidden="true"
-                className="inline-block transition-transform group-hover:translate-x-1"
-              >
-                →
-              </span>
+                className="inline-block size-4 align-[-0.125em] transition-transform group-hover:translate-x-1"
+              />
             </p>
           </div>
         </Link>

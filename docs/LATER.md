@@ -7,6 +7,16 @@ stays small enough to actually ship by Session 3.
 
 ## Future features
 
+### Polish round leftovers
+The polish round (2026-11-01) brings Lucide icons, Motion animations and
+TanStack Query for reviews. Still parked:
+- "Who is logged in" and login renewal through TanStack Query (the
+  current login code works and passed the live checks; rewriting it is
+  risky)
+- Animated transitions between pages
+- Fetching places in the browser (they stay on the Next.js server, so
+  the home page arrives already filled in)
+
 ### User accounts and reviews
 Accounts and reviews/ratings on detail pages moved into the spec on
 2026-10-21 (reviews and ratings round). Still parked:

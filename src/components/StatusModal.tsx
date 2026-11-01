@@ -1,5 +1,6 @@
 "use client";
 
+import { Check } from "lucide-react";
 import { useEffect, useRef } from "react";
 import { authButtonClass } from "@/components/AuthShell";
 
@@ -52,7 +53,7 @@ export function StatusModal({
           tone === "success" ? "bg-emerald-300 text-teal-900" : "bg-amber-300 text-teal-900"
         }`}
       >
-        {tone === "success" ? "✓" : "!"}
+        {tone === "success" ? <Check className="size-7" strokeWidth={3} /> : "!"}
       </div>
       <h2 id="status-modal-title" className="font-fraunces text-2xl font-medium">
         {title}

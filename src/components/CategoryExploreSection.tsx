@@ -1,5 +1,6 @@
 "use client";
 
+import { ArrowRight, Building2, Footprints, Hotel, Landmark, Mountain, PartyPopper, Trees, UtensilsCrossed } from "lucide-react";
 import { useMemo } from "react";
 import type { Accommodation, Destination } from "@/lib/api";
 import { locationFilters, sectionTitles } from "@/lib/labels";
@@ -8,14 +9,14 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 // Card names come from src/lib/labels.ts, so they match the list headings.
 const categories = [
-  { id: "mountain", emoji: "⛰️" },
-  { id: "food", emoji: "🍜" },
-  { id: "walking", emoji: "🚶" },
-  { id: "festival", emoji: "🎉" },
-  { id: "nature", emoji: "🌳" },
-  { id: "heritage", emoji: "🏛️" },
-  { id: "hotel", emoji: "🏨" },
-  { id: "condominium", emoji: "🏢" },
+  { id: "mountain", icon: Mountain },
+  { id: "food", icon: UtensilsCrossed },
+  { id: "walking", icon: Footprints },
+  { id: "festival", icon: PartyPopper },
+  { id: "nature", icon: Trees },
+  { id: "heritage", icon: Landmark },
+  { id: "hotel", icon: Hotel },
+  { id: "condominium", icon: Building2 },
 ].map((category) => ({ ...category, name: sectionTitles[category.id] }));
 
 // Real photos from Iloilo City and Province, from Wikimedia Commons under
@@ -138,15 +139,16 @@ export function CategoryExploreSection({
                 />
                 <div className="absolute inset-0 bg-linear-to-t from-black/70 via-black/30 to-transparent" />
                 <div className="absolute inset-0 flex flex-col justify-end p-6">
-                  <div className="text-4xl mb-2">{category.emoji}</div>
+                  <category.icon aria-hidden="true" strokeWidth={1.75} className="size-10 shrink-0 mb-2 text-white" />
                   <h3 className="text-xl font-semibold text-white mb-1">
                     {category.name}
                   </h3>
                   {loading ? (
                     <Skeleton className="h-5 w-20" />
                   ) : (
-                    <p className="text-white/90 text-sm">
-                      {count} place{count !== 1 ? "s" : ""} →
+                    <p className="flex items-center gap-1 text-white/90 text-sm">
+                      {count} place{count !== 1 ? "s" : ""}
+                      <ArrowRight aria-hidden="true" className="size-4" />
                     </p>
                   )}
                 </div>

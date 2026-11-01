@@ -1,3 +1,4 @@
+import { Heart } from "lucide-react";
 import Link from "next/link";
 import { Logo } from "@/components/Logo";
 import { scrollToSection } from "@/lib/utils/scroll";
@@ -76,7 +77,13 @@ export function Footer() {
 
         <div className="border-t border-white/20 pt-8 text-center">
           <p className="text-xs text-white/60">
-            Built with ❤️ for travelers exploring Iloilo
+            Built with{" "}
+            <Heart
+              role="img"
+              aria-label="love"
+              className="inline-block size-3.5 fill-rose-400 text-rose-400 align-[-0.15em]"
+            />{" "}
+            for travelers exploring Iloilo
           </p>
         </div>
       </div>

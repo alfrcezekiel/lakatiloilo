@@ -1,5 +1,6 @@
 "use client";
 
+import { X } from "lucide-react";
 import { useState } from "react";
 import Link from "next/link";
 import { Logo } from "@/components/Logo";
@@ -68,10 +69,12 @@ export function DockNavbar() {
               <div className="flex items-center justify-between mb-8">
                 <Logo width={163} height={34} />
                 <button
+                  type="button"
                   onClick={() => setIsOpen(false)}
-                  className="text-white hover:text-white/80 transition-colors text-2xl"
+                  aria-label="Close menu"
+                  className="text-white hover:text-white/80 transition-colors"
                 >
-                  ✕
+                  <X aria-hidden="true" className="size-7" />
                 </button>
               </div>
               <div className="flex flex-col gap-4 text-lg font-medium text-white">
@@ -117,7 +120,10 @@ export function DockNavbar() {
             )}
           </div>
           <button
+            type="button"
             onClick={() => setIsOpen(!isOpen)}
+            aria-label={isOpen ? "Close menu" : "Open menu"}
+            aria-expanded={isOpen}
             className="sm:hidden flex flex-col gap-1.5 p-2 cursor-pointer group"
           >
             <span className={`block w-5 h-0.5 bg-white transition-all duration-300 ${isOpen ? 'rotate-45 translate-y-1.5' : ''}`}></span>
