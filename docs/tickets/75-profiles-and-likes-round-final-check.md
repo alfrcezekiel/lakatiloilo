@@ -4,12 +4,12 @@
 
 **Blocked by:** 71, 72, 73, 74
 
-**Status:** todo
+**Status:** done (confirmed by the team on the live URL, 2026-11-01)
 
-- [ ] Every item in the "Profiles & likes round" checklist works on the live URL
-- [ ] Existing browsing, search, reviews, ratings on cards, sign-up, log-in, log-out and password reset still work
-- [ ] /code-review has been run on the round and its findings handled
-- [ ] Works on the live URL
+- [x] Every item in the "Profiles & likes round" checklist works on the live URL
+- [x] Existing browsing, search, reviews, ratings on cards, sign-up, log-in, log-out and password reset still work
+- [x] /code-review has been run on the round and its findings handled
+- [x] Works on the live URL
 
 **Progress (2026-11-01):** /code-review ran on the round (from b001b93, the last push: tickets 71–74 and the card band fix, all uncommitted), both axes one after the other.
 
@@ -32,3 +32,5 @@ Not done yet: the team's walk-through of the "Profiles & likes round" checklist 
 Checked on localhost (one preview tab only; pretend login and pretend answers for "who is logged in" and the logged-in reviews request, nothing sent to Supabase): logged out, Seda Atria made 1 reviews request and its review cards measure no blur and no shadow; logged in, opening Hotel del Rio made exactly 1 reviews request, sent with the login, and its Helpful button was marked from the start; logging out on the page reloaded the reviews as logged out (no Helpful button), and logging back in reloaded them with the login (marked again). Red's profile still opens ("Red · Lakat Iloilo", 15 reviews) with no blur or shadow on its cards. Lint and `npm run build` pass. Not checked: the number of backend requests for the profile page (it happens on the Next.js server; cache() is how Next.js shares one fetch between a page and its tab title), and the live URL.
 
 Left as they are (team's choice): 4 (the extra Supabase Auth check on logged-in reviews reads) and 5 (small copies; two files just past 300 lines).
+
+**Checked by the team on the live URL (2026-11-01):** every item in the "Profiles & likes round" checklist passed on a laptop and a phone, and the existing features (search, reviews, ratings on cards, sign-up, log-in, log-out, password reset) still work. Review findings 1–3 were fixed before the push; 4 and 5 were left as they are.

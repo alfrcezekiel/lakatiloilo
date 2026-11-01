@@ -4,7 +4,7 @@
 
 **Blocked by:** 73
 
-**Status:** todo
+**Status:** done (confirmed by the team on the live URL, 2026-11-01)
 
 - [x] On tablets and laptops, a profile icon beside Explore opens a dropdown headed by the traveler's name (in serif), then My profile and Log out; it closes after choosing, with Escape, or by clicking elsewhere
 - [x] On a phone, the menu lists the traveler's name (in serif), My profile and Log out
@@ -12,7 +12,7 @@
 - [x] A traveler with reviews sees the same profile everyone else sees
 - [x] A traveler with no reviews sees their name, traveler type and "You haven't written any reviews yet.", not "We couldn't find this traveler"
 - [x] Log out from the dropdown (and from the phone menu) still works
-- [ ] Works on the live URL
+- [x] Works on the live URL
 
 **Progress (2026-11-01):** "Hi, <name>" in the navbar is now a link to the traveler's own profile (/travelers/<their id>), in the bar on wider screens and in the phone menu (which closes when it is tapped). It underlines on hover, has a keyboard outline, says "My profile" on hover, and screen readers hear "Hi, <name> (my profile)". Log out is unchanged.
 
@@ -38,3 +38,5 @@ Not checked: clicking Log out in the dropdown (the preview closed first; it runs
 **Progress (2026-11-01, after the second change):** Checked on localhost at 1280 px with a pretend login and pretend answers for "who is logged in" and log-out only (no real account, nothing sent to Supabase): the dropdown reads "Pretend Traveler", then My profile and Log out, with no "Logged in as"; the name is Fraunces at 20 px (weight 500), the items 15 px with slight letter spacing. Clicking Log out in the dropdown sent the log-out request to the backend, forgot the login, removed the profile icon and showed "Log in". Lint and `npm run build` pass. Not checked: the phone menu's new name style on screen (same classes, a size up), a real login, a real phone, and the live URL (not pushed yet).
 
 **Ticked by the team (2026-11-01):** the team ticked the boxes after testing on localhost with a real login. "Works on the live URL" stays open until ticket 74 is pushed and checked there.
+
+**Confirmed by the team (2026-11-01):** checked on the live URL and marked done.

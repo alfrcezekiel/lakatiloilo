@@ -424,12 +424,12 @@ Profiles & likes and review extras rounds: browsing, profiles, likes counts, rep
 - [x] With "reduce motion" turned on, buttons do not move
 
 **Profiles & likes round (live URL):**
-- [ ] On both detail pages, Back to Home stays in the top-left corner while scrolling, on a laptop and a phone, and is readable over the photo and the text
-- [ ] Clicking a reviewer's name opens their profile with their traveler type and all their reviews, and each place name opens that place
-- [ ] The profile icon beside Explore opens a dropdown whose My profile opens the traveler's own profile (including when they have no reviews) and whose Log out logs them out; on a phone the menu lists both
-- [ ] A logged-in traveler can mark another traveler's review Helpful and unmark it; the count updates, and it is still marked after a refresh
-- [ ] A traveler cannot mark their own review, and the database refuses it even when asked directly (Row Level Security)
-- [ ] Logged out, the Helpful counts show but nothing can be clicked
+- [x] On both detail pages, Back to Home stays in the top-left corner while scrolling, on a laptop and a phone, and is readable over the photo and the text
+- [x] Clicking a reviewer's name opens their profile with their traveler type and all their reviews, and each place name opens that place
+- [x] The profile icon beside Explore opens a dropdown whose My profile opens the traveler's own profile (including when they have no reviews) and whose Log out logs them out; on a phone the menu lists both
+- [x] A logged-in traveler can mark another traveler's review Helpful and unmark it; the count updates, and it is still marked after a refresh
+- [x] A traveler cannot mark their own review, and the database refuses it even when asked directly (Row Level Security)
+- [x] Logged out, the Helpful counts show but nothing can be clicked
 
 **Review extras round (live URL):**
 - [ ] A logged-in traveler can reply to a review and delete their own reply; replies show to everyone

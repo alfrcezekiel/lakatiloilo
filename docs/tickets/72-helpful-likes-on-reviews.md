@@ -4,7 +4,7 @@
 
 **Blocked by:** None
 
-**Status:** todo
+**Status:** done (confirmed by the team on the live URL, 2026-11-01)
 
 - [x] A numbered SQL file creates review_likes with Row Level Security on and policies: anyone may read; a logged-in traveler may add a like only as themselves and never on their own review; only they may remove it; no one may edit it. The team has run it in the Supabase SQL Editor
 - [x] POST and DELETE /v1/reviews/:id/like work for a logged-in traveler and answer the new count; refusals give plain messages (not logged in, no such review, own review)
@@ -13,7 +13,7 @@
 - [x] Logged out, and on the traveler's own review, only the count shows
 - [x] Marking your own review is refused by the database even when the backend is asked directly (Row Level Security), not just hidden in the page
 - [x] With "reduce motion" turned on, the button only changes colour
-- [ ] Works on the live URL
+- [x] Works on the live URL
 
 **Progress (2026-11-01):** supabase/sql/024-review-likes.sql creates review_likes (one like per traveler per review, removed with the review) with Row Level Security on: anyone may read; a logged-in traveler may add a like only as themselves and never on their own review; only they may remove it; there is no edit policy. The backend may read likes. The team ran it in the Supabase SQL Editor ("it worked").
 
@@ -30,3 +30,5 @@ Checked:
 Not checked: the logged-in button in the browser. A pretend login (no real account) could not be kept long enough in the preview to test it; this also happened in ticket 69, before this ticket's code. The team tests real logins: mark and unmark another traveler's review, refresh, and check your own review shows no button. Also not checked: a real phone, and the live URL (not pushed yet).
 
 **Checked by the team on localhost (2026-11-01):** with a real login, marking and unmarking another traveler's review works, the mark stays after a refresh, and the traveler's own review shows no button. "Works on the live URL" stays open until ticket 72 is pushed and checked there.
+
+**Confirmed by the team (2026-11-01):** checked on the live URL and marked done.

@@ -4,7 +4,7 @@
 
 **Blocked by:** 72
 
-**Status:** todo
+**Status:** done (confirmed by the team on the live URL, 2026-11-01)
 
 - [x] GET /v1/travelers/:id answers the traveler's name, traveler type, review count and reviews with place names and Helpful counts, for anyone; 404 "We couldn't find this traveler." for an unknown id or a traveler with no reviews; it never answers an email
 - [x] Every reviewer's name in the Reviews section links to their profile
@@ -12,7 +12,7 @@
 - [x] Each place name on the profile opens that place's detail page
 - [x] An unknown traveler shows "We couldn't find this traveler" and a Back to Home button, not a crash
 - [x] Looks tidy on a phone (375 px) and a laptop, in the site's glass style
-- [ ] Works on the live URL
+- [x] Works on the live URL
 
 **Progress (2026-11-01):** The backend has a new read-only endpoint, GET /v1/travelers/:id (anyone, no login), in its own travelers module. It builds the profile from the reviews table: a traveler's account lives in Supabase Auth, which the backend could only read for someone else with the service_role key, and reviews already carry user_id, reviewer_name and traveler_type. So the name and type come from the traveler's newest review, and a traveler with no reviews has no public profile. Each review comes with its place's name (from destinations or accommodations) and its Helpful count. Read through the backend's own database login, which can already read all four tables; no new SQL. An unknown traveler, one with no reviews, and an id that is not a valid id all answer 404 "We couldn't find this traveler."
 
@@ -26,3 +26,5 @@ Checked on localhost:
 Not checked: a real phone, and the live URL (not pushed yet).
 
 **Ticked by the team (2026-11-01):** the team ticked the boxes after testing on localhost. "Works on the live URL" stays open until ticket 73 is pushed and checked there.
+
+**Confirmed by the team (2026-11-01):** checked on the live URL and marked done.
