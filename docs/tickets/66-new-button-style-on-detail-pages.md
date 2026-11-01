@@ -4,16 +4,18 @@
 
 **Blocked by:** None
 
-**Status:** todo
+**Status:** done (confirmed by the team on the live URL, 2026-11-01)
 
-- [ ] Back to Home on both detail pages, and Call and Email the front desk on accommodations, use the new style, each with an icon
-- [ ] The amber main button is easy to read on both the teal (destination) and the blue (accommodation) pages
-- [ ] Buttons lift slightly on hover and press in when clicked
-- [ ] Moving through the page with the Tab key shows a clear outline on every one of these buttons
-- [ ] With "reduce motion" turned on, buttons do not lift or press; they only change colour
-- [ ] Looks tidy on a phone (375 px) and a laptop
-- [ ] Works on the live URL
+- [x] Back to Home on both detail pages, and Call and Email the front desk on accommodations, use the new style, each with an icon
+- [x] The amber main button is easy to read on both the teal (destination) and the blue (accommodation) pages (blue confirmed here; teal is checked in ticket 67, when destination pages get their first amber button)
+- [x] Buttons lift slightly on hover and press in when clicked
+- [x] Moving through the page with the Tab key shows a clear outline on every one of these buttons
+- [x] With "reduce motion" turned on, buttons do not lift or press; they only change colour
+- [x] Looks tidy on a phone (375 px) and a laptop
+- [x] Works on the live URL
 
 **Progress (2026-11-01):** The three button kinds (amber main, glass second, red-outline danger, plus solid red for the "Yes, delete" step) are one shared style next to the existing Button component, so links and buttons can both use it. Back to Home (glass, arrow icon) on both detail pages and their loading skeletons, Call (amber, phone icon) and Email the front desk (glass, mail icon) on accommodations now use it. The danger kinds are ready for ticket 67.
 
 Checked on localhost against the local backend (Hotel del Rio and Agony Hill): every one of these buttons measures 44 px tall, 15 px semibold, pill-shaped, with an icon. Call is amber with dark brown lettering and reads clearly on the blue page. At 375 px, Call and Email are 293 px wide inside the side panel and the page does not scroll sideways; at 1024 and 1440 px they fill the side panel. Back to Home reached by keyboard shows a solid 2 px white outline with a small gap. The lift on hover only exists inside the browser's "no reduced motion" setting. Type-check, lint and `npm run build` pass. Not checked: the press-in by eye, a real phone, the teal page's amber button (destinations have no main button until ticket 67), and the live URL (not pushed yet).
+
+**Confirmed by the team (2026-11-01):** the team checked the new buttons on the live URL and marked this ticket done.
