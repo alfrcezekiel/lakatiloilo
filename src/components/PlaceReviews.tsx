@@ -4,6 +4,7 @@ import { createContext, useCallback, useContext, type ReactNode } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { getReviews, type Review } from "@/lib/api";
+import { loginToken, useCurrentUser } from "@/lib/login";
 import { StatTile } from "@/components/PlaceDetail";
 
 type PlaceType = "destination" | "accommodation";
@@ -26,9 +27,13 @@ export function PlaceReviewsProvider({
   );
 }
 
-// The cache's label for one place's reviews. Same label = same copy.
-const reviewsKey = (placeType: PlaceType, placeId: string) =>
-  ["reviews", placeType, placeId] as const;
+// The cache's label for one place's reviews, as seen by one traveler
+// ("anon" when logged out). Same label = same copy. The traveler is part
+// of the label because each copy says which reviews THEY marked
+// "Helpful" (profiles & likes round), so one traveler's marks can never
+// show for another after logging in or out.
+const reviewsKey = (placeType: PlaceType, placeId: string, viewer: string) =>
+  ["reviews", placeType, placeId, viewer] as const;
 
 export function usePlaceReviews() {
   const place = useContext(PlaceContext);
@@ -37,13 +42,26 @@ export function usePlaceReviews() {
   }
   const { placeType, placeId } = place;
   const queryClient = useQueryClient();
+  const { user, ready } = useCurrentUser();
+  const viewer = user?.id ?? "anon";
 
-  // From the NestJS backend (GET /v1/reviews), newest first. If this place
-  // was opened in the last minute, the cached copy shows at once and a
-  // fresh one replaces it when it arrives.
+  // From the NestJS backend (GET /v1/reviews), newest first, with the
+  // traveler's login when there is one. If this place was opened in the
+  // last minute, the cached copy shows at once and a fresh one replaces it
+  // when it arrives.
+  //
+  // enabled: ready waits until "who is logged in" is known, so the reviews
+  // are fetched once, for the right traveler. Before, a logged-in traveler's
+  // first visit fetched them twice (as logged out, then with the login), and
+  // the Helpful button could show unmarked for a moment before turning
+  // amber. Logged out, "ready" is true at once, so nothing waits; logged in,
+  // the answer is remembered between pages (navigation round).
+  // placeholderData keeps the list on screen when logging in or out.
   const query = useQuery({
-    queryKey: reviewsKey(placeType, placeId),
-    queryFn: () => getReviews(placeType, placeId),
+    queryKey: reviewsKey(placeType, placeId, viewer),
+    queryFn: async () => getReviews(placeType, placeId, user ? await loginToken() : null),
+    enabled: ready,
+    placeholderData: (previous) => previous,
   });
 
   // After a traveler writes, edits or deletes a review, the backend's
@@ -53,16 +71,25 @@ export function usePlaceReviews() {
   // It also calls router.refresh(), which makes Next.js forget the pages it
   // kept from earlier in this visit. Without it, pressing the browser's Back
   // button showed the home page from before, with the card's old rating
-  // (buttons & cards round). The page on screen stays as it is.
+  // (buttons & cards round). The page on screen stays as it is. A "Helpful"
+  // mark does not change any rating, so it passes refreshPages: false.
+  //
+  // Copies of this place kept for other travelers (from before logging in
+  // or out) are marked out of date, so they are fetched again if used.
   const router = useRouter();
   const setReviews = useCallback(
-    (update: (current: Review[]) => Review[]) => {
-      queryClient.setQueryData<Review[]>(reviewsKey(placeType, placeId), (current) =>
+    (update: (current: Review[]) => Review[], { refreshPages = true } = {}) => {
+      queryClient.setQueryData<Review[]>(reviewsKey(placeType, placeId, viewer), (current) =>
         update(current ?? []),
       );
-      router.refresh();
+      queryClient.invalidateQueries({
+        queryKey: ["reviews", placeType, placeId],
+        predicate: (q) => q.queryKey[3] !== viewer,
+        refetchType: "none",
+      });
+      if (refreshPages) router.refresh();
     },
-    [queryClient, placeType, placeId, router],
+    [queryClient, placeType, placeId, viewer, router],
   );
 
   return {

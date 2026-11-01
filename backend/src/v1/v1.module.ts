@@ -3,6 +3,7 @@ import { AccommodationsModule } from './accommodations/accommodations.module';
 import { AuthModule } from './auth/auth.module';
 import { DestinationsModule } from './destinations/destinations.module';
 import { ReviewsModule } from './reviews/reviews.module';
+import { TravelersModule } from './travelers/travelers.module';
 
 @Module({
   imports: [
@@ -10,6 +11,7 @@ import { ReviewsModule } from './reviews/reviews.module';
     AccommodationsModule,
     ReviewsModule,
     AuthModule,
+    TravelersModule,
   ],
 })
 export class V1Module {}

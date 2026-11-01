@@ -1,10 +1,11 @@
 "use client";
 
-import { X } from "lucide-react";
+import { LogOut, UserRound, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import Link from "next/link";
 import { Logo } from "@/components/Logo";
+import { ProfileMenu } from "@/components/ProfileMenu";
 import { scrollToSection } from "@/lib/utils/scroll";
 import { displayNameOf, logOut as logOutOnThisDevice, useCurrentUser } from "@/lib/login";
 
@@ -32,20 +33,12 @@ export function DockNavbar() {
   // "Log in", or the traveler's name with "Log out". Shown in the bar on
   // wider screens and in the slide-out menu on phones. Nothing shows for
   // the split second while the login is being checked.
-  const accountItem = !ready ? null : user ? (
-    <span className="flex items-center gap-2 whitespace-nowrap">
-      <span className="max-w-32 truncate text-white/80">
-        Hi, {displayNameOf(user)}
-      </span>
-      <button
-        type="button"
-        onClick={logOut}
-        className="cursor-pointer font-semibold text-white hover:text-white/80"
-      >
-        Log out
-      </button>
-    </span>
-  ) : (
+  //
+  // Logged in (change 2026-11-01, team request): on wider screens a
+  // profile icon beside Explore opens a dropdown with "My profile" and
+  // "Log out" (ProfileMenu). The phone menu has no room for a dropdown, so
+  // it lists the name (in serif), "My profile" and "Log out" directly.
+  const logInLink = (
     <Link
       href="/login"
       onClick={() => setIsOpen(false)}
@@ -53,6 +46,37 @@ export function DockNavbar() {
     >
       Log in
     </Link>
+  );
+  const barAccount = !ready ? null : user ? (
+    <ProfileMenu user={user} onLogOut={logOut} />
+  ) : (
+    logInLink
+  );
+  const phoneAccount = !ready ? null : user ? (
+    <div className="flex flex-col gap-1">
+      {/* The traveler's name in the site's serif, like the dropdown. */}
+      <p className="truncate font-fraunces text-2xl font-medium leading-tight tracking-tight text-white">
+        {displayNameOf(user)}
+      </p>
+      <Link
+        href={`/travelers/${user.id}`}
+        onClick={() => setIsOpen(false)}
+        className="flex items-center gap-2 py-3 hover:text-white/80"
+      >
+        <UserRound aria-hidden="true" className="size-5" />
+        My profile
+      </Link>
+      <button
+        type="button"
+        onClick={logOut}
+        className="flex cursor-pointer items-center gap-2 py-3 text-left hover:text-white/80"
+      >
+        <LogOut aria-hidden="true" className="size-5" />
+        Log out
+      </button>
+    </div>
+  ) : (
+    logInLink
   );
 
   const handleScrollToSection = (sectionId: string) => {
@@ -113,7 +137,7 @@ export function DockNavbar() {
                       {link.label}
                     </span>
                   ))}
-                  {accountItem && <div className="py-3">{accountItem}</div>}
+                  {phoneAccount && <div className="py-3">{phoneAccount}</div>}
                 </div>
               </div>
             </motion.div>
@@ -140,9 +164,9 @@ export function DockNavbar() {
                 {link.label}
               </span>
             ))}
-            {accountItem && (
+            {barAccount && (
               <span className="hidden sm:flex items-center border-l border-white/25 pl-4">
-                {accountItem}
+                {barAccount}
               </span>
             )}
           </div>

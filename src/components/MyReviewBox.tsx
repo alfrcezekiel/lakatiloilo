@@ -77,7 +77,7 @@ export function MyReviewBox({
   }
 
   return (
-    <Card className="bg-white/15 backdrop-blur-md border border-white/25 text-white">
+    <Card className="bg-white/15 border border-white/25 text-white shadow-none">
       <CardContent className="p-5 space-y-3">
         {justPosted ? (
           <p role="status" className="font-semibold">

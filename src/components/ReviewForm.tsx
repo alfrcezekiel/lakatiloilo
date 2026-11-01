@@ -88,7 +88,7 @@ export function ReviewForm({ placeType, placeId, onSaved, existing, onCancel }: 
   };
 
   return (
-    <Card className="bg-white/15 backdrop-blur-md border border-white/25 text-white">
+    <Card className="bg-white/15 border border-white/25 text-white shadow-none">
       <CardContent className="p-5">
         <form onSubmit={handleSubmit} noValidate className="space-y-4">
           {/* Stars: five radio buttons that look like stars, so mouse,

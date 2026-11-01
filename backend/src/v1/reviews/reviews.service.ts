@@ -54,6 +54,28 @@ export interface DeletedReview {
 
 const COLUMNS = 'id, user_id, reviewer_name, traveler_type, rating, comment, created_at';
 
+// A review as GET /v1/reviews sends it: the review, plus its "Helpful"
+// count and whether the traveler asking marked it (profiles & likes round).
+export type ReviewWithLikes = ReviewDto & { helpful_count: number; liked_by_me: boolean };
+
+// What the website gets after marking or unmarking a review as helpful.
+export interface LikeState {
+  helpful_count: number;
+  liked: boolean;
+}
+
+const reviewNotFound = () => new NotFoundException("We couldn't find that review.");
+
+// How many travelers found a review helpful, counted inside the same
+// transaction, so the answer includes the like just added or removed.
+const helpfulCount = async (runner: QueryRunner, reviewId: string) => {
+  const [row]: { count: number }[] = await runner.query(
+    'select count(*)::int as count from public.review_likes where review_id = $1',
+    [reviewId],
+  );
+  return row.count;
+};
+
 const notYours = () =>
   new NotFoundException("We couldn't find that review among yours. Please log in again and try.");
 
@@ -69,14 +91,28 @@ export class ReviewsService {
     private readonly supabase: SupabaseService,
   ) { }
 
-  // A place's reviews, newest first. Anyone may read them.
-  async findForPlace(placeType: PlaceType, placeId: string): Promise<ReviewDto[]> {
+  // A place's reviews, newest first. Anyone may read them. Each review also
+  // says how many travelers found it helpful, and (when the request carries
+  // a valid login) whether this traveler did (profiles & likes round). Read
+  // through lakat_api, which may read reviews and likes (023 and 024).
+  // viewerId travels as $3, so it can never change the query; when it is
+  // null, liked_by_me is simply false.
+  async findForPlace(
+    placeType: PlaceType,
+    placeId: string,
+    viewerId: string | null = null,
+  ): Promise<ReviewWithLikes[]> {
     try {
-      return await this.reviews.find({
-        select: ['id', 'user_id', 'reviewer_name', 'traveler_type', 'rating', 'comment', 'created_at'],
-        where: { place_type: placeType, place_id: placeId },
-        order: { created_at: 'DESC' },
-      });
+      return await this.dataSource.query(
+        `select r.id, r.user_id, r.reviewer_name, r.traveler_type, r.rating, r.comment, r.created_at,
+                (select count(*)::int from public.review_likes l where l.review_id = r.id) as helpful_count,
+                exists (select 1 from public.review_likes l
+                        where l.review_id = r.id and l.user_id = $3::uuid) as liked_by_me
+          from public.reviews r
+          where r.place_type = $1 and r.place_id = $2
+          order by r.created_at desc`,
+        [placeType, placeId, viewerId],
+      );
     } catch (error) {
       this.logger.error(`Could not read reviews: ${String(error)}`);
       throw new ServiceUnavailableException('Could not load reviews right now.');
@@ -195,6 +231,61 @@ export class ReviewsService {
     });
   }
 
+  // Who is asking, for "liked by me" on GET /v1/reviews. Reading reviews
+  // never needs a login, so a missing, wrong or expired login just means
+  // "nobody" instead of an error.
+  async viewerIdFor(authorization?: string): Promise<string | null> {
+    const token = authorization?.match(/^Bearer (.+)$/)?.[1];
+    if (!token) return null;
+    try {
+      return await this.supabase.userIdFor(token);
+    } catch {
+      return null;
+    }
+  }
+
+  // Marks someone else's review as helpful (POST /v1/reviews/:id/like),
+  // as the logged-in traveler, so the review_likes policies (024) decide.
+  // The two checks first only give friendlier messages; the database
+  // refuses a like on your own review by itself too. Marking twice changes
+  // nothing ("on conflict do nothing").
+  like(accessToken: string, reviewId: string): Promise<LikeState> {
+    return this.asTraveler(accessToken, async (runner) => {
+      const [review]: { user_id: string }[] = await runner.query(
+        'select user_id from public.reviews where id = $1',
+        [reviewId],
+      );
+      if (!review) throw reviewNotFound();
+      const [me]: { id: string }[] = await runner.query('select auth.uid() as id');
+      if (review.user_id === me.id) {
+        throw new BadRequestException("You can't mark your own review as helpful.");
+      }
+      await runner.query(
+        'insert into public.review_likes (review_id) values ($1) on conflict do nothing',
+        [reviewId],
+      );
+      return { helpful_count: await helpfulCount(runner, reviewId), liked: true };
+    });
+  }
+
+  // Removes the traveler's own like (DELETE /v1/reviews/:id/like). Row
+  // Level Security only lets anyone delete their own likes, so this can
+  // never remove someone else's. Unmarking twice changes nothing.
+  unlike(accessToken: string, reviewId: string): Promise<LikeState> {
+    return this.asTraveler(accessToken, async (runner) => {
+      const [review]: unknown[] = await runner.query(
+        'select 1 from public.reviews where id = $1',
+        [reviewId],
+      );
+      if (!review) throw reviewNotFound();
+      await runner.query(
+        'delete from public.review_likes where review_id = $1 and user_id = auth.uid()',
+        [reviewId],
+      );
+      return { helpful_count: await helpfulCount(runner, reviewId), liked: false };
+    });
+  }
+
   // Turns a database refusal into an answer the website understands.
   // Answers that are already HTTP answers (like "not found among yours")
   // pass straight through.
@@ -211,6 +302,9 @@ export class ReviewsService {
       // A rating or comment outside the limits.
       case '23514':
         return new BadRequestException('Please pick 1 to 5 stars and write 1 to 500 characters.');
+      // The review was deleted while it was being liked.
+      case '23503':
+        return reviewNotFound();
       // The place does not exist (checked by the reviews trigger).
       case 'P0001':
         return new NotFoundException('That place does not exist.');

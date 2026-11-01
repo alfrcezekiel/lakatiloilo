@@ -103,17 +103,74 @@ export interface Review {
   rating: number;
   comment: string;
   created_at: string;
+  // How many travelers marked it "Helpful", and whether the traveler
+  // asking did (profiles & likes round). Missing from a review the
+  // backend has just saved, which nobody has marked yet.
+  helpful_count?: number;
+  liked_by_me?: boolean;
 }
 
-// A place's reviews, newest first. Anyone may read them, so no login is
-// sent. Errors throw, so the reviews section can say it couldn't load them.
+// A place's reviews, newest first. Anyone may read them, so a login is
+// optional: with one, the backend also says which reviews this traveler
+// marked "Helpful". Errors throw, so the reviews section can say it
+// couldn't load them.
 export const getReviews = async (
   placeType: "destination" | "accommodation",
   placeId: string,
+  accessToken?: string | null,
 ) => {
   const { data } = await api().get<Review[]>("/v1/reviews", {
     params: { place_type: placeType, place_id: placeId },
+    headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : undefined,
   });
+  return data;
+};
+
+// One review on a traveler's profile (profiles & likes round): the review,
+// the place it is about, and its "Helpful" count.
+export interface ProfileReview {
+  id: string;
+  rating: number;
+  comment: string;
+  created_at: string;
+  place_type: "destination" | "accommodation";
+  place_id: string;
+  // null only if the place was removed after the review was written.
+  place_name: string | null;
+  helpful_count: number;
+}
+
+// A traveler's public profile (GET /v1/travelers/:id, anyone). Built from
+// their reviews, so it never holds an email.
+export interface TravelerProfile {
+  id: string;
+  display_name: string;
+  traveler_type: string | null;
+  review_count: number;
+  reviews: ProfileReview[];
+}
+
+// A traveler's profile, or null when there is no such traveler, or they
+// have written no reviews (the backend answers 404 for both).
+export const getTraveler = (id: string) =>
+  get<TravelerProfile>(`/v1/travelers/${encodeURIComponent(id)}`);
+
+// What the backend answers after marking or unmarking a review.
+export interface LikeState {
+  helpful_count: number;
+  liked: boolean;
+}
+
+// Marks someone else's review "Helpful" (POST /v1/reviews/:id/like), or
+// removes the traveler's own mark (DELETE), as the logged-in traveler.
+// Answers the new count. Refusals carry a plain message, for example
+// "You can't mark your own review as helpful."
+export const setHelpful = async (accessToken: string, reviewId: string, helpful: boolean) => {
+  const path = `/v1/reviews/${encodeURIComponent(reviewId)}/like`;
+  const headers = { Authorization: `Bearer ${accessToken}` };
+  const { data } = helpful
+    ? await api().post<LikeState>(path, null, { headers })
+    : await api().delete<LikeState>(path, { headers });
   return data;
 };
 

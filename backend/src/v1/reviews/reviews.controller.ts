@@ -41,17 +41,47 @@ export class ReviewsController {
   constructor(private readonly reviewsService: ReviewsService) {}
 
   // GET /v1/reviews?place_type=destination&place_id=<uuid>
-  // A place's reviews, newest first. Anyone may call it.
+  // A place's reviews, newest first, each with its "Helpful" count. Anyone
+  // may call it. With a login (Authorization: Bearer <token>) each review
+  // also says whether this traveler marked it (liked_by_me); without one,
+  // or with an expired one, liked_by_me is false.
   @Get()
   @HttpCode(200)
-  findForPlace(
+  async findForPlace(
+    @Headers('authorization') authorization: string | undefined,
     @Query('place_type') placeType: string,
     @Query('place_id', ParseUUIDPipe) placeId: string,
   ) {
     if (!PLACE_TYPES.includes(placeType as PlaceType)) {
       throw new BadRequestException('place_type must be "destination" or "accommodation".');
     }
-    return this.reviewsService.findForPlace(placeType as PlaceType, placeId);
+    const viewerId = await this.reviewsService.viewerIdFor(authorization);
+    return this.reviewsService.findForPlace(placeType as PlaceType, placeId, viewerId);
+  }
+
+  // POST /v1/reviews/<id>/like   (header: Authorization: Bearer <login token>)
+  // Marks someone else's review as helpful. Answers 200 with
+  // { helpful_count, liked: true }. Refusals: 401 not logged in, 404 no
+  // such review, 400 "You can't mark your own review as helpful."
+  @Post(':id/like')
+  @HttpCode(200)
+  like(
+    @Headers('authorization') authorization: string | undefined,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
+    return this.reviewsService.like(loginToken(authorization), id);
+  }
+
+  // DELETE /v1/reviews/<id>/like   (header: Authorization: Bearer <login token>)
+  // Removes the traveler's own like. Answers 200 with
+  // { helpful_count, liked: false }.
+  @Delete(':id/like')
+  @HttpCode(200)
+  unlike(
+    @Headers('authorization') authorization: string | undefined,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
+    return this.reviewsService.unlike(loginToken(authorization), id);
   }
 
   // POST /v1/reviews   (header: Authorization: Bearer <login token>)

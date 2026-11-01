@@ -12,6 +12,7 @@ import type { Review } from "@/lib/api";
 import { useCurrentUser } from "@/lib/login";
 import { ReviewForm } from "@/components/ReviewForm";
 import { MyReviewBox } from "@/components/MyReviewBox";
+import { HelpfulButton } from "@/components/HelpfulButton";
 import { SectionHeading } from "@/components/PlaceDetail";
 import { averageRating, usePlaceReviews } from "@/components/PlaceReviews";
 import { travelerTypeLabels } from "@/lib/labels";
@@ -20,7 +21,10 @@ import { travelerTypeLabels } from "@/lib/labels";
 // from here.
 export type { Review };
 
-const glassCard = "rounded-xl bg-white/10 backdrop-blur-md border border-white/20 text-white";
+// The see-through card every review sits in (also used on profile pages).
+// No backdrop blur and no shadow: on cards that fade in, a blur is painted
+// in pieces and shows as light bands (see ticket 68).
+export const glassCard = "rounded-xl bg-white/10 border border-white/20 text-white shadow-none";
 
 // The Reviews part of a destination or accommodation page. The reviews
 // come from <PlaceReviewsProvider> (src/components/PlaceReviews.tsx), which
@@ -100,7 +104,7 @@ export function ReviewsSection() {
                 {deletedMessage && (
                   <p
                     role="status"
-                    className="flex items-start gap-2 rounded-xl border border-white/25 bg-white/15 px-4 py-3 font-semibold text-white backdrop-blur-md"
+                    className="flex items-start gap-2 rounded-xl border border-white/25 bg-white/15 px-4 py-3 font-semibold text-white"
                   >
                     <Check aria-hidden="true" className="mt-0.5 size-5 shrink-0" />
                     <span>{deletedMessage} You can write a new one below.</span>
@@ -154,7 +158,13 @@ export function ReviewsSection() {
                           {/* min-w-0 and flex-wrap let a long name and its
                               tags wrap onto a second line on narrow phones. */}
                           <span className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 font-semibold">
-                            <span className="wrap-anywhere">{review.reviewer_name}</span>
+                            {/* Opens the reviewer's profile (ticket 73). */}
+                            <Link
+                              href={`/travelers/${review.user_id}`}
+                              className="rounded wrap-anywhere underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+                            >
+                              {review.reviewer_name}
+                            </Link>
                             {review.traveler_type && travelerTypeLabels[review.traveler_type] && (
                               <span className="font-normal text-white/75">
                                 · {travelerTypeLabels[review.traveler_type]}
@@ -178,6 +188,21 @@ export function ReviewsSection() {
                         <p className="whitespace-pre-line wrap-anywhere text-white/90 leading-relaxed">
                           {review.comment}
                         </p>
+                        <HelpfulButton
+                          review={review}
+                          user={user}
+                          onChange={(count, liked) =>
+                            setReviews(
+                              (current) =>
+                                current.map((r) =>
+                                  r.id === review.id
+                                    ? { ...r, helpful_count: count, liked_by_me: liked }
+                                    : r,
+                                ),
+                              { refreshPages: false },
+                            )
+                          }
+                        />
                       </CardContent>
                     </Card>
                   </motion.li>
@@ -208,7 +233,7 @@ export function Stars({ rating, className = "" }: { rating: number; className?: 
   );
 }
 
-function formatDate(iso: string) {
+export function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString("en-PH", {
     year: "numeric",
     month: "short",
