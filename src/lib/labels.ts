@@ -25,9 +25,14 @@ export const categoryLabels: Record<string, string> = Object.fromEntries(
 // One accommodation's type, for its detail page: "hotel" -> "Hotel". (The
 // chips above use the plural, "Hotels".) The ids match the `type` column of
 // accommodations.
+//
+// "­" is a soft hyphen: invisible, unless the word has to break there,
+// and then the browser shows "Condo-" on one line and "minium" on the next.
+// On a 320 px phone the Type tile is narrower than the whole word, and
+// not every phone's browser can work out where to hyphenate by itself.
 export const accommodationTypeLabels: Record<string, string> = {
   hotel: "Hotel",
-  condominium: "Condominium",
+  condominium: "Condo­minium",
 };
 
 // The `location_type` column of both tables.

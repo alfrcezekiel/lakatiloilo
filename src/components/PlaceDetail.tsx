@@ -129,7 +129,16 @@ export function StatTile({ label, children }: { label: string; children: ReactNo
       <p className="text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-white/60">
         {label}
       </p>
-      <div className="mt-1 text-sm font-semibold text-white sm:text-base">{children}</div>
+      {/* On a 320 px phone a tile has about 65 px for its value, but a
+          single word like "Condominium" needs 90 px, and a browser never
+          breaks a word by itself, so it spilled into the next tile.
+          hyphens-auto breaks it at an English hyphenation point
+          ("Condo-minium", using lang="en" on the page); wrap-break-word
+          breaks it anyway if no such point fits. Short values are not
+          affected. */}
+      <div className="mt-1 wrap-break-word hyphens-auto text-sm font-semibold text-white sm:text-base">
+        {children}
+      </div>
     </div>
   );
 }
