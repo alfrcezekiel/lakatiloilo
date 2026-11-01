@@ -15,8 +15,12 @@ interface FeaturedCardsProps {
 
 // The card's outer box, shared by the real cards and their skeletons so
 // both are exactly the same size and nothing jumps when the data arrives.
+// No shadow and no backdrop blur: a blur on a card that fades in and lifts
+// on hover was painted in pieces, which showed as light bands on the card
+// (found by the team, 2026-11-01). The background behind is a smooth
+// gradient, so the blur added almost nothing.
 const cardClass =
-  "flex min-w-0 items-center gap-4 sm:gap-5 rounded-3xl border border-white/25 bg-white/10 p-3 shadow-2xl backdrop-blur-md sm:p-4";
+  "flex min-w-0 items-center gap-4 sm:gap-5 rounded-3xl border border-white/25 bg-white/10 p-3 sm:p-4";
 const photoClass =
   "aspect-3/2 w-24 shrink-0 min-[400px]:w-32 overflow-hidden rounded-2xl sm:w-48";
 
@@ -73,7 +77,7 @@ export function FeaturedCards({ destinations, ratings, loading }: FeaturedCardsP
         <Reveal key={badge} className="grid" delay={index * 0.12}>
           <Link
             href={`/destinations/${place.id}`}
-            className={`group ${cardClass} transition duration-300 hover:bg-white/20 hover:shadow-2xl motion-safe:hover:-translate-y-1 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white`}
+            className={`group ${cardClass} transition duration-300 motion-safe:hover:-translate-y-1 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white`}
           >
             <div className={photoClass}>
               <img

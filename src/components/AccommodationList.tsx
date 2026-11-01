@@ -52,7 +52,7 @@ export function AccommodationList({ accommodations, id, ratings, loading }: Acco
                 href={`/accommodations/${accommodation.id}`}
                 className={cardLink}
               >
-                <Card className="overflow-hidden bg-white/15 backdrop-blur-md border border-white/25 shadow-none transition duration-300 motion-safe:hover:-translate-y-1 cursor-pointer h-full flex flex-col">
+                <Card className="overflow-hidden bg-white/15 border border-white/25 shadow-none transition duration-300 motion-safe:hover:-translate-y-1 cursor-pointer h-full flex flex-col">
                   <div className="aspect-video w-full overflow-hidden bg-muted">
                     <img
                       src={accommodation.photo_url}
