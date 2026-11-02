@@ -499,12 +499,12 @@ Profiles & likes, review extras and threaded replies rounds: browsing, profiles,
 - [x] Answering with a parent reply from another review is refused by the backend, and deleting someone else's reply is still refused by the database
 
 **Live updates round (live URL):**
-- [ ] Adding, changing and removing a destination and an accommodation in the Supabase Table Editor shows on an open home page within a few seconds, with no reload, on a laptop and a phone
-- [ ] Changing a place in the Table Editor updates its open detail page; removing it shows "not found"
-- [ ] A review, reply, photo or Helpful mark from a second account appears on an open detail page in another browser, and editing or deleting it updates there too, with the average rating
-- [ ] A review or reply being typed, an open Report pop-up and the scroll position are kept when an update arrives
-- [ ] After the phone sleeps or the tab sits in the background, the page catches up when it comes back
-- [ ] Row Level Security is unchanged on all five tables, and review_reports is not in the Realtime list
+- [x] Adding, changing and removing a destination and an accommodation in the Supabase Table Editor shows on an open home page within a few seconds, with no reload, on a laptop and a phone
+- [x] Changing a place in the Table Editor updates its open detail page; removing it shows "not found"
+- [x] A review, reply, photo or Helpful mark from a second account appears on an open detail page in another browser, and editing or deleting it updates there too, with the average rating
+- [x] A review or reply being typed, an open Report pop-up and the scroll position are kept when an update arrives
+- [x] After the phone sleeps or the tab sits in the background, the page catches up when it comes back
+- [x] Row Level Security is unchanged on all five tables, and review_reports is not in the Realtime list
 
 ## Out of scope
 - Live updates round: live reports (no screen shows reports and nobody may read them through the app; seeing reports as they arrive needs an admin screen), "new review" pop-ups or sounds, live traveler profile pages, and using the rows Realtime sends directly in the page

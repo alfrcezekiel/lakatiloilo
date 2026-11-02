@@ -112,6 +112,14 @@ before it becomes a ticket:
   reads reports in the Supabase dashboard.
 - Live traveler profile pages, and "new review" pop-ups or sounds.
 
+### From the live updates round code review (2026-11-02)
+- Fewer review refetches. Today an open place page fetches its reviews
+  again whenever any review on the whole site changes. Harmless with a
+  few travelers, but with many online every review sends a burst of
+  requests to the backend. Fix: for new and edited reviews, listen only
+  to this place (filter by `place_id`); deleted reviews, likes and
+  replies cannot be filtered that way and stay as they are.
+
 ### From the threaded replies round code review (2026-11-02)
 Parked by the team; none is needed for the demo.
 - A limit on how deep a thread can go (for example 50 levels) or how many
