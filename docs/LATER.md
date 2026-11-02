@@ -77,14 +77,31 @@ before it becomes a ticket:
 - More interactive features (the interactive map below is one candidate)
 
 ### From the likes on TypeORM round (2026-11-02)
-- Split the reviews service. It has grown to about 350 lines doing six
-  jobs: reading reviews, ratings, writing reviews, likes, acting as the
-  logged-in traveler, and turning database errors into messages. Plan:
-  move liking and unliking into their own likes service, with the "act as
-  the traveler" step in a small shared helper both can use. No change for
+- Split the reviews service. It is now about 370 lines (the review
+  extras round added the photo steps to writing, editing and deleting
+  reviews), doing reading reviews, ratings, writing reviews, likes, photos
+  and turning database errors into messages. Plan: move liking and
+  unliking into their own likes service, and the photo steps of writing,
+  editing and deleting into the review photos service. (The "act as the
+  traveler" step already moved into a shared helper in ticket 79.) No
+  change for travelers; about one ticket. No change for
   travelers; about one ticket.
 - Move adding, editing and deleting reviews onto TypeORM too (kept out of
   the likes round on purpose).
+
+### From the review extras round code review (2026-11-02)
+- One Supabase login check per review with a photo instead of two: the
+  photo upload and the save each ask Supabase who the traveler is; the
+  upload could pass the traveler id on to the save.
+- Keep reports when a review is deleted (needs a team decision and a SQL
+  change). Today deleting a review also deletes its reports, as the spec
+  says, so the writer of a reported review can make the report disappear
+  by deleting it. One option: keep the report with a copy of the review's
+  text instead of deleting it.
+- Tidy up photos left behind in Storage. If deleting an old photo fails
+  (Storage briefly unavailable), the file stays and is only logged; a
+  check could list files that no review points to. Fine for the demo:
+  they can be deleted by hand in the Storage dashboard.
 
 ### Backend extras (parked from the backend round, 2026-10-25)
 The backend round moved the home page, reviews, sign-up and log-in onto

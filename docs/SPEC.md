@@ -297,7 +297,7 @@ When Supabase Auth refuses, the backend answers with Supabase's own status and c
 
 **Review extras round (v1):**
 - POST /v1/reviews/:id/replies — logged-in traveler; adds a reply (1–300 characters) and answers with it (401, 404 no such review, 400 outside the limits)
-- DELETE /v1/replies/:id — logged-in traveler; deletes their own reply (200 { id, message: "Your reply has been deleted." }; 404 "We couldn't find that reply among yours.")
+- DELETE /v1/replies/:id — logged-in traveler; deletes their own reply (200 { id, message: "Your reply has been deleted." }; 404 "We couldn't find that reply among yours. Please log in again and try.", like the reviews message)
 - POST /v1/reviews/:id/report — logged-in traveler; reports a review with a reason and optional note (201 { message: "Thanks — the team will take a look." }; 409 "You've already reported this review."; 400 for your own review or an unknown reason)
 - POST /v1/reviews and PATCH /v1/reviews/:id — also accept one photo (JPG, PNG or WebP, up to 2 MB; 400 "Please choose a JPG, PNG or WebP photo up to 2 MB.") and, when editing, removing it
 - GET /v1/reviews — each review also carries its replies (oldest first) and its photo's address
