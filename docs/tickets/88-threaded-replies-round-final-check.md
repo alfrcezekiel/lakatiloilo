@@ -8,11 +8,11 @@
 
 **Blocked by:** 84, 85, 86, 87
 
-**Status:** todo
+**Status:** done (confirmed by the team on the live URL, 2026-11-02)
 
 - [x] Every item in the "Threaded replies round" checklist works on the live URL
-- [ ] Reviews, photos, reports, Helpful likes, profiles and log-in still work
-- [ ] /code-review has been run on the round and its findings handled
+- [x] Reviews, photos, reports, Helpful likes, profiles and log-in still work
+- [x] /code-review has been run on the round and its findings handled
 - [x] Works on the live URL
 
 **Progress (2026-11-02):** the change above is in the replies component. Answers to a reply are turned newest first (the backend still sends oldest first; replies to the review stay oldest first), and "Your reply is posted." shows under the reply just posted. After a delete it still shows at the bottom. Website only.
@@ -45,3 +45,7 @@ Not checked: in the browser. The built-in browser stayed on the page's loading s
 - Fixed: the ReviewReply entity comment lists the three columns travelers may send.
 - Parked in docs/LATER.md ("From the threaded replies round code review"): a thread depth or reply limit and a rate limit, the message in a rare timing case, a project-specific error code instead of 22023, one way to check ids, splitting the replies component, keyboard focus after Cancel and Delete, and answers whose parent is gone. Also removed a repeated sentence in LATER.md.
 - Website and backend type-checks, lint and `npm run build` pass.
+
+**Confirmed by the team (2026-11-02):** after the review fixes were pushed (14eff40), reviews, photos, reports, Helpful likes, profiles and log-in all still work on the live URL. The threaded replies round is done.
+
+**Follow-up review (2026-11-02, 14eff40):** no must-fix findings. The entity comment tidy was only half done (one 113-character line was left); it is now split into short lines. Comment only; backend type-check passes.

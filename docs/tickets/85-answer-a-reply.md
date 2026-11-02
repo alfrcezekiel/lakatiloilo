@@ -8,7 +8,7 @@ The review_replies table gains parent_reply_id: the reply being answered, or emp
 
 **Blocked by:** 84
 
-**Status:** todo
+**Status:** done (confirmed by the team on the live URL, 2026-11-02)
 
 - [x] A numbered SQL file adds parent_reply_id to review_replies, lets travelers send it, refuses a parent reply from another review, and removes answers with the reply they answer. Row Level Security stays on with the same policies. The team has run it in the Supabase SQL Editor
 - [x] POST /v1/reviews/:id/replies accepts an optional parent_reply_id; a missing parent reply, or one under another review, answers 400 "That reply isn't under this review."

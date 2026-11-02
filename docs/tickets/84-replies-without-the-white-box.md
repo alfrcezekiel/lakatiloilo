@@ -4,7 +4,7 @@
 
 **Blocked by:** None
 
-**Status:** todo
+**Status:** done (confirmed by the team on the live URL, 2026-11-02)
 
 - [x] No reply has a pale box behind it; each has a thin left line instead
 - [x] Names, tags, dates and text stay easy to read on both the teal and the blue detail pages

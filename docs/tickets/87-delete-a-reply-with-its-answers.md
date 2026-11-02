@@ -4,7 +4,7 @@
 
 **Blocked by:** 85
 
-**Status:** todo
+**Status:** done (confirmed by the team on the live URL, 2026-11-02)
 
 - [x] A reply with answers asks "Delete this reply and its answers?"; one without answers asks "Delete this reply?"
 - [x] After deleting, the whole thread under it is gone at once, and still gone after a refresh

@@ -4,7 +4,7 @@
 
 **Blocked by:** 85
 
-**Status:** todo
+**Status:** done (confirmed by the team on the live URL, 2026-11-02)
 
 - [x] Levels 1 to 3 each move in a little more
 - [x] Level 4 and deeper stay at the level-3 indent and start with "Replying to <name>"
