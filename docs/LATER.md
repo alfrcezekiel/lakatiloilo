@@ -76,6 +76,16 @@ before it becomes a ticket:
 - More detailed information about each destination and accommodation
 - More interactive features (the interactive map below is one candidate)
 
+### From the likes on TypeORM round (2026-11-02)
+- Split the reviews service. It has grown to about 350 lines doing six
+  jobs: reading reviews, ratings, writing reviews, likes, acting as the
+  logged-in traveler, and turning database errors into messages. Plan:
+  move liking and unliking into their own likes service, with the "act as
+  the traveler" step in a small shared helper both can use. No change for
+  travelers; about one ticket.
+- Move adding, editing and deleting reviews onto TypeORM too (kept out of
+  the likes round on purpose).
+
 ### Backend extras (parked from the backend round, 2026-10-25)
 The backend round moved the home page, reviews, sign-up and log-in onto
 the NestJS backend. Still parked:

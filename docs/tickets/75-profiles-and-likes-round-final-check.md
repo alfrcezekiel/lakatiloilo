@@ -43,3 +43,5 @@ Checked on localhost: curl showed /travelers/hello arriving with the placeholder
 Still left as they are (team's choice): the extra Supabase Auth check on logged-in reviews reads, and the small copies.
 
 **Decision (2026-11-01, team):** leave the unknown-traveler page at status 200 for now; the 404 is parked in docs/LATER.md.
+
+**Review fixes confirmed by the team on the live URL (2026-11-01):** the "No one has marked this helpful yet" line and the unknown-traveler placeholder look right.

@@ -28,6 +28,8 @@ Profiles & likes round: every reviewer has a profile page that anyone can open f
 
 Review extras round: logged-in travelers can reply to a review, report a review to the team, and add one photo to their own review.
 
+Likes on TypeORM round: travelers see no change. The backend describes the review_likes table to TypeORM, like the other tables, and reads and writes Helpful likes through it instead of hand-written SQL, so the likes code is easier to read, change and trust.
+
 ## The user
 Travelers planning weekend trips around Iloilo Province. No login required for browsing; an account is needed only to write a review.
 
@@ -59,6 +61,7 @@ Travelers planning weekend trips around Iloilo Province. No login required for b
 25. As a logged-in traveler, I want to reply to a review, so that I can answer a question or add a tip.
 26. As a logged-in traveler, I want to report a review that is spam or offensive, so that the team can deal with it.
 27. As a logged-in traveler, I want to add a photo to my review, so that others can see what the place is really like.
+28. As a developer, I want the review_likes table described and used through TypeORM like the other tables, so that the likes code is easier to read, change and trust.
 
 ## Screens
 1. Home page hero — redesigned to match the team's mockup:
@@ -145,6 +148,8 @@ Travelers planning weekend trips around Iloilo Province. No login required for b
    - **Replies:** under each review, its replies, oldest first: the replier's name (linking to their profile), traveler type tag, text and date. Logged-in travelers get a **Reply** button that opens a small form (up to 300 characters). A traveler can delete their own replies. No replies to replies, and no editing.
    - **Report a review:** logged-in travelers see a small "Report" link on other travelers' reviews. It opens a pop-up with four reasons (Spam, Offensive, Not about this place, Other) and an optional note, then says "Thanks — the team will take a look." Reporting the same review again says "You've already reported this review." Nothing is hidden automatically; the team reads reports in the Supabase dashboard.
    - **A photo in a review:** the review form gets "Add a photo" (one photo, JPG, PNG or WebP, up to 2 MB), with a preview and a Remove button. Editing a review can add, swap or remove the photo. The photo shows under the review text, and clicking it opens it larger. Deleting a review deletes its photo too.
+
+22. Likes on TypeORM round — no screen changes. The Helpful button, Helpful counts, profiles and the profile dropdown look and behave exactly as before.
 
 ## Data
 
@@ -244,6 +249,8 @@ Row Level Security policy for review_reports: no one may read reports through th
 
 **review-photos Storage bucket (review extras round):** anyone may view the photos. A logged-in traveler may upload only into a folder named after their own user_id, and only that traveler may replace or delete files there. Photos are JPG, PNG or WebP, up to 2 MB, so an upload stays under Vercel's 4.5 MB request limit. Uploads go through the backend as the logged-in traveler, so these Storage policies decide, like Row Level Security does for the tables.
 
+Likes on TypeORM round: no database change, no new SQL, and nothing to run in Supabase; the review_likes columns and Row Level Security policies stay as in the profiles & likes round. The backend describes review_likes to TypeORM with its three columns (review_id and user_id, which together identify a like, and created_at), linked to the review it belongs to. The backend still sends only review_id: user_id and created_at are still filled in by the database from the login, and TypeORM is told never to send them (the database only lets travelers set review_id). Marking and unmarking still run as the logged-in traveler inside one transaction, so Row Level Security still decides, including refusing a like on your own review. Helpful counts and "liked by me" on reviews and profiles are read through TypeORM, with the same answers as before.
+
 (Before the backend round, the browser read and wrote reviews directly through Supabase with the same keys and the same Row Level Security policy.)
 
 The traveler type is saved on the Supabase Auth account, next to the display name. The database copies it onto each review, the same way it copies reviewer_name, so it can never be typed in from the browser. The reviews Row Level Security policy is unchanged.
@@ -297,6 +304,8 @@ When Supabase Auth refuses, the backend answers with Supabase's own status and c
 
 All writes in these rounds run as the logged-in traveler (the asTraveler step), so Row Level Security and the Storage policies decide. The backend never uses the service_role key.
 
+**Likes on TypeORM round (v1):** no endpoint changes. POST and DELETE /v1/reviews/:id/like, GET /v1/reviews and GET /v1/travelers/:id keep the same inputs, answers and refusal messages.
+
 **Version 2 (/v2):**
 - Reserved for future API changes. v1 remains available to prevent breaking existing clients.
 
@@ -321,6 +330,7 @@ All writes in these rounds run as the logged-in traveler (the asTraveler step), 
 - Backend round: also needs the Supabase URL and the publishable (anon) key as settings, locally and in Vercel, to check travelers' login tokens with Supabase Auth (reviews themselves go through TypeORM)
 - Backend round: the reviews and log-in endpoints are built in the NestJS backend, which runs on the server and answers with data (JSON). The Next.js frontend calls them from the browser (the client side) and shows the results; the home page's places are fetched by the Next.js server instead
 - Own login round: the "who is logged in", renew-login and log-out endpoints are also in the NestJS backend, next to sign-up and log-in. The website keeps the login itself and sends it to the backend; only the Forgot password and Set new password pages still use Supabase's browser library. Any other page that finds a Supabase login left in the browser (from before this round, or from a reset link that was opened but not used) ends it through the backend's log-out endpoint and deletes it, so no normal page talks to Supabase Auth
+- Likes on TypeORM round: review_likes is described to TypeORM next to destinations, accommodations and reviews (still with synchronize off, so TypeORM never changes the database). Likes are read and written through it; adding, editing and deleting reviews and the act-as-the-traveler step keep their own SQL
 
 **Database (Supabase):**
 - Hosted PostgreSQL with PostGIS extension
@@ -438,7 +448,13 @@ Profiles & likes and review extras rounds: browsing, profiles, likes counts, rep
 - [ ] A photo over 2 MB, or not a JPG, PNG or WebP, is refused with a clear message
 - [ ] Deleting someone else's reply, or uploading into someone else's photo folder, is refused by the database or Storage, not just hidden in the page
 
+**Likes on TypeORM round (live URL):**
+- [ ] Marking and unmarking Helpful still works, and counts and profiles show the same numbers as before
+- [ ] Marking your own review is still refused by the database, checked through the backend's own login inside a transaction that is undone
+- [ ] The refusals for no login, a fake login and a bad id answer the same messages as before
+
 ## Out of scope
+- Likes on TypeORM round: moving the other hand-written SQL (adding, editing and deleting reviews, the act-as-the-traveler step) onto TypeORM, and any change travelers can see
 - Navigation round: login renewal through TanStack Query, the old page animating out, and the experimental "view transitions" setting (parked in docs/LATER.md)
 - Polish round: fetching places in the browser (parked in docs/LATER.md); "who is logged in" and page transitions moved into the navigation round
 - Login for anything other than reviews (browsing stays open to everyone)
