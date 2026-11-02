@@ -1,0 +1,44 @@
+import { Column, Entity, JoinColumn, ManyToOne, PrimaryColumn } from 'typeorm';
+import { Review } from './review.entity';
+
+// The review_replies table (supabase/sql/025, review extras round, ticket
+// 79): one reply under a review.
+//
+// 025 only lets travelers send review_id and comment ("grant insert
+// (review_id, comment)"). Everything else is filled in by the database:
+// id (gen_random_uuid), user_id (from the login), replier_name and
+// traveler_type (copied from the account by the trigger) and created_at.
+// So those columns are insert: false, and TypeORM never names them when
+// saving; if it did, even with DEFAULT, the database would refuse the reply.
+// update: false everywhere: nobody may edit a reply.
+@Entity('review_replies')
+export class ReviewReply {
+  @PrimaryColumn({ type: 'uuid', insert: false, update: false })
+  id: string;
+
+  @Column({ type: 'uuid', update: false })
+  review_id: string;
+
+  @Column({ type: 'uuid', insert: false, update: false })
+  user_id: string;
+
+  @Column({ type: 'text', insert: false, update: false })
+  replier_name: string;
+
+  // "local", "domestic" or "foreign"; null for accounts without one.
+  @Column({ type: 'text', nullable: true, insert: false, update: false })
+  traveler_type: string | null;
+
+  @Column({ type: 'text', update: false })
+  comment: string;
+
+  @Column({ type: 'timestamptz', insert: false, update: false })
+  created_at: Date;
+
+  // The review this reply is under. The database removes replies together
+  // with their review ("on delete cascade" in 025); synchronize is off, so
+  // this only describes that link.
+  @ManyToOne(() => Review, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'review_id' })
+  review: Review;
+}

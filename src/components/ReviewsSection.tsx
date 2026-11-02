@@ -13,6 +13,9 @@ import { useCurrentUser } from "@/lib/login";
 import { ReviewForm } from "@/components/ReviewForm";
 import { MyReviewBox } from "@/components/MyReviewBox";
 import { HelpfulButton } from "@/components/HelpfulButton";
+import { ReviewReplies } from "@/components/ReviewReplies";
+import { ReportReview } from "@/components/ReportReview";
+import { ReviewPhoto } from "@/components/ReviewPhoto";
 import { SectionHeading } from "@/components/PlaceDetail";
 import { averageRating, usePlaceReviews } from "@/components/PlaceReviews";
 import { travelerTypeLabels } from "@/lib/labels";
@@ -188,17 +191,37 @@ export function ReviewsSection() {
                         <p className="whitespace-pre-line wrap-anywhere text-white/90 leading-relaxed">
                           {review.comment}
                         </p>
-                        <HelpfulButton
-                          review={review}
+                        {review.photo_url && (
+                          <ReviewPhoto url={review.photo_url} reviewerName={review.reviewer_name} />
+                        )}
+                        {/* Helpful on the left, the small Report link
+                            (ticket 80) on the right of the same row. */}
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <HelpfulButton
+                            review={review}
+                            user={user}
+                            onChange={(count, liked) =>
+                              setReviews(
+                                (current) =>
+                                  current.map((r) =>
+                                    r.id === review.id
+                                      ? { ...r, helpful_count: count, liked_by_me: liked }
+                                      : r,
+                                  ),
+                                { refreshPages: false },
+                              )
+                            }
+                          />
+                          <ReportReview reviewId={review.id} reviewerId={review.user_id} user={user} />
+                        </div>
+                        <ReviewReplies
+                          reviewId={review.id}
+                          replies={review.replies ?? []}
                           user={user}
-                          onChange={(count, liked) =>
+                          onChange={(replies) =>
                             setReviews(
                               (current) =>
-                                current.map((r) =>
-                                  r.id === review.id
-                                    ? { ...r, helpful_count: count, liked_by_me: liked }
-                                    : r,
-                                ),
+                                current.map((r) => (r.id === review.id ? { ...r, replies } : r)),
                               { refreshPages: false },
                             )
                           }

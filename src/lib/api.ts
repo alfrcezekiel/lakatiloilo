@@ -108,7 +108,69 @@ export interface Review {
   // backend has just saved, which nobody has marked yet.
   helpful_count?: number;
   liked_by_me?: boolean;
+  // The public address of the review's photo, or null when it has none
+  // (review extras round, ticket 81).
+  photo_url?: string | null;
+  // The replies under it, oldest first (review extras round). Missing from
+  // a review the backend has just saved, which has none yet.
+  replies?: Reply[];
 }
+
+// A reply under a review (review extras round, ticket 79). The name and
+// traveler type are copied from the replier's account by the database.
+export interface Reply {
+  id: string;
+  review_id: string;
+  user_id: string;
+  replier_name: string;
+  traveler_type: string | null;
+  comment: string;
+  created_at: string;
+}
+
+// Adds the logged-in traveler's reply under a review (POST
+// /v1/reviews/:id/replies) and answers with the saved reply. Refusals
+// carry a plain message, for example "Please write 1 to 300 characters."
+export const createReply = async (accessToken: string, reviewId: string, comment: string) => {
+  const { data } = await api().post<Reply>(
+    `/v1/reviews/${encodeURIComponent(reviewId)}/replies`,
+    { comment },
+    { headers: { Authorization: `Bearer ${accessToken}` } },
+  );
+  return data;
+};
+
+// The reasons a traveler can give when reporting a review (the same list
+// as the backend and supabase/sql/026).
+export type ReportReason = "spam" | "offensive" | "not_about_place" | "other";
+
+// Reports someone else's review to the team (POST /v1/reviews/:id/report),
+// as the logged-in traveler. Answers { message: "Thanks — the team will take
+// a look." }. Refusals carry a plain message, for example "You've already
+// reported this review." (409).
+export const reportReview = async (
+  accessToken: string,
+  reviewId: string,
+  reason: ReportReason,
+  note: string,
+) => {
+  const { data } = await api().post<{ message: string }>(
+    `/v1/reviews/${encodeURIComponent(reviewId)}/report`,
+    { reason, note },
+    { headers: { Authorization: `Bearer ${accessToken}` } },
+  );
+  return data;
+};
+
+// Deletes the traveler's own reply (DELETE /v1/replies/:id). Answers with
+// the backend's message, "Your reply has been deleted."
+export const deleteReply = async (accessToken: string, replyId: string) => {
+  const { data } = await api().delete<{ id: string; message: string }>(
+    `/v1/replies/${encodeURIComponent(replyId)}`,
+    { headers: { Authorization: `Bearer ${accessToken}` } },
+  );
+  return data;
+};
 
 // A place's reviews, newest first. Anyone may read them, so a login is
 // optional: with one, the backend also says which reviews this traveler
@@ -178,6 +240,10 @@ export const setHelpful = async (accessToken: string, reviewId: string, helpful:
 // /v1/reviews). `accessToken` is their Supabase login token: the backend
 // passes it on, so Row Level Security checks who is writing. Answers with
 // the saved review.
+//
+// With a photo (review extras round, ticket 81) the review is sent as form
+// fields plus the file ("multipart/form-data"), which is how a browser
+// sends files; without one it is sent as JSON, as before.
 export const createReview = async (
   accessToken: string,
   review: {
@@ -186,8 +252,19 @@ export const createReview = async (
     rating: number;
     comment: string;
   },
+  photo?: File | null,
 ) => {
-  const { data } = await api().post<Review>("/v1/reviews", review, {
+  let body: typeof review | FormData = review;
+  if (photo) {
+    const form = new FormData();
+    form.append("place_type", review.place_type);
+    form.append("place_id", review.place_id);
+    form.append("rating", String(review.rating));
+    form.append("comment", review.comment);
+    form.append("photo", photo);
+    body = form;
+  }
+  const { data } = await api().post<Review>("/v1/reviews", body, {
     headers: { Authorization: `Bearer ${accessToken}` },
   });
   return data;
@@ -195,16 +272,30 @@ export const createReview = async (
 
 // Changes the stars and comment of the traveler's own review through the
 // backend (PATCH /v1/reviews/:id). Answers with the saved review.
+//
+// The photo (ticket 82): `photo` replaces the old one (sent as form data,
+// like a new review); `removePhoto` removes it; with neither, the photo
+// stays as it is.
 export const updateReview = async (
   accessToken: string,
   id: string,
   changes: { rating: number; comment: string },
+  photoChange: { photo?: File | null; removePhoto?: boolean } = {},
 ) => {
-  const { data } = await api().patch<Review>(
-    `/v1/reviews/${encodeURIComponent(id)}`,
-    changes,
-    { headers: { Authorization: `Bearer ${accessToken}` } },
-  );
+  let body: Record<string, unknown> | FormData = {
+    ...changes,
+    remove_photo: !!photoChange.removePhoto,
+  };
+  if (photoChange.photo) {
+    const form = new FormData();
+    form.append("rating", String(changes.rating));
+    form.append("comment", changes.comment);
+    form.append("photo", photoChange.photo);
+    body = form;
+  }
+  const { data } = await api().patch<Review>(`/v1/reviews/${encodeURIComponent(id)}`, body, {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
   return data;
 };
 

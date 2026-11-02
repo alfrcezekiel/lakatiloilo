@@ -8,17 +8,19 @@ import {
   ServiceUnavailableException,
   UnauthorizedException,
 } from '@nestjs/common';
-import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
-import { DataSource, QueryFailedError, QueryRunner, Repository } from 'typeorm';
+import { InjectRepository } from '@nestjs/typeorm';
+import { QueryFailedError, QueryRunner, Repository } from 'typeorm';
 import { Review } from '../../entities/review.entity';
 import { ReviewLike, helpfulCountOf } from '../../entities/review-like.entity';
 import { SupabaseService } from '../../supabase/supabase.service';
+import { TravelerTransactions } from '../traveler-transactions';
+import { ReviewPhotosService, type UploadedPhoto } from './review-photos.service';
 
 // What the website gets for each review. Only the display name is ever
 // sent, never the reviewer's email (the reviews table does not hold it).
 export type ReviewDto = Pick<
   Review,
-  'id' | 'user_id' | 'reviewer_name' | 'traveler_type' | 'rating' | 'comment' | 'created_at'
+  'id' | 'user_id' | 'reviewer_name' | 'traveler_type' | 'rating' | 'comment' | 'photo_path' | 'created_at'
 >;
 
 export type PlaceType = 'destination' | 'accommodation';
@@ -53,7 +55,7 @@ export interface DeletedReview {
   message: string;
 }
 
-const COLUMNS = 'id, user_id, reviewer_name, traveler_type, rating, comment, created_at';
+const COLUMNS = 'id, user_id, reviewer_name, traveler_type, rating, comment, photo_path, created_at';
 
 // A review as GET /v1/reviews sends it: the review, plus its "Helpful"
 // count and whether the traveler asking marked it (profiles & likes round).
@@ -84,7 +86,8 @@ export class ReviewsService {
 
   constructor(
     @InjectRepository(Review) private readonly reviews: Repository<Review>,
-    @InjectDataSource() private readonly dataSource: DataSource,
+    private readonly travelerTransactions: TravelerTransactions,
+    private readonly photos: ReviewPhotosService,
     private readonly supabase: SupabaseService,
   ) { }
 
@@ -112,6 +115,7 @@ export class ReviewsService {
         .addSelect('r.traveler_type', 'traveler_type')
         .addSelect('r.rating', 'rating')
         .addSelect('r.comment', 'comment')
+        .addSelect('r.photo_path', 'photo_path')
         .addSelect('r.created_at', 'created_at')
         .addSelect(helpfulCountOf('r'), 'helpful_count')
         .addSelect(
@@ -162,88 +166,106 @@ export class ReviewsService {
     }
   }
 
-  // Runs `work` as the traveler whose login token this is.
-  //
-  // 1. Supabase Auth checks the token is genuine and says whose it is.
-  // 2. In one transaction, the database is told "this request is that
-  //    traveler" and switches to Supabase's "authenticated" role, just
-  //    like a request from the website would.
-  // 3. `work` runs there, so the Row Level Security policies from
-  //    supabase/sql/020 check auth.uid() exactly as before.
-  // Any error undoes the whole transaction.
-  private async asTraveler<T>(
-    accessToken: string,
-    work: (runner: QueryRunner) => Promise<T>,
-  ): Promise<T> {
-    const userId = await this.supabase.userIdFor(accessToken);
-    if (!userId) throw new UnauthorizedException('Please log in again, then try again.');
-
-    const runner = this.dataSource.createQueryRunner();
-    await runner.connect();
-    await runner.startTransaction();
-    try {
-      // "set local" and the "true" below last only until this
-      // transaction ends, so the next request starts clean.
-      await runner.query(`select set_config('request.jwt.claims', $1, true)`, [
-        JSON.stringify({ sub: userId, role: 'authenticated' }),
-      ]);
-      await runner.query('set local role authenticated');
-      const result = await work(runner);
-      await runner.commitTransaction();
-      return result;
-    } catch (error) {
-      await runner.rollbackTransaction();
-      throw this.toHttpError(error);
-    } finally {
-      await runner.release();
-    }
+  // Runs `work` as the traveler whose login token this is, so Row Level
+  // Security decides (see TravelerTransactions in v1/traveler-transactions.ts,
+  // shared with replies since ticket 79). Errors become this service's plain
+  // messages (toHttpError below).
+  private asTraveler<T>(accessToken: string, work: (runner: QueryRunner) => Promise<T>): Promise<T> {
+    return this.travelerTransactions.run(accessToken, work, (error) => this.toHttpError(error));
   }
 
   // Adds a review. The database fills in user_id, reviewer_name and the
   // dates itself. The values travel separately from the SQL text ($1 to
   // $4), so what a traveler types can never change the query.
-  create(accessToken: string, review: NewReview): Promise<ReviewDto> {
-    return this.asTraveler(accessToken, async (runner) => {
-      const rows: ReviewDto[] = await runner.query(
-        `insert into public.reviews (place_type, place_id, rating, comment)
-            values ($1, $2, $3, $4)
-            returning ${COLUMNS}`,
-        [review.place_type, review.place_id, review.rating, review.comment],
-      );
-      return rows[0];
-    });
+  //
+  // With a photo (ticket 81): the photo is uploaded first, into the
+  // traveler's own folder, and its place is saved with the review
+  // (photo_path, $5). If saving the review then fails, the photo is deleted
+  // again, so no unused file is left behind.
+  async create(accessToken: string, review: NewReview, photo?: UploadedPhoto): Promise<ReviewDto> {
+    const photoPath = photo ? await this.photos.upload(accessToken, photo) : null;
+    try {
+      return await this.asTraveler(accessToken, async (runner) => {
+        const rows: ReviewDto[] = await runner.query(
+          `insert into public.reviews (place_type, place_id, rating, comment, photo_path)
+              values ($1, $2, $3, $4, $5)
+              returning ${COLUMNS}`,
+          [review.place_type, review.place_id, review.rating, review.comment, photoPath],
+        );
+        return rows[0];
+      });
+    } catch (error) {
+      if (photoPath) await this.photos.remove(accessToken, photoPath);
+      throw error;
+    }
   }
 
   // Changes the stars and comment of the traveler's own review. Row Level
   // Security hides everyone else's reviews, so for someone else's review
   // (or one that no longer exists) nothing is changed and the answer is
   // "not found among yours".
-  update(accessToken: string, id: string, changes: ReviewChanges): Promise<ReviewDto> {
-    return this.asTraveler(accessToken, async (runner) => {
-      // For UPDATE, TypeORM answers with [changed rows, how many].
-      const [rows]: [ReviewDto[], number] = await runner.query(
-        `update public.reviews set rating = $1, comment = $2
-              where id = $3
-              returning ${COLUMNS}`,
-        [changes.rating, changes.comment, id],
-      );
-      if (rows.length === 0) throw notYours();
-      return rows[0];
-    });
+  //
+  // The photo (ticket 82): with a new photo it is uploaded first and
+  // replaces the old one; with removePhoto the review loses its photo;
+  // with neither, the photo stays as it is. The old file is deleted from
+  // Storage once the review is saved. If saving fails, the new upload is
+  // deleted again, so no unused file is left behind.
+  async update(
+    accessToken: string,
+    id: string,
+    changes: ReviewChanges,
+    photoChange: { photo?: UploadedPhoto; removePhoto?: boolean } = {},
+  ): Promise<ReviewDto> {
+    const changePhoto = !!photoChange.photo || !!photoChange.removePhoto;
+    const newPath = photoChange.photo ? await this.photos.upload(accessToken, photoChange.photo) : null;
+    try {
+      const { saved, oldPath } = await this.asTraveler(accessToken, async (runner) => {
+        // The photo it had before, read in the same transaction (only the
+        // traveler's own review is found).
+        const [before]: { photo_path: string | null }[] = await runner.query(
+          'select photo_path from public.reviews where id = $1 and user_id = auth.uid()',
+          [id],
+        );
+        if (!before) throw notYours();
+        // For UPDATE, TypeORM answers with [changed rows, how many].
+        // $4 says whether the photo changes at all; $5 is the new place
+        // (null to remove it).
+        const [rows]: [ReviewDto[], number] = await runner.query(
+          `update public.reviews
+              set rating = $1,
+                  comment = $2,
+                  photo_path = case when $4 then $5 else photo_path end
+            where id = $3
+            returning ${COLUMNS}`,
+          [changes.rating, changes.comment, id, changePhoto, newPath],
+        );
+        if (rows.length === 0) throw notYours();
+        return { saved: rows[0], oldPath: before.photo_path };
+      });
+      if (changePhoto && oldPath && oldPath !== newPath) await this.photos.remove(accessToken, oldPath);
+      return saved;
+    } catch (error) {
+      if (newPath) await this.photos.remove(accessToken, newPath);
+      throw error;
+    }
   }
 
   // Deletes the traveler's own review and says so. As with update,
   // someone else's review is invisible here, so nothing is deleted.
-  remove(accessToken: string, id: string): Promise<DeletedReview> {
-    return this.asTraveler(accessToken, async (runner) => {
+  // Its photo, if it had one, is deleted from Storage afterwards (ticket
+  // 81); "returning photo_path" says which file that is.
+  async remove(accessToken: string, id: string): Promise<DeletedReview> {
+    const photoPath = await this.asTraveler(accessToken, async (runner) => {
       // For DELETE, TypeORM answers with [deleted rows, how many].
-      const [, count]: [unknown[], number] = await runner.query(
-        'delete from public.reviews where id = $1',
+      const [rows, count]: [{ photo_path: string | null }[], number] = await runner.query(
+        'delete from public.reviews where id = $1 returning photo_path',
         [id],
       );
       if (count === 0) throw notYours();
-      return { id, message: 'Your review has been deleted.' };
+      return rows[0]?.photo_path ?? null;
     });
+    if (photoPath) await this.photos.remove(accessToken, photoPath);
+    return { id, message: 'Your review has been deleted.' };
   }
 
   // Who is asking, for "liked by me" on GET /v1/reviews. Reading reviews

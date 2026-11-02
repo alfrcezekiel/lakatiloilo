@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { backendMessage, createReview, updateReview } from "@/lib/api";
 import { loginToken } from "@/lib/login";
+import { ReviewPhotoPicker } from "@/components/ReviewPhotoPicker";
 import type { Review } from "@/components/ReviewsSection";
 
 const MAX_COMMENT = 500;
@@ -42,6 +43,11 @@ export function ReviewForm({ placeType, placeId, onSaved, existing, onCancel }: 
   const [commentError, setCommentError] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  // The photo: a newly chosen file (ticket 81; when editing it replaces
+  // the old one), and, when editing, whether the traveler removed the
+  // photo the review already had (ticket 82).
+  const [photo, setPhoto] = useState<File | null>(null);
+  const [removeCurrent, setRemoveCurrent] = useState(false);
 
   const length = comment.trim().length;
   const tooLong = length > MAX_COMMENT;
@@ -75,8 +81,8 @@ export function ReviewForm({ placeType, placeId, onSaved, existing, onCancel }: 
       // the database fills in who wrote it, their name and the dates.
       onSaved(
         isEdit
-          ? await updateReview(token, existing.id, fields)
-          : await createReview(token, { place_type: placeType, place_id: placeId, ...fields }),
+          ? await updateReview(token, existing.id, fields, { photo, removePhoto: removeCurrent })
+          : await createReview(token, { place_type: placeType, place_id: placeId, ...fields }, photo),
       );
     } catch (error) {
       // The backend explains its refusals in plain words (for example
@@ -171,6 +177,14 @@ export function ReviewForm({ placeType, placeId, onSaved, existing, onCancel }: 
               </span>
             </div>
           </div>
+
+          <ReviewPhotoPicker
+            photo={photo}
+            onChange={setPhoto}
+            disabled={busy}
+            currentUrl={isEdit && !removeCurrent ? existing?.photo_url : null}
+            onRemoveCurrent={() => setRemoveCurrent(true)}
+          />
 
           <div className="flex flex-wrap items-center gap-3">
             {/* disabled while saving, so it cannot be sent twice. */}

@@ -45,6 +45,35 @@ export class SupabaseService {
     });
   }
 
+  // A brand-new client that acts AS this traveler: every request carries
+  // their login token, so Supabase Storage's policies (supabase/sql/027)
+  // decide what they may upload or delete, like Row Level Security does for
+  // the tables (review extras round, ticket 81). One per request, so two
+  // travelers' logins can never mix.
+  travelerClient(accessToken: string): SupabaseClient {
+    const url = this.config.get<string>('SUPABASE_URL');
+    const anonKey = this.config.get<string>('SUPABASE_ANON_KEY');
+    if (!url || !anonKey) {
+      throw new Error(
+        'SUPABASE_URL or SUPABASE_ANON_KEY is not set. Add them to backend/.env (see .env.example) and to Vercel.',
+      );
+    }
+    return createClient(url, anonKey, {
+      auth: { persistSession: false, autoRefreshToken: false },
+      global: { headers: { Authorization: `Bearer ${accessToken}` } },
+    });
+  }
+
+  // The public address of a file in a public Storage bucket. Anyone can
+  // open it (the review-photos bucket is public, see 027).
+  publicFileUrl(bucket: string, path: string): string {
+    const url = this.config.get<string>('SUPABASE_URL') ?? '';
+    return `${url.replace(/\/$/, '')}/storage/v1/object/public/${bucket}/${path
+      .split('/')
+      .map(encodeURIComponent)
+      .join('/')}`;
+  }
+
   // Asks Supabase Auth whose login token this is. Answers with that
   // traveler's account, or null if the token is not genuine, has expired,
   // or belongs to a logged-out session.
