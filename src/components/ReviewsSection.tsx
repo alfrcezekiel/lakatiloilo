@@ -91,8 +91,10 @@ export function ReviewsSection() {
                 placeId={placeId}
                 justPosted={justPosted}
                 onSaved={(saved) => {
+                  // Merge, don't replace: the edit's answer has no replies
+                  // or Helpful count, so keep the ones already on screen.
                   setReviews((current) =>
-                    current.map((r) => (r.id === saved.id ? saved : r)),
+                    current.map((r) => (r.id === saved.id ? { ...r, ...saved } : r)),
                   );
                   setJustPosted(false);
                 }}
