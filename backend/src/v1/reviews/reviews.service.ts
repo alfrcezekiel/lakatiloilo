@@ -11,6 +11,7 @@ import {
 import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
 import { DataSource, QueryFailedError, QueryRunner, Repository } from 'typeorm';
 import { Review } from '../../entities/review.entity';
+import { ReviewLike, helpfulCountOf } from '../../entities/review-like.entity';
 import { SupabaseService } from '../../supabase/supabase.service';
 
 // What the website gets for each review. Only the display name is ever
@@ -67,14 +68,10 @@ export interface LikeState {
 const reviewNotFound = () => new NotFoundException("We couldn't find that review.");
 
 // How many travelers found a review helpful, counted inside the same
-// transaction, so the answer includes the like just added or removed.
-const helpfulCount = async (runner: QueryRunner, reviewId: string) => {
-  const [row]: { count: number }[] = await runner.query(
-    'select count(*)::int as count from public.review_likes where review_id = $1',
-    [reviewId],
-  );
-  return row.count;
-};
+// transaction (runner.manager), so the answer includes the like just added
+// or removed.
+const helpfulCount = (runner: QueryRunner, reviewId: string) =>
+  runner.manager.count(ReviewLike, { where: { review_id: reviewId } });
 
 const notYours = () =>
   new NotFoundException("We couldn't find that review among yours. Please log in again and try.");
@@ -95,24 +92,42 @@ export class ReviewsService {
   // says how many travelers found it helpful, and (when the request carries
   // a valid login) whether this traveler did (profiles & likes round). Read
   // through lakat_api, which may read reviews and likes (023 and 024).
-  // viewerId travels as $3, so it can never change the query; when it is
-  // null, liked_by_me is simply false.
+  //
+  // Built with TypeORM's query builder (likes on TypeORM round, ticket 77):
+  // the two like columns are small sub-queries on the ReviewLike entity, so
+  // it is still one database request. Every value (place, viewer) travels
+  // as a named parameter, never glued into the SQL text. When viewerId is
+  // null, no like matches it, so liked_by_me is simply false.
   async findForPlace(
     placeType: PlaceType,
     placeId: string,
     viewerId: string | null = null,
   ): Promise<ReviewWithLikes[]> {
     try {
-      return await this.dataSource.query(
-        `select r.id, r.user_id, r.reviewer_name, r.traveler_type, r.rating, r.comment, r.created_at,
-                (select count(*)::int from public.review_likes l where l.review_id = r.id) as helpful_count,
-                exists (select 1 from public.review_likes l
-                        where l.review_id = r.id and l.user_id = $3::uuid) as liked_by_me
-          from public.reviews r
-          where r.place_type = $1 and r.place_id = $2
-          order by r.created_at desc`,
-        [placeType, placeId, viewerId],
-      );
+      return await this.reviews
+        .createQueryBuilder('r')
+        .select('r.id', 'id')
+        .addSelect('r.user_id', 'user_id')
+        .addSelect('r.reviewer_name', 'reviewer_name')
+        .addSelect('r.traveler_type', 'traveler_type')
+        .addSelect('r.rating', 'rating')
+        .addSelect('r.comment', 'comment')
+        .addSelect('r.created_at', 'created_at')
+        .addSelect(helpfulCountOf('r'), 'helpful_count')
+        .addSelect(
+          (mine) =>
+            mine
+              .select('COUNT(*) > 0')
+              .from(ReviewLike, 'm')
+              .where('m.review_id = r.id')
+              .andWhere('m.user_id = CAST(:viewerId AS uuid)'),
+          'liked_by_me',
+        )
+        .where('r.place_type = :placeType', { placeType })
+        .andWhere('r.place_id = :placeId', { placeId })
+        .setParameter('viewerId', viewerId)
+        .orderBy('r.created_at', 'DESC')
+        .getRawMany<ReviewWithLikes>();
     } catch (error) {
       this.logger.error(`Could not read reviews: ${String(error)}`);
       throw new ServiceUnavailableException('Could not load reviews right now.');
@@ -246,42 +261,55 @@ export class ReviewsService {
 
   // Marks someone else's review as helpful (POST /v1/reviews/:id/like),
   // as the logged-in traveler, so the review_likes policies (024) decide.
+  // Everything goes through runner.manager: TypeORM on the same connection
+  // and transaction that asTraveler switched to the traveler.
   // The two checks first only give friendlier messages; the database
   // refuses a like on your own review by itself too. Marking twice changes
-  // nothing ("on conflict do nothing").
+  // nothing (orIgnore = "on conflict do nothing").
   like(accessToken: string, reviewId: string): Promise<LikeState> {
     return this.asTraveler(accessToken, async (runner) => {
-      const [review]: { user_id: string }[] = await runner.query(
-        'select user_id from public.reviews where id = $1',
-        [reviewId],
-      );
+      const review = await runner.manager.findOne(Review, {
+        select: { user_id: true },
+        where: { id: reviewId },
+      });
       if (!review) throw reviewNotFound();
+
+      // Who this traveler is, as Supabase sees it (a function, not a table,
+      // so it stays a one-line query).
       const [me]: { id: string }[] = await runner.query('select auth.uid() as id');
       if (review.user_id === me.id) {
         throw new BadRequestException("You can't mark your own review as helpful.");
       }
-      await runner.query(
-        'insert into public.review_likes (review_id) values ($1) on conflict do nothing',
-        [reviewId],
-      );
+
+      // Only review_id is sent: user_id and created_at are filled in by the
+      // database (see ReviewLike). updateEntity(false): nothing to read back.
+      await runner.manager
+        .createQueryBuilder()
+        .insert()
+        .into(ReviewLike)
+        .values({ review_id: reviewId })
+        .orIgnore()
+        .updateEntity(false)
+        .execute();
       return { helpful_count: await helpfulCount(runner, reviewId), liked: true };
     });
   }
 
   // Removes the traveler's own like (DELETE /v1/reviews/:id/like). Row
-  // Level Security only lets anyone delete their own likes, so this can
-  // never remove someone else's. Unmarking twice changes nothing.
+  // Level Security only lets anyone delete their own likes, and the
+  // condition asks only for this traveler's (auth.uid()), so this can never
+  // remove someone else's. Unmarking twice changes nothing.
   unlike(accessToken: string, reviewId: string): Promise<LikeState> {
     return this.asTraveler(accessToken, async (runner) => {
-      const [review]: unknown[] = await runner.query(
-        'select 1 from public.reviews where id = $1',
-        [reviewId],
-      );
-      if (!review) throw reviewNotFound();
-      await runner.query(
-        'delete from public.review_likes where review_id = $1 and user_id = auth.uid()',
-        [reviewId],
-      );
+      const reviewExists = await runner.manager.exists(Review, { where: { id: reviewId } });
+      if (!reviewExists) throw reviewNotFound();
+      await runner.manager
+        .createQueryBuilder()
+        .delete()
+        .from(ReviewLike)
+        .where('review_id = :reviewId', { reviewId })
+        .andWhere('user_id = auth.uid()')
+        .execute();
       return { helpful_count: await helpfulCount(runner, reviewId), liked: false };
     });
   }

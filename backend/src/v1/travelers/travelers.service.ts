@@ -1,6 +1,10 @@
 import { Injectable, Logger, NotFoundException, ServiceUnavailableException } from '@nestjs/common';
 import { InjectDataSource } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
+import { Accommodation } from '../../entities/accommodation.entity';
+import { Destination } from '../../entities/destination.entity';
+import { Review } from '../../entities/review.entity';
+import { helpfulCountOf } from '../../entities/review-like.entity';
 
 // One review as it shows on a traveler's profile: the review, the place it
 // is about (with its name, so the page can link to it) and its "Helpful"
@@ -44,21 +48,29 @@ export class TravelersService {
   async profile(id: string): Promise<TravelerProfile> {
     let rows: (ProfileReview & { reviewer_name: string; traveler_type: string | null })[];
     try {
-      // $1 travels separately from the SQL text, so the id can never
-      // change the query. The place name comes from whichever table the
-      // review's place_type points at.
-      rows = await this.dataSource.query(
-        `select r.id, r.rating, r.comment, r.created_at, r.place_type, r.place_id,
-                r.reviewer_name, r.traveler_type,
-                coalesce(d.name, a.name) as place_name,
-                (select count(*)::int from public.review_likes l where l.review_id = r.id) as helpful_count
-           from public.reviews r
-           left join public.destinations d on r.place_type = 'destination' and d.id = r.place_id
-           left join public.accommodations a on r.place_type = 'accommodation' and a.id = r.place_id
-          where r.user_id = $1
-          order by r.created_at desc`,
-        [id],
-      );
+      // Built with TypeORM's query builder on the entities (likes on
+      // TypeORM round, ticket 77), still one database request. The id
+      // travels as a named parameter, so it can never change the query.
+      // The place name comes from whichever table the review's place_type
+      // points at; the Helpful count is a small sub-query on ReviewLike.
+      rows = await this.dataSource
+        .getRepository(Review)
+        .createQueryBuilder('r')
+        .leftJoin(Destination, 'd', "r.place_type = 'destination' AND d.id = r.place_id")
+        .leftJoin(Accommodation, 'a', "r.place_type = 'accommodation' AND a.id = r.place_id")
+        .select('r.id', 'id')
+        .addSelect('r.rating', 'rating')
+        .addSelect('r.comment', 'comment')
+        .addSelect('r.created_at', 'created_at')
+        .addSelect('r.place_type', 'place_type')
+        .addSelect('r.place_id', 'place_id')
+        .addSelect('r.reviewer_name', 'reviewer_name')
+        .addSelect('r.traveler_type', 'traveler_type')
+        .addSelect('COALESCE(d.name, a.name)', 'place_name')
+        .addSelect(helpfulCountOf('r'), 'helpful_count')
+        .where('r.user_id = :id', { id })
+        .orderBy('r.created_at', 'DESC')
+        .getRawMany();
     } catch (error) {
       this.logger.error(`Could not read traveler profile: ${String(error)}`);
       throw new ServiceUnavailableException('Could not load this traveler right now.');
