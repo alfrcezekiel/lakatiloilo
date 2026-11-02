@@ -88,8 +88,7 @@ before it becomes a ticket:
   unliking into their own likes service, and the photo steps of writing,
   editing and deleting into the review photos service. (The "act as the
   traveler" step already moved into a shared helper in ticket 79.) No
-  change for travelers; about one ticket. No change for
-  travelers; about one ticket.
+  change for travelers; about one ticket.
 - Move adding, editing and deleting reviews onto TypeORM too (kept out of
   the likes round on purpose).
 
@@ -106,6 +105,27 @@ before it becomes a ticket:
   (Storage briefly unavailable), the file stays and is only logged; a
   check could list files that no review points to. Fine for the demo:
   they can be deleted by hand in the Storage dashboard.
+
+### From the threaded replies round code review (2026-11-02)
+Parked by the team; none is needed for the demo.
+- A limit on how deep a thread can go (for example 50 levels) or how many
+  replies a review can have, and a per-traveler rate limit. Today someone
+  with a script could post thousands of replies, each answering the last,
+  which would make the page slow and could crash it.
+- The right message in a rare timing case: if a reply is deleted at the
+  exact moment someone answers it, they see "We couldn't find that
+  review." instead of "That reply isn't under this review."
+- A project-specific database error code for "that reply isn't under this
+  review" in a new SQL file, instead of the general code 22023.
+- One way to check ids in the replies controller (parent_reply_id has its
+  own pattern; ids in the web address use NestJS's check).
+- Split the replies component (about 400 lines): the reply form and one
+  reply into their own files. No change for travelers.
+- Keyboard focus: after Cancel or Delete, send focus back to the reply's
+  Reply link instead of the top of the page; move focus to "Yes, delete"
+  when the confirm step opens.
+- Answers whose parent reply is gone are silently not shown (only
+  possible for a moment during a race); fine as it is, noted here.
 
 ### Backend extras (parked from the backend round, 2026-10-25)
 The backend round moved the home page, reviews, sign-up and log-in onto

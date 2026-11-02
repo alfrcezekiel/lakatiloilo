@@ -9,7 +9,7 @@
 - [x] Levels 1 to 3 each move in a little more
 - [x] Level 4 and deeper stay at the level-3 indent and start with "Replying to <name>"
 - [x] At 375 px, five levels deep, no text is squeezed and nothing reaches past the screen edge
-- [ ] Works on the live URL
+- [x] Works on the live URL
 
 **Progress (2026-11-02):** the replies component indents one step per level up to 3 levels. A level-3 reply's answers, and all answers below them, no longer nest inside it: they follow it in the same list, at the level-3 indent, in thread order, each starting with a small "↳ Replying to <name>" line naming the traveler it answers. Website only; no data or backend change.
 
@@ -22,3 +22,5 @@ Checked, in the browser with a pretend login and pretend backend answers (nothin
 Not checked: a real login (the team tests real logins) and the live URL (not pushed yet).
 
 **Checked by the team on localhost (2026-11-02):** with a real login, a thread 4 or more levels deep stops indenting at level 3 and shows the right "Replying to <name>" names, on a laptop and a phone. "Works on the live URL" stays open until ticket 86 is pushed and checked there.
+
+**Checked by the team on the live URL (2026-11-02):** the threaded replies round checklist passed after the push (1c3170c).

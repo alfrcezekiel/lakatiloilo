@@ -10,7 +10,7 @@
 - [x] Names, tags, dates and text stay easy to read on both the teal and the blue detail pages
 - [x] The Reply button, the reply form and Delete look and work as before
 - [x] Looks tidy on a phone (375 px) and a laptop
-- [ ] Works on the live URL
+- [x] Works on the live URL
 
 **Progress (2026-11-02):** each reply under a review lost its pale white box (rounded, 5% white background) and now has a thin 2 px line down its left side (25% white) instead, with the same text, Reply button, form and Delete as before. One line changed in the replies component.
 
@@ -21,3 +21,5 @@ Checked:
 Not checked: the blue accommodation pages (no accommodation has replies yet; the same white-on-colour styles are used there), the Reply form and Delete with a real login (the team tests real logins), and the live URL (not pushed yet).
 
 **Confirmed by the team (2026-11-02):** checked and ticked. "Works on the live URL" stays open until ticket 84 is pushed and checked there.
+
+**Checked by the team on the live URL (2026-11-02):** the threaded replies round checklist passed after the push (1c3170c).

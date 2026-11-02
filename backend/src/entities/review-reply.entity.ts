@@ -4,9 +4,9 @@ import { Review } from './review.entity';
 // The review_replies table (supabase/sql/025, review extras round, ticket
 // 79): one reply under a review.
 //
-// 025 lets travelers send review_id and comment ("grant insert
-// (review_id, comment)"), and 028 adds parent_reply_id. Everything else is filled in by the database:
-// id (gen_random_uuid), user_id (from the login), replier_name and
+// Travelers may send only three columns: review_id and comment (025,
+// "grant insert (review_id, comment)") and parent_reply_id (028).
+// Everything else is filled in by the database: id (gen_random_uuid), user_id (from the login), replier_name and
 // traveler_type (copied from the account by the trigger) and created_at.
 // So those columns are insert: false, and TypeORM never names them when
 // saving; if it did, even with DEFAULT, the database would refuse the reply.

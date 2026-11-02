@@ -10,10 +10,10 @@
 
 **Status:** todo
 
-- [ ] Every item in the "Threaded replies round" checklist works on the live URL
+- [x] Every item in the "Threaded replies round" checklist works on the live URL
 - [ ] Reviews, photos, reports, Helpful likes, profiles and log-in still work
 - [ ] /code-review has been run on the round and its findings handled
-- [ ] Works on the live URL
+- [x] Works on the live URL
 
 **Progress (2026-11-02):** the change above is in the replies component. Answers to a reply are turned newest first (the backend still sends oldest first; replies to the review stay oldest first), and "Your reply is posted." shows under the reply just posted. After a delete it still shows at the bottom. Website only.
 
@@ -34,3 +34,14 @@ Not checked: the live URL (not pushed yet).
 Not checked: in the browser. The built-in browser stayed on the page's loading skeleton twice, although the dev server sent the full page in under a second, so the check was stopped as the team rules ask. Needs the team's phone simulator.
 
 **Checked by the team in a phone simulator (2026-11-02):** after a hard refresh, the Reviews area and an open reply box stay visible while scrolling to the bottom and typing a reply.
+
+**Checked by the team on the live URL (2026-11-02):** every item in the "Threaded replies round" checklist passed after the push (1c3170c). Still open: confirming reviews, photos, reports, Helpful likes, profiles and log-in still work, and /code-review on the round.
+
+**Code review (2026-11-02, from 95c093f to 1c3170c, both axes in parallel):** no must-fix findings (Row Level Security unchanged, no secrets, no raw HTML, no SQL glued from input, no way to make a reply loop; the build passes).
+
+**Review findings handled (2026-11-02, team request: fix 3 small, park the rest):**
+- Fixed: a refused delete now shows its message next to that reply's confirm step, not inside a reply form open somewhere else (the two used to share one message). Checked in the browser with a pretend login and a pretend refusal: the message appeared only inside the reply that could not be deleted.
+- Fixed: the spec's polish-round line now has a dated change note saying Reviews stays visible while any part of it is on screen, and the round's checklist has the phone line.
+- Fixed: the ReviewReply entity comment lists the three columns travelers may send.
+- Parked in docs/LATER.md ("From the threaded replies round code review"): a thread depth or reply limit and a rate limit, the message in a rare timing case, a project-specific error code instead of 22023, one way to check ids, splitting the replies component, keyboard focus after Cancel and Delete, and answers whose parent is gone. Also removed a repeated sentence in LATER.md.
+- Website and backend type-checks, lint and `npm run build` pass.

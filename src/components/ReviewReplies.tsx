@@ -61,6 +61,11 @@ export function ReviewReplies({
   const [error, setError] = useState<string | null>(null);
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  // A refused delete, shown next to that reply's confirm step, not in an
+  // open reply form somewhere else (code review, 2026-11-02).
+  const [deleteError, setDeleteError] = useState<{ replyId: string; message: string } | null>(
+    null,
+  );
   const [status, setStatus] = useState<string | null>(null);
   // The reply just posted: "Your reply is posted." shows under it. Null
   // shows the status line at the bottom (after a delete).
@@ -129,11 +134,11 @@ export function ReviewReplies({
 
   const remove = async (replyId: string) => {
     setDeletingId(replyId);
-    setError(null);
+    setDeleteError(null);
     try {
       const token = await loginToken();
       if (!token) {
-        setError("Please log in again, then try again.");
+        setDeleteError({ replyId, message: "Please log in again, then try again." });
         return;
       }
       const deleted = await deleteReply(token, replyId);
@@ -145,7 +150,10 @@ export function ReviewReplies({
       setStatus(deleted.message);
       setPostedId(null);
     } catch (e) {
-      setError(backendMessage(e) ?? "Something went wrong. Please try again.");
+      setDeleteError({
+        replyId,
+        message: backendMessage(e) ?? "Something went wrong. Please try again.",
+      });
     } finally {
       setDeletingId(null);
     }
@@ -236,7 +244,10 @@ export function ReviewReplies({
                 </button>
                 <button
                   type="button"
-                  onClick={() => setConfirmingId(null)}
+                  onClick={() => {
+                    setConfirmingId(null);
+                    setDeleteError(null);
+                  }}
                   disabled={deletingId === reply.id}
                   className={cn(pillButton({ kind: "glass" }), small)}
                 >
@@ -259,7 +270,10 @@ export function ReviewReplies({
                 {own && (
                   <button
                     type="button"
-                    onClick={() => setConfirmingId(reply.id)}
+                    onClick={() => {
+                      setConfirmingId(reply.id);
+                      setDeleteError(null);
+                    }}
                     className="rounded text-sm font-medium text-red-200 underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-white"
                   >
                     Delete
@@ -268,6 +282,12 @@ export function ReviewReplies({
               </>
             )}
           </div>
+        )}
+
+        {deleteError?.replyId === reply.id && (
+          <p role="alert" className="mt-1.5 text-sm text-amber-200">
+            {deleteError.message}
+          </p>
         )}
 
         {openForm === reply.id && <div className="mt-2">{form}</div>}

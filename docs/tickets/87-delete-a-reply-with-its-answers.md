@@ -10,7 +10,7 @@
 - [x] After deleting, the whole thread under it is gone at once, and still gone after a refresh
 - [x] Deleting someone else's reply is still refused by the database (Row Level Security), not just hidden in the page
 - [x] The answer and messages from DELETE /v1/replies/:id are the same as before
-- [ ] Works on the live URL
+- [x] Works on the live URL
 
 **Progress (2026-11-02):** the replies component's confirm step says "Delete this reply and its answers?" when the reply has answers, and "Delete this reply?" when it has none. After the backend confirms, the page removes the reply and every answer under it, all levels deep (the same ones the database deletes, 028), so nothing waits for a refresh. A Reply form open under a deleted answer closes. Website only: no data, backend or message changes.
 
@@ -23,3 +23,5 @@ Checked:
 Not checked: a real login (the team tests real logins), "still gone after a refresh" with real data, and the live URL (not pushed yet).
 
 **Checked by the team on localhost (2026-11-02):** with a real login, deleting a reply with answers asks "Delete this reply and its answers?" and the whole thread is gone at once and after a refresh; a reply without answers asks "Delete this reply?". "Works on the live URL" stays open until ticket 87 is pushed and checked there.
+
+**Checked by the team on the live URL (2026-11-02):** the threaded replies round checklist passed after the push (1c3170c).

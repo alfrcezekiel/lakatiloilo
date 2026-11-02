@@ -119,7 +119,7 @@ Travelers planning weekend trips around Iloilo Province. No login required for b
 
 17. Polish round — same pages and features, with clearer icons, smoother movement and faster reviews:
    - **Icons everywhere:** the emoji on the Features cards and the category cards, the address pin, the menu's close button, the back and "View details" arrows and the footer heart become matching Lucide icons. Stars stay gold.
-   - **Detail pages:** the chips, title and address fade up when the page opens. The tiles, About, the side panel and Reviews fade in and out as described below. A new review slides in at the top of the list; a deleted one shrinks away.
+   - **Detail pages:** the chips, title and address fade up when the page opens. The tiles, About, the side panel and Reviews fade in and out as described below. (Changed on 2026-11-02 at the team's request: Reviews stays visible while any part of it is on screen, instead of fading out when less than 15% of it shows. Threaded replies make it much taller than a phone screen, so it used to vanish at the bottom of the page and while typing a reply with the keyboard open.) A new review slides in at the top of the list; a deleted one shrinks away.
    - **Home page and detail pages, text and cards (change 2026-11-01, team request):** what is on screen rises into view when the page loads or is refreshed. Scrolling down, text and cards rise up into view (fade up); scrolling back up, they come down into view from above (fade down). This happens every time they come back on screen: they fade out when they leave. Cards in one row arrive one after another. On the home page this covers the hero text, search bar and chips, the Featured and Trending cards, Why Iloilo, the Features cards, the category cards, and every list heading and place card. Cards lift slightly on hover.
    - **Navbar menu on phones:** slides open and closed instead of appearing at once.
    - **Reviews load faster on a return visit:** going back to a place seen in the last minute shows its reviews straight away while fresh ones load quietly. After writing, editing or deleting a review, the Rating tile and the list update at once.
@@ -472,13 +472,14 @@ Profiles & likes, review extras and threaded replies rounds: browsing, profiles,
 - [x] The refusals for no login, a fake login and a bad id answer the same messages as before
 
 **Threaded replies round (live URL):**
-- [ ] Replies have no pale box behind them, only the thin left line, on a laptop and a phone
-- [ ] A logged-in traveler can answer a reply; the answer shows indented right under it (newest first) at once, with "Your reply is posted." under it, and still after a refresh
-- [ ] Answers at levels 2 and 3 have a curved line from the reply they answer, on a laptop and a phone
-- [ ] Four or more levels deep, the indent stops growing, "Replying to <name>" shows, and nothing is squeezed at 375 px
-- [ ] Deleting a reply with answers asks "Delete this reply and its answers?" and removes the whole thread under it
-- [ ] Logged out, threads show but there is no Reply link
-- [ ] Answering with a parent reply from another review is refused by the backend, and deleting someone else's reply is still refused by the database
+- [x] Replies have no pale box behind them, only the thin left line, on a laptop and a phone
+- [x] A logged-in traveler can answer a reply; the answer shows indented right under it (newest first) at once, with "Your reply is posted." under it, and still after a refresh
+- [x] Answers at levels 2 and 3 have a curved line from the reply they answer, on a laptop and a phone
+- [x] Four or more levels deep, the indent stops growing, "Replying to <name>" shows, and nothing is squeezed at 375 px
+- [x] Deleting a reply with answers asks "Delete this reply and its answers?" and removes the whole thread under it
+- [x] Logged out, threads show but there is no Reply link
+- [x] On a phone, Reviews stays visible at the bottom of the page and while typing a reply (checked by the team in a phone simulator, 2026-11-02)
+- [x] Answering with a parent reply from another review is refused by the backend, and deleting someone else's reply is still refused by the database
 
 ## Out of scope
 - Likes on TypeORM round: moving the other hand-written SQL (adding, editing and deleting reviews, the act-as-the-traveler step) onto TypeORM, and any change travelers can see

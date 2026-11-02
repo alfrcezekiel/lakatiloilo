@@ -17,7 +17,7 @@ The review_replies table gains parent_reply_id: the reply being answered, or emp
 - [x] Replies to the review itself still work as before
 - [x] Logged out, the threads show but there is no Reply link
 - [x] Looks tidy on a phone (375 px) and a laptop
-- [ ] Works on the live URL
+- [x] Works on the live URL
 
 **Progress (2026-11-02):** supabase/sql/028-replies-to-replies.sql adds parent_reply_id to review_replies (empty = answers the review; deleting a reply deletes every answer under it), a check that refuses a parent reply that is missing or under another review (code 22023), and lets travelers send parent_reply_id. Row Level Security and the four policies from 025 are unchanged. The team ran it in the Supabase SQL Editor ("it worked").
 
@@ -34,3 +34,5 @@ Checked:
 Not checked: a real login (the team tests real logins), "still there after a refresh" with real data, and the live URL (not pushed yet).
 
 **Checked by the team on localhost (2026-11-02):** with a real login, answering a reply and answering an answer work, the threads stay in place after a refresh, and logged out there are no Reply buttons. "Works on the live URL" stays open until ticket 85 is pushed and checked there.
+
+**Checked by the team on the live URL (2026-11-02):** the threaded replies round checklist passed after the push (1c3170c).
