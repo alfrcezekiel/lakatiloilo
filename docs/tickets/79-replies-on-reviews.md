@@ -4,7 +4,7 @@
 
 **Blocked by:** None
 
-**Status:** todo
+**Status:** done (confirmed by the team on the live URL, 2026-11-02)
 
 - [x] A numbered SQL file creates review_replies with Row Level Security on and policies: anyone may read; a logged-in traveler may add a reply only as themselves; only the writer may delete it; no one may edit it. The database copies the replier's name and traveler type from the account. The team has run it in the Supabase SQL Editor
 - [x] POST /v1/reviews/:id/replies and DELETE /v1/replies/:id work through TypeORM as the logged-in traveler, with plain refusal messages (not logged in, no such review, text outside 1–300 characters, someone else's reply)
@@ -13,7 +13,7 @@
 - [x] A logged-in traveler can reply, and delete their own reply; the list updates at once
 - [x] Deleting someone else's reply is refused by the database (Row Level Security), not just hidden in the page
 - [x] Looks tidy on a phone (375 px) and a laptop
-- [ ] Works on the live URL
+- [x] Works on the live URL
 
 **Progress (2026-11-02):** supabase/sql/025-review-replies.sql creates review_replies (removed with their review, 1–300 characters) with Row Level Security on: anyone may read; a logged-in traveler may add a reply only as themselves; only the writer may delete it; there is no edit policy. A trigger copies the replier's name and traveler type from the account, with the same rules as reviews. The backend may read replies. The team ran it in the Supabase SQL Editor ("it worked").
 
@@ -30,3 +30,5 @@ Checked:
 Not checked: a real login (the team tests real logins), writing and deleting reviews through the moved "act as the traveler" helper with a real login, and the live URL (not pushed yet).
 
 **Checked by the team on localhost (2026-11-02):** with a real login, replying and deleting a reply work, replies show when logged out, and writing, editing and deleting a review still work through the moved "act as the traveler" helper. "Works on the live URL" stays open until ticket 79 is pushed and checked there.
+
+**Confirmed by the team (2026-11-02):** checked on the live URL and marked done.

@@ -442,11 +442,11 @@ Profiles & likes and review extras rounds: browsing, profiles, likes counts, rep
 - [x] Logged out, the Helpful counts show but nothing can be clicked
 
 **Review extras round (live URL):**
-- [ ] A logged-in traveler can reply to a review and delete their own reply; replies show to everyone
-- [ ] Reporting a review shows the thank-you message, reporting it again says it was already reported, and the report appears in the Supabase dashboard
-- [ ] A traveler can add a photo to a review, swap it and remove it, and deleting the review deletes the photo from Storage
-- [ ] A photo over 2 MB, or not a JPG, PNG or WebP, is refused with a clear message
-- [ ] Deleting someone else's reply, or uploading into someone else's photo folder, is refused by the database or Storage, not just hidden in the page
+- [x] A logged-in traveler can reply to a review and delete their own reply; replies show to everyone
+- [x] Reporting a review shows the thank-you message, reporting it again says it was already reported, and the report appears in the Supabase dashboard
+- [x] A traveler can add a photo to a review, swap it and remove it, and deleting the review deletes the photo from Storage
+- [x] A photo over 2 MB, or not a JPG, PNG or WebP, is refused with a clear message
+- [x] Deleting someone else's reply, or uploading into someone else's photo folder, is refused by the database or Storage, not just hidden in the page
 
 **Likes on TypeORM round (live URL):**
 - [x] Marking and unmarking Helpful still works, and counts and profiles show the same numbers as before

@@ -4,12 +4,12 @@
 
 **Blocked by:** 79, 80, 81, 82
 
-**Status:** todo
+**Status:** done (confirmed by the team on the live URL, 2026-11-02)
 
-- [ ] Every item in the "Review extras round" checklist works on the live URL
-- [ ] Existing reviews, Helpful likes, profiles, the profile dropdown, ratings on cards and log-in still work
-- [ ] /code-review has been run on the round and its findings handled
-- [ ] Works on the live URL
+- [x] Every item in the "Review extras round" checklist works on the live URL
+- [x] Existing reviews, Helpful likes, profiles, the profile dropdown, ratings on cards and log-in still work
+- [x] /code-review has been run on the round and its findings handled
+- [x] Works on the live URL
 
 **Progress (2026-11-02):** /code-review ran on the round (from ade7563, the last push: tickets 79–82 and SQL 025–027, all uncommitted), both axes one after the other.
 
@@ -27,3 +27,5 @@ Not done yet: the team's walk-through of the "Review extras round" checklist on 
 - Spec: the DELETE /v1/replies/:id line now gives the real 404 message ("…among yours. Please log in again and try.", like the reviews message).
 - Parked in docs/LATER.md: (1) the reviews service split, updated for its new size (about 370 lines) and to move the photo steps into the review photos service too; (2) one Supabase login check per review with a photo instead of two; (3) keeping reports when a review is deleted (a team decision and a SQL change); (4) tidying up photos left behind in Storage if a delete fails.
 No code changed.
+
+**Checked by the team on the live URL (2026-11-02):** every item in the "Review extras round" checklist passed on a laptop and a phone, including photo uploads on the live site, and Helpful likes, profiles, the profile dropdown and ratings on cards still work. The review wording finding was fixed before the push; findings 1–4 are parked in docs/LATER.md.

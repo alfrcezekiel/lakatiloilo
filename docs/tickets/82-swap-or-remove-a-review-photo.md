@@ -4,13 +4,13 @@
 
 **Blocked by:** 81
 
-**Status:** todo
+**Status:** done (confirmed by the team on the live URL, 2026-11-02)
 
 - [x] PATCH /v1/reviews/:id can add, swap or remove the photo of the traveler's own review, with the same limits and message as ticket 81
 - [x] The edit form shows the current photo, with Change and Remove
 - [x] Swapping or removing a photo deletes the old file from Storage
 - [x] Editing only the stars or text leaves the photo as it is
-- [ ] Works on the live URL
+- [x] Works on the live URL
 
 **Progress (2026-11-02):** No database change (027 already lets the writer set or clear photo_path, and refuses a photo outside their folder).
 
@@ -29,3 +29,5 @@ Found and fixed while building (no effect on the result): one of my edit scripts
 Not checked: a real swap and removal with a real login, the old file being deleted from Storage after a swap or removal, and the live URL (not pushed yet).
 
 **Checked by the team on localhost (2026-11-02):** with a real login, swapping a review photo shows the new one and leaves only the new file in Storage; removing the photo empties it; editing only the stars keeps the photo. "Works on the live URL" stays open until ticket 82 is pushed and checked there.
+
+**Confirmed by the team (2026-11-02):** checked on the live URL and marked done.

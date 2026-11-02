@@ -4,7 +4,7 @@
 
 **Blocked by:** None
 
-**Status:** todo
+**Status:** done (confirmed by the team on the live URL, 2026-11-02)
 
 - [x] A numbered SQL file creates review_reports with Row Level Security on and policies: no one may read reports through the app; a logged-in traveler may add a report only as themselves and never on their own review; one report per traveler per review; no one may edit or delete one through the app. The team has run it in the Supabase SQL Editor
 - [x] POST /v1/reviews/:id/report works through TypeORM as the logged-in traveler and answers the thank-you message; refusals give plain messages (not logged in, no such review, your own review, unknown reason, already reported)
@@ -12,7 +12,7 @@
 - [x] The pop-up can be closed with Escape or Cancel, and works with the keyboard
 - [x] A sent report appears in the Supabase dashboard (Table Editor → review_reports)
 - [x] Reading reports through the backend or the website is refused by the database
-- [ ] Works on the live URL
+- [x] Works on the live URL
 
 **Progress (2026-11-02):** supabase/sql/026-review-reports.sql creates review_reports (reason one of spam / offensive / not_about_place / other, optional note up to 300 characters, one report per traveler per review, removed with its review) with Row Level Security on and exactly one policy: a logged-in traveler may add a report only as themselves and never on their own review. Nobody may read, edit or delete reports through the app, including the backend's own login; the team reads them in the Supabase dashboard. The team ran it in the Supabase SQL Editor ("it worked").
 
@@ -29,3 +29,5 @@ Checked:
 Not checked: a real login, seeing a real report in the Supabase dashboard (Table Editor → review_reports), and the live URL (not pushed yet).
 
 **Checked by the team on localhost (2026-11-02):** with a real login, reporting a review works, reporting it again says it was already reported, and the report shows in the Supabase dashboard (Table Editor → review_reports). "Works on the live URL" stays open until ticket 80 is pushed and checked there.
+
+**Confirmed by the team (2026-11-02):** checked on the live URL and marked done.

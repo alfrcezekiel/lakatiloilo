@@ -4,7 +4,7 @@
 
 **Blocked by:** None
 
-**Status:** todo
+**Status:** done (confirmed by the team on the live URL, 2026-11-02)
 
 - [x] A numbered SQL file adds photo_path to reviews (the writer may set it, like the stars and comment), creates the review-photos bucket (anyone may view; a traveler may upload, replace or delete only in their own folder; 2 MB and JPG/PNG/WebP only). The team has run it in the Supabase SQL Editor
 - [x] POST /v1/reviews accepts one photo and saves it as the logged-in traveler; a photo over 2 MB, or not JPG/PNG/WebP, is refused with "Please choose a JPG, PNG or WebP photo up to 2 MB."
@@ -14,7 +14,7 @@
 - [x] Deleting a review deletes its photo from Storage
 - [x] Uploading into someone else's folder is refused by Storage, not just hidden in the page
 - [x] No service_role or sb_secret_ key is used anywhere
-- [ ] Works on the live URL
+- [x] Works on the live URL
 
 **Progress (2026-11-02):** supabase/sql/027-review-photos.sql (run by the team, "it worked") adds reviews.photo_path (the writer may set or clear it), a check in the reviews trigger that refuses a photo_path outside the writer's own folder, the public review-photos bucket (2 MB, JPG/PNG/WebP only) and four Storage policies: anyone may view; a logged-in traveler may upload, replace or delete only in their own folder ("<user id>/…").
 
@@ -33,3 +33,5 @@ Not checked yet: the Storage policies themselves (the backend's database login h
 **Storage rules checked by the team (2026-11-02), in the Supabase SQL Editor inside a rolled-back transaction:** the first check script failed at its own step 3 because Supabase blocks plain SQL deletes of Storage files ("Direct deletion from storage tables is not allowed. Use the Storage API instead."), which is a guard on Supabase's side, not a problem with 027. The corrected script passed every line: a traveler can upload into their own folder (PASS 1) but not into another traveler's (PASS 2); a logged-out visitor can see a photo (PASS 3) but cannot upload (PASS 4); the delete and replace policies are for logged-in travelers and check the review-photos bucket and the traveler's own folder (PASS 5 and 6, read back from pg_policies). Deleting through the Storage service is checked by deleting a review with a photo on localhost.
 
 **Checked by the team on localhost (2026-11-02):** with a real login, posting a review with a photo works and the photo opens larger; a PDF or a photo over 2 MB shows the photo message; deleting the review removes its photo from Storage (review-photos, own folder). "Works on the live URL" stays open until ticket 81 is pushed and checked there.
+
+**Confirmed by the team (2026-11-02):** checked on the live URL and marked done.
