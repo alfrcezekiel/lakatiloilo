@@ -4,6 +4,7 @@ import { createContext, useCallback, useContext, type ReactNode } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { getReviews, type Review } from "@/lib/api";
+import { useTableChanges } from "@/lib/realtime";
 import { loginToken, useCurrentUser } from "@/lib/login";
 import { StatTile } from "@/components/PlaceDetail";
 
@@ -17,11 +18,31 @@ type Place = { placeType: PlaceType; placeId: string };
 // Reviews section further down read the same list, and update together.
 const PlaceContext = createContext<Place | null>(null);
 
+// Live updates (ticket 89): when any review, Helpful mark or reply changes
+// anywhere, Supabase Realtime rings and this place's reviews are fetched
+// again from the backend, so other travelers' changes show without a
+// reload. Listened to once per page, here, not in every component that
+// reads the reviews. (Realtime cannot tell which place a deleted row
+// belonged to, so it listens to all of them; a refetch is one small
+// request.)
+const REVIEW_TABLES = ["reviews", "review_likes", "review_replies"] as const;
+
 export function PlaceReviewsProvider({
   placeType,
   placeId,
   children,
 }: Place & { children: ReactNode }) {
+  const queryClient = useQueryClient();
+  const refetchReviews = useCallback(() => {
+    // Fetches the copy on screen again; copies kept for other travelers
+    // are only marked out of date.
+    void queryClient.invalidateQueries({ queryKey: ["reviews", placeType, placeId] });
+  }, [queryClient, placeType, placeId]);
+  // TanStack Query already fetches the reviews again when the tab comes
+  // back or the browser is online again, so only a Realtime reconnect
+  // rings here (ticket 92).
+  useTableChanges(REVIEW_TABLES, refetchReviews, { catchUpOnReturn: false });
+
   return (
     <PlaceContext.Provider value={{ placeType, placeId }}>{children}</PlaceContext.Provider>
   );

@@ -32,6 +32,8 @@ Likes on TypeORM round: travelers see no change. The backend describes the revie
 
 Threaded replies round: logged-in travelers can answer a reply, not only a review. Answers show indented under the reply they answer, so a conversation is easy to follow, and replies sit directly on the review card without a pale box behind each one.
 
+Live updates round: pages keep themselves up to date. When a destination or accommodation is added, changed or removed, or another traveler writes, edits or deletes a review, a reply, a photo or a Helpful mark, the open page shows it within a few seconds, without the traveler reloading. Supabase Realtime is only the doorbell that says "something changed"; the page then asks the NestJS backend again, so all data still comes through the backend.
+
 ## The user
 Travelers planning weekend trips around Iloilo Province. No login required for browsing; an account is needed only to write a review.
 
@@ -65,6 +67,8 @@ Travelers planning weekend trips around Iloilo Province. No login required for b
 27. As a logged-in traveler, I want to add a photo to my review, so that others can see what the place is really like.
 28. As a developer, I want the review_likes table described and used through TypeORM like the other tables, so that the likes code is easier to read, change and trust.
 29. As a logged-in traveler, I want to answer someone's reply and see answers indented under it, so that I can follow and join a conversation under a review.
+30. As a traveler, I want new, changed and removed destinations and accommodations, and their ratings, to show on the open page by themselves, so that I never plan around old information.
+31. As a traveler reading a place's reviews, I want other travelers' new reviews, replies, photos and Helpful marks to appear by themselves, so that I can follow the conversation without reloading.
 
 ## Screens
 1. Home page hero — redesigned to match the team's mockup:
@@ -162,6 +166,14 @@ Travelers planning weekend trips around Iloilo Province. No login required for b
    - **Deleting:** the traveler's own reply keeps its Delete button. When it has answers under it, the confirm step says "Delete this reply and its answers?", and the whole thread under it is deleted with it.
    - Unchanged: the replier's name (linking to their profile), traveler type tag and date; no editing replies.
 
+24. Live updates round — pages keep themselves up to date, with no reload:
+   - **Home page:** when a destination or accommodation is added, changed or removed in Supabase, or a place's rating changes, the cards and star ratings update by themselves within a few seconds.
+   - **Detail pages:** the place's details (name, photo, description, contact, address) update by themselves. If the place is removed, the page shows the existing "not found" message.
+   - **Reviews on a detail page:** other travelers' new, edited and deleted reviews, star ratings, Helpful counts, replies and photos appear by themselves; the average rating at the top follows.
+   - **Nothing is lost:** a review or reply being typed, an open Report pop-up, a delete confirm step and the scroll position stay as they are when an update arrives.
+   - **Coming back:** after the phone sleeps, the tab sits in the background, or the connection drops, the page catches up by itself when it is back.
+   - No new buttons or messages: updates arrive quietly. With "reduce motion" on, they just appear.
+
 ## Data
 
 **destinations table:**
@@ -258,6 +270,8 @@ Row Level Security policy for review_replies: anyone may read. Only a logged-in 
 
 Row Level Security policy for review_reports: no one may read reports through the app; the team reads them in the Supabase dashboard. Only a logged-in traveler may add a report, only with their own user_id, and never on their own review. No one may edit or delete a report through the app.
 
+**Live updates round:** no new table or column. One SQL file adds destinations, accommodations, reviews, review_likes and review_replies to Supabase's Realtime list (the supabase_realtime publication), so Supabase can announce changes to them. Row Level Security is unchanged and still decides: Realtime only tells a viewer about rows they may already read, and all five are already readable by anyone. review_reports stays off the list (nobody may read reports through the app). The browser uses Realtime only as a signal that a table changed; it never uses the rows Realtime sends.
+
 **reviews table, review extras round:** gains photo_path — where the review's photo is kept in Storage, or empty when there is no photo. Like the stars and comment, only the review's writer may set or clear it.
 
 **review-photos Storage bucket (review extras round):** anyone may view the photos. A logged-in traveler may upload only into a folder named after their own user_id, and only that traveler may replace or delete files there. Photos are JPG, PNG or WebP, up to 2 MB, so an upload stays under Vercel's 4.5 MB request limit. Uploads go through the backend as the logged-in traveler, so these Storage policies decide, like Row Level Security does for the tables.
@@ -320,6 +334,8 @@ When Supabase Auth refuses, the backend answers with Supabase's own status and c
 - DELETE /v1/replies/:id — also deletes every answer under the reply; same answers and messages as before
 - GET /v1/reviews — each reply also carries its parent_reply_id; the website builds the threads
 
+**Live updates round (v1):** no endpoint changes. After a Realtime signal the website calls the same endpoints again (GET /v1/destinations, /v1/accommodations, /v1/ratings, the place's own endpoint and GET /v1/reviews).
+
 All writes in these rounds run as the logged-in traveler (the asTraveler step), so Row Level Security and the Storage policies decide. The backend never uses the service_role key.
 
 **Likes on TypeORM round (v1):** no endpoint changes. POST and DELETE /v1/reviews/:id/like, GET /v1/reviews and GET /v1/travelers/:id keep the same inputs, answers and refusal messages.
@@ -337,6 +353,7 @@ All writes in these rounds run as the logged-in traveler (the asTraveler step), 
 - Polish round: Lucide icons (`lucide-react`, already installed) for every icon; Motion (the `motion` package, formerly Framer Motion) for animations, set to follow the device's "reduce motion" setting (the fade-up of whatever is on screen when a page loads is plain CSS instead, so it never waits for the page's JavaScript and the text is in the page from the server; Motion takes over for scrolling, and only hides what is off screen once the JavaScript has loaded); TanStack Query for the reviews fetched in the browser (reading, plus writing, editing and deleting as updates to its copy). Places stay fetched on the Next.js server, and the login keeps its own code
 - Navigation round: "who is logged in" is read through TanStack Query, kept per login, so every component shares one copy and logging in or out (in this tab or another) refreshes it. Login renewal (the timer, the one-tab-at-a-time lock and the retries) keeps its own code. The fade between pages is opacity only, with no movement, because a moving page wrapper would stop the floating navbar and scroll-to-top button from staying in place; the old page does not animate out (the App Router cannot keep it on screen without an experimental setting)
 - Fetches data from NestJS backend via HTTP calls (the home page on the server from the backend round, like the detail pages)
+- Live updates round: the browser's Supabase client also listens to Supabase Realtime, as a doorbell only: "a row in this table changed". The page then asks the backend again (reviews through TanStack Query; the home and detail pages through a server refresh). The browser never reads places or reviews from Supabase itself (team decision, 2026-11-02).
 - Deployed on Vercel
 
 **Backend (NestJS):**
@@ -481,7 +498,16 @@ Profiles & likes, review extras and threaded replies rounds: browsing, profiles,
 - [x] On a phone, Reviews stays visible at the bottom of the page and while typing a reply (checked by the team in a phone simulator, 2026-11-02)
 - [x] Answering with a parent reply from another review is refused by the backend, and deleting someone else's reply is still refused by the database
 
+**Live updates round (live URL):**
+- [ ] Adding, changing and removing a destination and an accommodation in the Supabase Table Editor shows on an open home page within a few seconds, with no reload, on a laptop and a phone
+- [ ] Changing a place in the Table Editor updates its open detail page; removing it shows "not found"
+- [ ] A review, reply, photo or Helpful mark from a second account appears on an open detail page in another browser, and editing or deleting it updates there too, with the average rating
+- [ ] A review or reply being typed, an open Report pop-up and the scroll position are kept when an update arrives
+- [ ] After the phone sleeps or the tab sits in the background, the page catches up when it comes back
+- [ ] Row Level Security is unchanged on all five tables, and review_reports is not in the Realtime list
+
 ## Out of scope
+- Live updates round: live reports (no screen shows reports and nobody may read them through the app; seeing reports as they arrive needs an admin screen), "new review" pop-ups or sounds, live traveler profile pages, and using the rows Realtime sends directly in the page
 - Likes on TypeORM round: moving the other hand-written SQL (adding, editing and deleting reviews, the act-as-the-traveler step) onto TypeORM, and any change travelers can see
 - Navigation round: login renewal through TanStack Query, the old page animating out, and the experimental "view transitions" setting (parked in docs/LATER.md)
 - Polish round: fetching places in the browser (parked in docs/LATER.md); "who is logged in" and page transitions moved into the navigation round

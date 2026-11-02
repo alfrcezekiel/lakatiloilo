@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 import { ReviewsSection } from "@/components/ReviewsSection";
 import { Reveal } from "@/components/Reveal";
 import { PlaceReviewsProvider, RatingTile } from "@/components/PlaceReviews";
+import { LivePlace } from "@/components/LivePlace";
 import {
   PanelFact,
   PlaceBody,
@@ -61,6 +62,8 @@ export default async function DestinationDetailPage({
       />
 
       <PlaceReviewsProvider placeType="destination" placeId={destination.id}>
+        {/* Live updates: this page refreshes when the place changes (ticket 91). */}
+        <LivePlace placeType="destination" placeId={destination.id} />
         <PlaceBody
           main={
             <>

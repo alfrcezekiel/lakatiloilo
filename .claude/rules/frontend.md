@@ -17,6 +17,10 @@ paths:
 - The Supabase browser client is only for the login session itself:
   `setSession` after a backend log-in, log-out, Forgot password and Set
   new password. Never for places or reviews.
+- Exception (live updates round, team decision 2026-11-02): it may also
+  listen to Supabase Realtime as a doorbell ("a row in this table
+  changed"), then ask the backend again. Never use the rows Realtime
+  sends, and never subscribe to review_reports.
 
 ## Screens
 

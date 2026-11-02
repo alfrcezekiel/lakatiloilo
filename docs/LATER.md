@@ -106,6 +106,12 @@ before it becomes a ticket:
   check could list files that no review points to. Fine for the demo:
   they can be deleted by hand in the Storage dashboard.
 
+### From the live updates round (2026-11-02)
+- See new reports as they arrive. Needs an admin screen and an admin
+  login first (see "Admin UI" in the spec's Out of scope); today the team
+  reads reports in the Supabase dashboard.
+- Live traveler profile pages, and "new review" pop-ups or sounds.
+
 ### From the threaded replies round code review (2026-11-02)
 Parked by the team; none is needed for the demo.
 - A limit on how deep a thread can go (for example 50 levels) or how many

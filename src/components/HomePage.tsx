@@ -2,7 +2,9 @@
 
 import type { Accommodation, Destination, PlaceRating } from "@/lib/api";
 import { ratingKey, type RatingsByPlace } from "@/components/CardRating";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
+import { useRouter } from "next/navigation";
+import { useTableChanges } from "@/lib/realtime";
 import { HeroSection } from "@/components/HeroSection";
 import { SearchBar } from "@/components/SearchBar";
 import { CategoryChips } from "@/components/CategoryChips";
@@ -38,6 +40,10 @@ export type HomePlaces = {
   failed: boolean;
 };
 
+// The tables whose changes the home page shows: the places themselves, and
+// reviews (they change the star ratings on the cards).
+const HOME_TABLES = ["destinations", "accommodations", "reviews"] as const;
+
 // The home page itself. The Next.js server has already started asking the
 // NestJS backend for the places, and passes that request in as `places`:
 // the page shows straight away (with skeletons), and fills in when the
@@ -62,17 +68,36 @@ export function HomePage({ places }: { places: Promise<HomePlaces> }) {
   // Ratings for the cards, looked up by place (null if they failed).
   const [ratings, setRatings] = useState<RatingsByPlace>(null);
 
+  // Live updates (ticket 90): when a destination, accommodation or review
+  // changes anywhere, Supabase Realtime rings and the page asks the Next.js
+  // server to load the places and ratings from the backend again
+  // (router.refresh). Only the server part is redone: the scroll position,
+  // the search text and the chosen category stay as they are, and the new
+  // places arrive through `places` below.
+  const router = useRouter();
+  useTableChanges(HOME_TABLES, router.refresh);
+  // True once places have shown, so a live refresh that fails keeps them.
+  const loadedOnce = useRef(false);
+
   // Wait for the places the server is fetching. Child components get the
   // lists as props instead of fetching again.
   useEffect(() => {
     let cancelled = false;
     places.then((result) => {
       if (cancelled) return;
+      // A live refresh that could not reach the backend keeps the cards and
+      // ratings already on screen instead of emptying them.
+      if (result.failed && loadedOnce.current) return;
+      loadedOnce.current = !result.failed;
       setDestinations(result.destinations);
       setAccommodations(result.accommodations);
-      setRatings(
-        result.ratings &&
-          new Map(result.ratings.map((r) => [ratingKey(r.place_type, r.place_id), r])),
+      // Ratings that fail on a live refresh keep the ones on screen.
+      setRatings((current) =>
+        result.ratings
+          ? new Map(result.ratings.map((r) => [ratingKey(r.place_type, r.place_id), r]))
+          : loadedOnce.current
+            ? current
+            : null,
       );
       setLoadError(result.failed);
       setLoading(false);
