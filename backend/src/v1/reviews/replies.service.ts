@@ -17,7 +17,14 @@ import { TravelerTransactions } from '../traveler-transactions';
 // none).
 export type ReplyDto = Pick<
   ReviewReply,
-  'id' | 'review_id' | 'user_id' | 'replier_name' | 'traveler_type' | 'comment' | 'created_at'
+  | 'id'
+  | 'review_id'
+  | 'parent_reply_id'
+  | 'user_id'
+  | 'replier_name'
+  | 'traveler_type'
+  | 'comment'
+  | 'created_at'
 >;
 
 // What the website gets after deleting a reply.
@@ -29,6 +36,7 @@ export interface DeletedReply {
 const REPLY_COLUMNS: (keyof ReplyDto)[] = [
   'id',
   'review_id',
+  'parent_reply_id',
   'user_id',
   'replier_name',
   'traveler_type',
@@ -37,6 +45,7 @@ const REPLY_COLUMNS: (keyof ReplyDto)[] = [
 ];
 
 const reviewNotFound = () => new NotFoundException("We couldn't find that review.");
+const parentNotUnderReview = () => new BadRequestException("That reply isn't under this review.");
 const replyNotYours = () =>
   new NotFoundException("We couldn't find that reply among yours. Please log in again and try.");
 
@@ -77,10 +86,17 @@ export class RepliesService {
     }
   }
 
-  // Adds a reply under a review, as the logged-in traveler. Only review_id
-  // and the text are sent; the database fills in the rest (see ReviewReply)
-  // and answers with the saved reply ("returning").
-  create(accessToken: string, reviewId: string, comment: string): Promise<ReplyDto> {
+  // Adds a reply under a review, as the logged-in traveler. Only review_id,
+  // the text and (when answering a reply) parent_reply_id are sent; the
+  // database fills in the rest (see ReviewReply) and answers with the
+  // saved reply ("returning"). The database refuses a parent reply under a
+  // different review (028), which becomes a 400.
+  create(
+    accessToken: string,
+    reviewId: string,
+    comment: string,
+    parentReplyId: string | null = null,
+  ): Promise<ReplyDto> {
     return this.travelerTransactions.run(
       accessToken,
       async (runner) => {
@@ -90,7 +106,11 @@ export class RepliesService {
           .createQueryBuilder()
           .insert()
           .into(ReviewReply)
-          .values({ review_id: reviewId, comment })
+          .values(
+            parentReplyId
+              ? { review_id: reviewId, comment, parent_reply_id: parentReplyId }
+              : { review_id: reviewId, comment },
+          )
           .returning(REPLY_COLUMNS)
           .updateEntity(false)
           .execute();
@@ -135,6 +155,9 @@ export class RepliesService {
       // The review was deleted while the reply was being saved.
       case '23503':
         return reviewNotFound();
+      // The parent reply is missing or under another review (028).
+      case '22023':
+        return parentNotUnderReview();
       // Refused by Row Level Security or by the table's permissions.
       case '42501':
         return new UnauthorizedException('Please log in again, then try again.');

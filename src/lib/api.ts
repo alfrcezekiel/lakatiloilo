@@ -121,6 +121,9 @@ export interface Review {
 export interface Reply {
   id: string;
   review_id: string;
+  // The reply this one answers, or null when it answers the review
+  // (threaded replies round, ticket 85).
+  parent_reply_id: string | null;
   user_id: string;
   replier_name: string;
   traveler_type: string | null;
@@ -129,12 +132,19 @@ export interface Reply {
 }
 
 // Adds the logged-in traveler's reply under a review (POST
-// /v1/reviews/:id/replies) and answers with the saved reply. Refusals
-// carry a plain message, for example "Please write 1 to 300 characters."
-export const createReply = async (accessToken: string, reviewId: string, comment: string) => {
+// /v1/reviews/:id/replies) and answers with the saved reply. With
+// parentReplyId it answers that reply instead of the review (ticket 85).
+// Refusals carry a plain message, for example "Please write 1 to 300
+// characters." or "That reply isn't under this review."
+export const createReply = async (
+  accessToken: string,
+  reviewId: string,
+  comment: string,
+  parentReplyId: string | null = null,
+) => {
   const { data } = await api().post<Reply>(
     `/v1/reviews/${encodeURIComponent(reviewId)}/replies`,
-    { comment },
+    parentReplyId ? { comment, parent_reply_id: parentReplyId } : { comment },
     { headers: { Authorization: `Bearer ${accessToken}` } },
   );
   return data;

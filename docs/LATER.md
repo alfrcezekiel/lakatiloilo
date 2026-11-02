@@ -36,7 +36,11 @@ Still parked:
 - Social logins
 - Changing the display name or traveler type on the profile page (every
   old review and reply copies them, so they would all need updating)
-- Editing replies, replies to replies, and likes on replies
+- Editing replies and likes on replies (replies to replies moved into the
+  spec as the threaded replies round on 2026-11-02)
+- Keeping answers when the reply above them is deleted ("This reply was
+  deleted"), collapsing long threads, and telling a traveler when someone
+  answers them
 - Hiding reported reviews automatically, and an admin screen for reports
   (needs the admin UI below)
 - More than one photo per review

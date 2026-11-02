@@ -18,16 +18,24 @@ const EASE = [0.22, 1, 0.36, 1] as const;
 // - Scrolling back up: things come down from above (fade down).
 // - Off screen: they fade out, ready to fade in again next time.
 // `delay` (seconds) lets cards in one row arrive one after another.
+// `amount` is how much of it must be on screen to count as "on screen":
+// 15% by default. Very tall blocks (a place's reviews, which threaded
+// replies make long on a phone) pass "some", meaning any part of it: with
+// 15%, a tall block faded out while the traveler was still reading or
+// typing in it, for example at the bottom of the page or with the phone
+// keyboard open (fixed 2026-11-02).
 // With the device's "reduce motion" setting on, nothing moves at all.
 export function Reveal({
   children,
   className,
   delay = 0,
+  amount = 0.15,
   as = "div",
 }: {
   children: ReactNode;
   className?: string;
   delay?: number;
+  amount?: number | "some";
   as?: "div" | "li" | "section";
 }) {
   const ref = useRef<HTMLElement>(null);
@@ -87,7 +95,7 @@ export function Reveal({
         // leaves the screen, and keep watching for the next time.
         return fadeOut;
       },
-      { amount: 0.15 },
+      { amount },
     );
 
     return () => {
@@ -96,7 +104,7 @@ export function Reveal({
       element.style.animation = "";
       animate(element, { opacity: 1, y: 0 }, { duration: 0 });
     };
-  }, [reduceMotion, delay]);
+  }, [reduceMotion, delay, amount]);
 
   const Tag = as as "div";
   const style: CSSProperties | undefined = delay ? { animationDelay: `${delay}s` } : undefined;

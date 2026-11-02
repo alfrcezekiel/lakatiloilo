@@ -4,8 +4,8 @@ import { Review } from './review.entity';
 // The review_replies table (supabase/sql/025, review extras round, ticket
 // 79): one reply under a review.
 //
-// 025 only lets travelers send review_id and comment ("grant insert
-// (review_id, comment)"). Everything else is filled in by the database:
+// 025 lets travelers send review_id and comment ("grant insert
+// (review_id, comment)"), and 028 adds parent_reply_id. Everything else is filled in by the database:
 // id (gen_random_uuid), user_id (from the login), replier_name and
 // traveler_type (copied from the account by the trigger) and created_at.
 // So those columns are insert: false, and TypeORM never names them when
@@ -31,6 +31,12 @@ export class ReviewReply {
 
   @Column({ type: 'text', update: false })
   comment: string;
+
+  // The reply this one answers, or null when it answers the review
+  // (threaded replies round, 028). Must be under the same review (the
+  // database checks it); deleting that reply deletes this one too.
+  @Column({ type: 'uuid', nullable: true, update: false })
+  parent_reply_id: string | null;
 
   @Column({ type: 'timestamptz', insert: false, update: false })
   created_at: Date;

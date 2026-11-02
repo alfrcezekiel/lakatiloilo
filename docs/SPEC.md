@@ -30,6 +30,8 @@ Review extras round: logged-in travelers can reply to a review, report a review 
 
 Likes on TypeORM round: travelers see no change. The backend describes the review_likes table to TypeORM, like the other tables, and reads and writes Helpful likes through it instead of hand-written SQL, so the likes code is easier to read, change and trust.
 
+Threaded replies round: logged-in travelers can answer a reply, not only a review. Answers show indented under the reply they answer, so a conversation is easy to follow, and replies sit directly on the review card without a pale box behind each one.
+
 ## The user
 Travelers planning weekend trips around Iloilo Province. No login required for browsing; an account is needed only to write a review.
 
@@ -62,6 +64,7 @@ Travelers planning weekend trips around Iloilo Province. No login required for b
 26. As a logged-in traveler, I want to report a review that is spam or offensive, so that the team can deal with it.
 27. As a logged-in traveler, I want to add a photo to my review, so that others can see what the place is really like.
 28. As a developer, I want the review_likes table described and used through TypeORM like the other tables, so that the likes code is easier to read, change and trust.
+29. As a logged-in traveler, I want to answer someone's reply and see answers indented under it, so that I can follow and join a conversation under a review.
 
 ## Screens
 1. Home page hero — redesigned to match the team's mockup:
@@ -145,11 +148,19 @@ Travelers planning weekend trips around Iloilo Province. No login required for b
    - **Helpful likes on every review:** logged in, a small glass **Helpful · 3** button with a thumbs-up icon that turns amber when marked and back when clicked again. Logged out, only the count as text ("3 travelers found this helpful", or "No one has marked this helpful yet" when it is 0). On a traveler's own review, only the count: nobody can mark their own review. With "reduce motion" turned on, the button only changes colour.
 
 21. Review extras round — replies, reports and photos in reviews:
-   - **Replies:** under each review, its replies, oldest first: the replier's name (linking to their profile), traveler type tag, text and date. Logged-in travelers get a **Reply** button that opens a small form (up to 300 characters). A traveler can delete their own replies. No replies to replies, and no editing.
+   - **Replies:** under each review, its replies, oldest first: the replier's name (linking to their profile), traveler type tag, text and date. Logged-in travelers get a **Reply** button that opens a small form (up to 300 characters). A traveler can delete their own replies. No replies to replies, and no editing. (Changed on 2026-11-02 at the team's request: replies to replies and the new look are round 23.)
    - **Report a review:** logged-in travelers see a small "Report" link on other travelers' reviews. It opens a pop-up with four reasons (Spam, Offensive, Not about this place, Other) and an optional note, then says "Thanks — the team will take a look." Reporting the same review again says "You've already reported this review." Nothing is hidden automatically; the team reads reports in the Supabase dashboard.
    - **A photo in a review:** the review form gets "Add a photo" (one photo, JPG, PNG or WebP, up to 2 MB), with a preview and a Remove button. Editing a review can add, swap or remove the photo. The photo shows under the review text, and clicking it opens it larger. Deleting a review deletes its photo too.
 
 22. Likes on TypeORM round — no screen changes. The Helpful button, Helpful counts, profiles and the profile dropdown look and behave exactly as before.
+
+23. Threaded replies round — replies to replies, with a new look:
+   - **No box behind replies:** replies lose their pale white background and sit directly on the review card, set apart only by a thin line down their left side.
+   - **Reply to a reply:** logged in, every reply gets a small **Reply** link that opens the same small form (up to 300 characters) right under that reply. The new reply shows indented under the one it answers, and the list updates at once. The Reply button under the review still adds a reply to the review itself.
+   - **Threads:** answers to the same reply show newest first under it, joined by the thin left line, so a new answer appears right under the reply it answers, where its form was; "Your reply is posted." shows under the new reply. Replies to the review itself stay oldest first. (Changed on 2026-11-02 at the team's request: answers to a reply used to show oldest first, so a new answer could land below older answers and their threads.)
+   - **Curved lines:** each answer drawn inside the reply it answers (levels 2 and 3) gets a small curved line branching from that reply's thin line into the answer's name, so it is clear whose reply it answers. Deeper answers keep "Replying to <name>" instead of a curve. (Added on 2026-11-02 at the team's request.) Replies can go any number of levels deep, but the indent stops growing after 3 levels; deeper replies start with "Replying to <name>" so it stays readable on a 375 px phone.
+   - **Deleting:** the traveler's own reply keeps its Delete button. When it has answers under it, the confirm step says "Delete this reply and its answers?", and the whole thread under it is deleted with it.
+   - Unchanged: the replier's name (linking to their profile), traveler type tag and date; no editing replies.
 
 ## Data
 
@@ -234,6 +245,8 @@ Profiles & likes round: profiles need no new table or column. A traveler's profi
 
 Row Level Security policy for review_replies: anyone may read. Only a logged-in traveler may add a reply, and only with their own user_id. Only the traveler who wrote a reply may delete it. No one may edit a reply.
 
+**review_replies table, threaded replies round:** gains parent_reply_id — the reply being answered, or empty when the reply answers the review itself. The database refuses a parent reply that is under a different review. Deleting a reply deletes every answer under it (all levels), the same way deleting a review deletes its replies. Travelers may now send review_id, parent_reply_id and the text; everything else is still filled in by the database. The Row Level Security policy is unchanged.
+
 **review_reports table (review extras round):**
 - id — unique identifier for each report
 - review_id — the reported review; reports are removed when the review is deleted
@@ -302,6 +315,11 @@ When Supabase Auth refuses, the backend answers with Supabase's own status and c
 - POST /v1/reviews and PATCH /v1/reviews/:id — also accept one photo (JPG, PNG or WebP, up to 2 MB; 400 "Please choose a JPG, PNG or WebP photo up to 2 MB.") and, when editing, removing it
 - GET /v1/reviews — each review also carries its replies (oldest first) and its photo's address
 
+**Threaded replies round (v1):**
+- POST /v1/reviews/:id/replies — also accepts an optional parent_reply_id; 400 "That reply isn't under this review." when the parent reply is missing or under another review
+- DELETE /v1/replies/:id — also deletes every answer under the reply; same answers and messages as before
+- GET /v1/reviews — each reply also carries its parent_reply_id; the website builds the threads
+
 All writes in these rounds run as the logged-in traveler (the asTraveler step), so Row Level Security and the Storage policies decide. The backend never uses the service_role key.
 
 **Likes on TypeORM round (v1):** no endpoint changes. POST and DELETE /v1/reviews/:id/like, GET /v1/reviews and GET /v1/travelers/:id keep the same inputs, answers and refusal messages.
@@ -349,7 +367,7 @@ Own login round: the website keeps its own copy of the login. "Who is logged in"
 
 Navigation round: no change for travelers. "Who is logged in" is shared through TanStack Query; renewal (about once an hour, one tab at a time, retrying every 30 seconds) keeps its own code.
 
-Profiles & likes and review extras rounds: browsing, profiles, likes counts, replies and photos are visible to everyone. Marking a review helpful, replying, reporting and adding a photo need an account, like writing a review.
+Profiles & likes, review extras and threaded replies rounds: browsing, profiles, likes counts, replies and photos are visible to everyone. Marking a review helpful, replying, reporting and adding a photo need an account, like writing a review.
 
 ## Done for the demo
 - [x] NestJS backend project structure created in `backend/` directory
@@ -453,6 +471,15 @@ Profiles & likes and review extras rounds: browsing, profiles, likes counts, rep
 - [x] Marking your own review is still refused by the database, checked through the backend's own login inside a transaction that is undone
 - [x] The refusals for no login, a fake login and a bad id answer the same messages as before
 
+**Threaded replies round (live URL):**
+- [ ] Replies have no pale box behind them, only the thin left line, on a laptop and a phone
+- [ ] A logged-in traveler can answer a reply; the answer shows indented right under it (newest first) at once, with "Your reply is posted." under it, and still after a refresh
+- [ ] Answers at levels 2 and 3 have a curved line from the reply they answer, on a laptop and a phone
+- [ ] Four or more levels deep, the indent stops growing, "Replying to <name>" shows, and nothing is squeezed at 375 px
+- [ ] Deleting a reply with answers asks "Delete this reply and its answers?" and removes the whole thread under it
+- [ ] Logged out, threads show but there is no Reply link
+- [ ] Answering with a parent reply from another review is refused by the backend, and deleting someone else's reply is still refused by the database
+
 ## Out of scope
 - Likes on TypeORM round: moving the other hand-written SQL (adding, editing and deleting reviews, the act-as-the-traveler step) onto TypeORM, and any change travelers can see
 - Navigation round: login renewal through TanStack Query, the old page animating out, and the experimental "view transitions" setting (parked in docs/LATER.md)
@@ -460,7 +487,8 @@ Profiles & likes and review extras rounds: browsing, profiles, likes counts, rep
 - Login for anything other than reviews (browsing stays open to everyone)
 - Changing the display name or traveler type after sign-up (the profile page shows them but cannot change them: every old review copies them too), and a custom email sender for reset emails
 - Social logins
-- Profiles & likes and review extras rounds: editing replies, replies to replies, likes on replies, hiding reported reviews automatically, any admin screen for reports, more than one photo per review, and photos over 2 MB
+- Threaded replies round: keeping answers when the reply above them is deleted ("This reply was deleted"), collapsing threads, and notifying a traveler when someone answers them
+- Profiles & likes and review extras rounds: editing replies, likes on replies, hiding reported reviews automatically, any admin screen for reports, more than one photo per review, and photos over 2 MB
 - Buttons & cards round: email confirmation for new accounts (parked: a custom email sender needs an outside service the team has not agreed to), and a "Get directions in Google Maps" button on destinations
 - Filtering or sorting by rating (star ratings on the home page cards moved into the buttons & cards round)
 - Booking/payments for any services

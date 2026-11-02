@@ -224,7 +224,15 @@ export function PlaceBody({
             <Wrap>{aside}</Wrap>
           </div>
         </aside>
-        <Wrap className="lg:col-start-1">{reviews}</Wrap>
+        {/* "some": the reviews can be far taller than the screen, so they
+            stay visible while any part of them is on screen (see Reveal). */}
+        {animate ? (
+          <Reveal className="lg:col-start-1" amount="some">
+            {reviews}
+          </Reveal>
+        ) : (
+          <div className="lg:col-start-1">{reviews}</div>
+        )}
       </div>
     </div>
   );
