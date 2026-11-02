@@ -449,9 +449,9 @@ Profiles & likes and review extras rounds: browsing, profiles, likes counts, rep
 - [ ] Deleting someone else's reply, or uploading into someone else's photo folder, is refused by the database or Storage, not just hidden in the page
 
 **Likes on TypeORM round (live URL):**
-- [ ] Marking and unmarking Helpful still works, and counts and profiles show the same numbers as before
-- [ ] Marking your own review is still refused by the database, checked through the backend's own login inside a transaction that is undone
-- [ ] The refusals for no login, a fake login and a bad id answer the same messages as before
+- [x] Marking and unmarking Helpful still works, and counts and profiles show the same numbers as before
+- [x] Marking your own review is still refused by the database, checked through the backend's own login inside a transaction that is undone
+- [x] The refusals for no login, a fake login and a bad id answer the same messages as before
 
 ## Out of scope
 - Likes on TypeORM round: moving the other hand-written SQL (adding, editing and deleting reviews, the act-as-the-traveler step) onto TypeORM, and any change travelers can see

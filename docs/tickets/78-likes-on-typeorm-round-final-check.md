@@ -4,12 +4,12 @@
 
 **Blocked by:** 76, 77
 
-**Status:** todo
+**Status:** done (confirmed by the team on the live URL, 2026-11-02)
 
-- [ ] Every item in the "Likes on TypeORM round" checklist works on the live URL
-- [ ] Existing reviews, Helpful likes, profiles, the profile dropdown and log-in still work
-- [ ] /code-review has been run on the round and its findings handled
-- [ ] Works on the live URL
+- [x] Every item in the "Likes on TypeORM round" checklist works on the live URL
+- [x] Existing reviews, Helpful likes, profiles, the profile dropdown and log-in still work
+- [x] /code-review has been run on the round and its findings handled
+- [x] Works on the live URL
 
 **Progress (2026-11-02):** /code-review ran on the round (from d99e15d, the last push: tickets 76 and 77, uncommitted), both axes one after the other.
 
@@ -24,3 +24,5 @@ Not done yet: the team's walk-through of the "Likes on TypeORM round" checklist 
 **Review findings handled (2026-11-02, team request: fix 2, park 1):**
 2. The Helpful-count sub-query now lives once, as helpfulCountOf next to the ReviewLike entity; reviews and profiles both use it. Checked: Seda Atria's reviews answered exactly as before; Agony Hill's reviews and Red's profile now show one more Helpful each, because the team marked reviews while testing, and every count (4 of 4 reviews, 15 of 15 profile reviews) matches a direct count of the review_likes table; the rolled-back check with a like in place gave the same answers as in ticket 77. Backend type-check and lint pass.
 1. Splitting reviews.service.ts (350 lines) into a likes service is parked in docs/LATER.md, together with moving the rest of the reviews SQL onto TypeORM.
+
+**Checked by the team on the live URL (2026-11-02):** every item in the "Likes on TypeORM round" checklist passed on a laptop and a phone, and writing reviews, profiles and the profile dropdown still work. Review finding 2 was fixed before the push; finding 1 is parked in docs/LATER.md.

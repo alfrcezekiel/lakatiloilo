@@ -4,7 +4,7 @@
 
 **Blocked by:** None
 
-**Status:** todo
+**Status:** done (confirmed by the team on the live URL, 2026-11-02)
 
 - [x] review_likes is described to TypeORM next to the other tables, and TypeORM still never changes the database (synchronize stays off)
 - [x] Marking and unmarking Helpful go through TypeORM, send only review_id, and answer the same { helpful_count, liked } as before
@@ -12,7 +12,7 @@
 - [x] Marking your own review is still refused, and the database refuses it too when checked through the backend's own login inside a transaction that is undone
 - [x] No login, a fake login and a bad id still answer the same refusal messages
 - [x] No new SQL, and nothing to run in Supabase
-- [ ] Works on the live URL
+- [x] Works on the live URL
 
 **Progress (2026-11-02):** A new ReviewLike entity describes review_likes to TypeORM: review_id and user_id as the two-part identity, created_at, and the link to its review. user_id and created_at are marked insert: false and update: false, so TypeORM never names them when saving (024 only lets travelers send review_id). It is registered with the backend's database connection next to the other tables (synchronize stays off) and with the reviews module. Marking and unmarking now go through runner.manager (TypeORM on the same connection and transaction that asTraveler switched to the traveler): the review lookups use findOne and exists, the like is an insert of review_id with orIgnore ("on conflict do nothing"), unmarking deletes only where user_id = auth.uid(), and the new count uses count(). Only "select auth.uid()" stays a one-line query, because it is a function, not a table. The answers and messages are unchanged.
 
@@ -24,3 +24,5 @@ Checked:
 Not checked: marking and unmarking through the website with a real login (the team tests real logins), and the live URL (not pushed yet).
 
 **Checked by the team on localhost (2026-11-02):** with a real login, marking and unmarking Helpful works and the mark stays after a refresh. "Works on the live URL" stays open until ticket 76 is pushed and checked there.
+
+**Confirmed by the team (2026-11-02):** checked on the live URL and marked done.
