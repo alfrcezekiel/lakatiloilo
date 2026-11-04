@@ -1,3 +1,5 @@
+import type { Metadata } from "next";
+import { cache } from "react";
 import { getDestination } from "@/lib/api";
 import type { Destination } from "@/lib/api";
 import { locationLabels } from "@/lib/labels";
@@ -28,22 +30,37 @@ const categoryLabels: Record<string, string> = {
   heritage: "Heritage Site",
 };
 
+// cache(): the tab title (generateMetadata) and the page both need the
+// destination, and share one backend answer per visit (like the traveler page).
+// failed: the backend could not be reached, as opposed to "no such place".
+const load = cache(async (id: string): Promise<{ destination: Destination | null; failed: boolean }> => {
+  try {
+    return { destination: await getDestination(id), failed: false };
+  } catch {
+    return { destination: null, failed: true };
+  }
+});
+
+// The tab names the place, so travelers (and screen readers) can tell tabs
+// apart (evaluation B2, 2026-11-04; WCAG 2.4.2 Page Titled).
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}): Promise<Metadata> {
+  const { destination, failed } = await load((await params).id);
+  if (destination) return { title: `${destination.name} · Lakat Iloilo` };
+  return { title: failed ? "Lakat Iloilo" : "Destination not found · Lakat Iloilo" };
+}
+
 export default async function DestinationDetailPage({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const { id } = await params;
-  let destination: Destination | null = null;
-  let error: Error | null = null;
-  try {
-    destination = await getDestination(id);
-  } catch (e) {
-    error = e instanceof Error ? e : new Error(String(e));
-  }
-
-  if (error || !destination) {
-    return <PlaceNotFound tone="destination" what="Destination" message={error?.message} />;
+  const { destination, failed } = await load((await params).id);
+  if (!destination) {
+    return <PlaceNotFound tone="destination" what="Destination" failed={failed} />;
   }
 
   const category = categoryLabels[destination.category] ?? destination.category;

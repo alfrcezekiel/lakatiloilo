@@ -1,3 +1,5 @@
+import type { Metadata } from "next";
+import { cache } from "react";
 import { Mail, Phone } from "lucide-react";
 import { getAccommodation } from "@/lib/api";
 import { pillButton } from "@/components/ui/button";
@@ -19,22 +21,37 @@ import {
   tones,
 } from "@/components/PlaceDetail";
 
+// cache(): the tab title (generateMetadata) and the page both need the
+// accommodation, and share one backend answer per visit (like the traveler page).
+// failed: the backend could not be reached, as opposed to "no such place".
+const load = cache(async (id: string): Promise<{ accommodation: Accommodation | null; failed: boolean }> => {
+  try {
+    return { accommodation: await getAccommodation(id), failed: false };
+  } catch {
+    return { accommodation: null, failed: true };
+  }
+});
+
+// The tab names the place, so travelers (and screen readers) can tell tabs
+// apart (evaluation B2, 2026-11-04; WCAG 2.4.2 Page Titled).
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}): Promise<Metadata> {
+  const { accommodation, failed } = await load((await params).id);
+  if (accommodation) return { title: `${accommodation.name} · Lakat Iloilo` };
+  return { title: failed ? "Lakat Iloilo" : "Accommodation not found · Lakat Iloilo" };
+}
+
 export default async function AccommodationDetailPage({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const { id } = await params;
-  let accommodation: Accommodation | null = null;
-  let error: Error | null = null;
-  try {
-    accommodation = await getAccommodation(id);
-  } catch (e) {
-    error = e instanceof Error ? e : new Error(String(e));
-  }
-
-  if (error || !accommodation) {
-    return <PlaceNotFound tone="accommodation" what="Accommodation" message={error?.message} />;
+  const { accommodation, failed } = await load((await params).id);
+  if (!accommodation) {
+    return <PlaceNotFound tone="accommodation" what="Accommodation" failed={failed} />;
   }
 
   const type = accommodationTypeLabels[accommodation.type] ?? accommodation.type;

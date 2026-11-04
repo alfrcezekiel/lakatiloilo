@@ -51,13 +51,15 @@ const api = () => {
 };
 
 // GET a path from the backend. Returns null for 404 (not found) so pages
-// can show their own message; other errors throw.
-const get = async <T>(path: string): Promise<T | null> => {
+// can show their own message; other errors throw. `alsoNotFound` lists
+// more statuses that mean "no such thing" for that call.
+const get = async <T>(path: string, alsoNotFound: number[] = []): Promise<T | null> => {
   try {
     const { data } = await api().get<T>(path);
     return data;
   } catch (error) {
-    if (axios.isAxiosError(error) && error.response?.status === 404) {
+    const status = axios.isAxiosError(error) ? error.response?.status : undefined;
+    if (status === 404 || (status !== undefined && alsoNotFound.includes(status))) {
       return null;
     }
     throw error;
@@ -71,7 +73,9 @@ export const getDestinations = async () =>
   (await get<Destination[]>("/v1/destinations")) ?? [];
 
 export const getDestination = (id: string) =>
-  get<Destination>(`/v1/destinations/${encodeURIComponent(id)}`);
+  // 400: the id in the address is not a real id (e.g. /destinations/abc), so
+  // there is no such place (evaluation B1, 2026-11-04).
+  get<Destination>(`/v1/destinations/${encodeURIComponent(id)}`, [400]);
 
 export const getAccommodations = async () =>
   (await get<Accommodation[]>("/v1/accommodations")) ?? [];
@@ -89,7 +93,9 @@ export interface PlaceRating {
 export const getRatings = async () => (await get<PlaceRating[]>("/v1/ratings")) ?? [];
 
 export const getAccommodation = (id: string) =>
-  get<Accommodation>(`/v1/accommodations/${encodeURIComponent(id)}`);
+  // 400: the id in the address is not a real id (e.g. /accommodations/abc), so
+  // there is no such place (evaluation B1, 2026-11-04).
+  get<Accommodation>(`/v1/accommodations/${encodeURIComponent(id)}`, [400]);
 
 // A review as the backend sends it (backend round). Only the display name
 // is included, never the reviewer's email.

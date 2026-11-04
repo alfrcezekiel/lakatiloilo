@@ -239,12 +239,22 @@ export function PlaceBody({
 }
 
 // Shown when the backend has no place with this id.
-export function PlaceNotFound({ tone, what, message }: { tone: Tone; what: string; message?: string }) {
+// "failed" means the backend could not be reached or answered with an
+// error, rather than "no such place". Either way the traveler sees a
+// friendly sentence, never the technical error text (evaluation B1,
+// 2026-11-04: it used to show "Error: Request failed with status code 400").
+export function PlaceNotFound({ tone, what, failed = false }: { tone: Tone; what: string; failed?: boolean }) {
   return (
     <main className={cn("min-h-screen", tones[tone].page)}>
       <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6">
-        <h1 className="font-fraunces text-4xl font-medium text-white">{what} not found</h1>
-        {message && <p className="mt-2 text-sm text-white/70">Error: {message}</p>}
+        <h1 className="font-fraunces text-4xl font-medium text-white">
+          {failed ? `We couldn't load this ${what.toLowerCase()}` : `${what} not found`}
+        </h1>
+        <p className="mt-2 text-sm text-white/80">
+          {failed
+            ? "Please check your connection and try again in a moment."
+            : "This link may be old or mistyped. Try finding it from the home page."}
+        </p>
         <div className="mt-6">
           <BackLink />
         </div>
