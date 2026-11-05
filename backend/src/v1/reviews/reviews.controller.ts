@@ -7,7 +7,6 @@ import {
   Headers,
   HttpCode,
   Param,
-  ParseUUIDPipe,
   Patch,
   Post,
   Query,
@@ -21,6 +20,7 @@ import { NewReview, PlaceType, ReviewChanges, ReviewsService } from './reviews.s
 import { RepliesService } from './replies.service';
 import { PhotoTooLargeFilter } from './photo-too-large.filter';
 import { ReviewPhotosService, type UploadedPhoto } from './review-photos.service';
+import { idOf, placeIdQuery } from '../id-param';
 
 const PLACE_TYPES: PlaceType[] = ['destination', 'accommodation'];
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -71,7 +71,7 @@ export class ReviewsController {
   async findForPlace(
     @Headers('authorization') authorization: string | undefined,
     @Query('place_type') placeType: string,
-    @Query('place_id', ParseUUIDPipe) placeId: string,
+    @Query('place_id', placeIdQuery()) placeId: string,
   ) {
     if (!PLACE_TYPES.includes(placeType as PlaceType)) {
       throw new BadRequestException('place_type must be "destination" or "accommodation".');
@@ -94,7 +94,7 @@ export class ReviewsController {
   @HttpCode(200)
   like(
     @Headers('authorization') authorization: string | undefined,
-    @Param('id', ParseUUIDPipe) id: string,
+    @Param('id', idOf('review')) id: string,
   ) {
     return this.reviewsService.like(loginToken(authorization), id);
   }
@@ -106,7 +106,7 @@ export class ReviewsController {
   @HttpCode(200)
   unlike(
     @Headers('authorization') authorization: string | undefined,
-    @Param('id', ParseUUIDPipe) id: string,
+    @Param('id', idOf('review')) id: string,
   ) {
     return this.reviewsService.unlike(loginToken(authorization), id);
   }
@@ -160,7 +160,7 @@ export class ReviewsController {
   @UseFilters(PhotoTooLargeFilter)
   async update(
     @Headers('authorization') authorization: string | undefined,
-    @Param('id', ParseUUIDPipe) id: string,
+    @Param('id', idOf('review')) id: string,
     @Body() body: (Partial<Record<keyof ReviewChanges, unknown>> & { remove_photo?: unknown }) | undefined,
     @UploadedFile() photo: UploadedPhoto | undefined,
   ) {
@@ -182,7 +182,7 @@ export class ReviewsController {
   @HttpCode(200)
   remove(
     @Headers('authorization') authorization: string | undefined,
-    @Param('id', ParseUUIDPipe) id: string,
+    @Param('id', idOf('review')) id: string,
   ) {
     return this.reviewsService.remove(loginToken(authorization), id);
   }

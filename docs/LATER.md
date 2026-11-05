@@ -106,6 +106,18 @@ before it becomes a ticket:
   check could list files that no review points to. Fine for the demo:
   they can be deleted by hand in the Storage dashboard.
 
+### From the evaluations (2026-11-04 and 2026-11-05)
+Parked by the team; none is needed for the demo. Details in
+`docs/evaluations/`.
+- A Content-Security-Policy header (a list of where pages may load
+  scripts, images and connections from). The simple security headers are
+  in; a CSP needs careful testing because it could block Supabase live
+  updates, review photos or Next.js's own scripts.
+- B8: the Log in / Create account switch and the submit button are both
+  called "Log in". Screen readers already tell them apart ("toggle
+  button, pressed" inside the "Log in or create an account" group);
+  proper tabs (`role="tablist"`) would need arrow-key handling.
+
 ### From the live updates round (2026-11-02)
 - See new reports as they arrive. Needs an admin screen and an admin
   login first (see "Admin UI" in the spec's Out of scope); today the team

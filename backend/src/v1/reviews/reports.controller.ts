@@ -5,12 +5,12 @@ import {
   Headers,
   HttpCode,
   Param,
-  ParseUUIDPipe,
   Post,
 } from '@nestjs/common';
 import { REPORT_REASONS, type ReportReason } from '../../entities/review-report.entity';
 import { loginToken } from '../login-token';
 import { ReportsService } from './reports.service';
+import { idOf } from '../id-param';
 
 // The reason must be one of the four, and the note (optional) at most 300
 // characters once trimmed; an empty note is saved as no note. Friendly
@@ -43,7 +43,7 @@ export class ReportsController {
   @HttpCode(201)
   report(
     @Headers('authorization') authorization: string | undefined,
-    @Param('id', ParseUUIDPipe) reviewId: string,
+    @Param('id', idOf('review')) reviewId: string,
     @Body() body: { reason?: unknown; note?: unknown } | undefined,
   ) {
     const token = loginToken(authorization);

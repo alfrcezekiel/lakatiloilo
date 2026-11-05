@@ -1,6 +1,7 @@
-import { Controller, Get, Param, ParseUUIDPipe, Query, HttpCode } from '@nestjs/common';
+import { Controller, Get, Param, Query, HttpCode } from '@nestjs/common';
 import { parseNearParams } from '../near-query';
 import { DestinationsService } from './destinations.service';
+import { idOf } from '../id-param';
 
 @Controller('v1/destinations')
 export class DestinationsController {
@@ -29,11 +30,11 @@ export class DestinationsController {
     return this.destinationsService.findNear(parseNearParams(lat, lng, radiusKm), category);
   }
 
-  // GET /v1/destinations/:id — ParseUUIDPipe answers 400 for an id that
-  // is not a UUID, before it reaches the database.
+  // GET /v1/destinations/:id — a badly formatted id answers 404
+  // "We couldn't find that …" before it reaches the database (id-param.ts).
   @Get(':id')
   @HttpCode(200)
-  findOne(@Param('id', ParseUUIDPipe) id: string) {
+  findOne(@Param('id', idOf('destination')) id: string) {
     return this.destinationsService.findOne(id);
   }
 }

@@ -29,7 +29,10 @@ export function GlassField({
   return (
     <div>
       <div
-        className={`flex items-center gap-3 rounded-2xl border bg-white/5 px-4 py-2.5 focus-within:border-white/60 ${error ? "border-amber-300/80" : "border-white/25"
+        // Border at 45% white (3.3:1 on the card), 90% when the field is
+        // selected (8.1:1), so the field's edge and focus are both easy to
+        // see (evaluation 2026-11-05, WCAG 1.4.11 asks 3:1).
+        className={`flex items-center gap-3 rounded-2xl border bg-white/5 px-4 py-2.5 focus-within:border-white/90 ${error ? "border-amber-300/80" : "border-white/45"
           }`}
       >
         <div className="min-w-0 flex-1">

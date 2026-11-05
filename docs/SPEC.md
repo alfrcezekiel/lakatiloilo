@@ -336,6 +336,8 @@ When Supabase Auth refuses, the backend answers with Supabase's own status and c
 
 **Live updates round (v1):** no endpoint changes. After a Realtime signal the website calls the same endpoints again (GET /v1/destinations, /v1/accommodations, /v1/ratings, the place's own endpoint and GET /v1/reviews).
 
+**Change (2026-11-05, team request — evaluation A1 and B5):** no new endpoints. An id that is not a real id (for example /v1/reviews/abc or /v1/destinations/abc) answers 404 with a plain sentence ("We couldn't find that review." — or destination, accommodation, reply), the same as an unknown id; an unknown destination or accommodation also answers "We couldn't find that destination." / "…accommodation." instead of "Destination <id> not found". GET /v1/reviews without a valid place_id answers 400 "Please choose a destination or accommodation." Every answer carries X-Content-Type-Options: nosniff and X-Frame-Options: DENY, and no longer X-Powered-By.
+
 All writes in these rounds run as the logged-in traveler (the asTraveler step), so Row Level Security and the Storage policies decide. The backend never uses the service_role key.
 
 **Likes on TypeORM round (v1):** no endpoint changes. POST and DELETE /v1/reviews/:id/like, GET /v1/reviews and GET /v1/travelers/:id keep the same inputs, answers and refusal messages.

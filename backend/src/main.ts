@@ -1,5 +1,6 @@
 import { Logger } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
+import type { NestExpressApplication } from '@nestjs/platform-express';
 import { AppModule } from './app.module';
 
 // Importing AppModule runs ConfigModule.forRoot, which loads backend/.env
@@ -25,7 +26,16 @@ const corsOrigins = (): string[] => {
 const bootstrap = async () => {
   // Read before starting Nest, so a missing CORS_ORIGIN fails straight away.
   const origins = corsOrigins();
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
+  // Security headers on every answer (evaluation B5, 2026-11-04): don't
+  // announce "X-Powered-By: Express", never let a browser guess a file's
+  // type, and never let another site show an answer inside a frame.
+  app.disable('x-powered-by');
+  app.use((_request: unknown, response: { setHeader: (name: string, value: string) => void }, next: () => void) => {
+    response.setHeader('X-Content-Type-Options', 'nosniff');
+    response.setHeader('X-Frame-Options', 'DENY');
+    next();
+  });
   // Browsers may read (GET), add (POST), edit (PATCH) and delete (DELETE)
   // reviews. The Authorization header carries the traveler's login token.
   app.enableCors({

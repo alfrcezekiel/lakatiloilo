@@ -6,11 +6,11 @@ import {
   Headers,
   HttpCode,
   Param,
-  ParseUUIDPipe,
   Post,
 } from '@nestjs/common';
 import { loginToken } from '../login-token';
 import { RepliesService } from './replies.service';
+import { idOf } from '../id-param';
 
 // A reply's text: 1 to 300 characters once trimmed. A friendly message
 // here; the database checks it again (025).
@@ -52,7 +52,7 @@ export class RepliesController {
   @HttpCode(201)
   create(
     @Headers('authorization') authorization: string | undefined,
-    @Param('id', ParseUUIDPipe) reviewId: string,
+    @Param('id', idOf('review')) reviewId: string,
     @Body() body: { comment?: unknown; parent_reply_id?: unknown } | undefined,
   ) {
     return this.repliesService.create(
@@ -71,7 +71,7 @@ export class RepliesController {
   @HttpCode(200)
   remove(
     @Headers('authorization') authorization: string | undefined,
-    @Param('id', ParseUUIDPipe) replyId: string,
+    @Param('id', idOf('reply')) replyId: string,
   ) {
     return this.repliesService.remove(loginToken(authorization), replyId);
   }

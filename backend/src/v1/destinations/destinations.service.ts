@@ -40,7 +40,7 @@ export class DestinationsService {
   async findOne(id: string): Promise<Destination> {
     const destination = await this.destinationsRepository.findOneBy({ id });
     if (!destination) {
-      throw new NotFoundException(`Destination ${id} not found`);
+      throw new NotFoundException("We couldn't find that destination.");
     }
     return destination;
   }
