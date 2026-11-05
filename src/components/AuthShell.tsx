@@ -41,8 +41,11 @@ export function AuthCard({
   title: React.ReactNode;
   children: React.ReactNode;
 }) {
+  // Dark glass (teal-950/40), not light glass: on the mountain photo the
+  // old bg-white/15 made small white text too faint to read (evaluation B6,
+  // 2026-11-05; WCAG 1.4.3 asks for 4.5:1).
   return (
-    <div className="w-full max-w-md rounded-3xl border border-white/25 bg-white/15 p-6 shadow-2xl backdrop-blur-xl sm:p-8">
+    <div className="w-full max-w-md rounded-3xl border border-white/25 bg-teal-950/40 p-6 shadow-2xl backdrop-blur-xl sm:p-8">
       <p className="text-[11px] font-semibold uppercase tracking-[0.25em] text-white/80">
         Iloilo City · Iloilo Province
       </p>

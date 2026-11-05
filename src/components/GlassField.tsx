@@ -3,8 +3,10 @@ import { Label } from "@/components/ui/label";
 // Shared by the log-in, forgot password and set new password pages.
 
 // The input inside a glass field: no box of its own, the field draws it.
+// Placeholder at 70% white and the field's own tint at 5%, so the hint
+// text stays readable on the dark card (evaluation B6, 2026-11-05).
 export const fieldInputClass =
-  "h-auto border-0 bg-transparent p-0 text-base text-white placeholder:text-white/50 focus-visible:ring-0 focus-visible:ring-offset-0 md:text-base";
+  "h-auto border-0 bg-transparent p-0 text-base text-white placeholder:text-white/70 focus-visible:ring-0 focus-visible:ring-offset-0 md:text-base";
 
 // One rounded glass box with a small capital label on top, the input
 // under it, an optional button on the right (like Show), and a yellow
@@ -27,7 +29,7 @@ export function GlassField({
   return (
     <div>
       <div
-        className={`flex items-center gap-3 rounded-2xl border bg-white/10 px-4 py-2.5 focus-within:border-white/60 ${error ? "border-amber-300/80" : "border-white/25"
+        className={`flex items-center gap-3 rounded-2xl border bg-white/5 px-4 py-2.5 focus-within:border-white/60 ${error ? "border-amber-300/80" : "border-white/25"
           }`}
       >
         <div className="min-w-0 flex-1">
