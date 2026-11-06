@@ -24,8 +24,8 @@ const PlaceContext = createContext<Place | null>(null);
 // reload. Listened to once per page, here, not in every component that
 // reads the reviews. (Realtime cannot tell which place a deleted row
 // belonged to, so it listens to all of them; a refetch is one small
-// request.)
-const REVIEW_TABLES = ["reviews", "review_likes", "review_replies"] as const;
+// request.) Helpful marks on replies too (reply_likes, ticket 96).
+const REVIEW_TABLES = ["reviews", "review_likes", "review_replies", "reply_likes"] as const;
 
 export function PlaceReviewsProvider({
   placeType,

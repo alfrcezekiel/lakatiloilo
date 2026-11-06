@@ -1,19 +1,25 @@
 "use client";
 
-import { CornerDownRight, MessageCircle, Send, Trash2, X } from "lucide-react";
+import { CornerDownRight, MessageCircle, Trash2 } from "lucide-react";
 import Link from "next/link";
-import { type ReactNode, useId, useState } from "react";
+import { type ReactNode, useState } from "react";
 import { pillButton } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
-import { Textarea } from "@/components/ui/textarea";
-import { backendMessage, createReply, deleteReply, type Reply, type Traveler } from "@/lib/api";
+import {
+  backendMessage,
+  createReply,
+  deleteReply,
+  updateReply,
+  type Reply,
+  type Traveler,
+} from "@/lib/api";
 import { travelerTypeLabels } from "@/lib/labels";
 import { cn } from "@/lib/utils";
 import { loginToken } from "@/lib/login";
 import { formatDate } from "@/components/ReviewsSection";
+import { HelpfulButton } from "@/components/HelpfulButton";
+import { MAX_REPLY, ReplyForm, smallPill as small } from "@/components/ReplyForm";
 
-const MAX_REPLY = 300;
-const small = "h-9 px-3.5 text-sm";
 // Threads indent one step per level up to this many levels (ticket 86).
 // Deeper answers stay at this indent and say who they answer, so a long
 // conversation stays readable on a phone.
@@ -27,8 +33,10 @@ const curve =
   "relative before:absolute before:top-0 before:-left-5 before:h-3 before:w-5 before:rounded-bl-xl before:border-b-2 before:border-l-2 before:border-white/25";
 
 // Which form is open: the one under the review ("review"), the one under a
-// reply (that reply's id), or none (null). Only one at a time.
+// reply (that reply's id), the one editing a reply ("edit:" + its id,
+// ticket 95), or none (null). Only one at a time.
 type OpenForm = "review" | string | null;
+const EDIT = "edit:";
 
 // The replies under one review (review extras round, ticket 79; threads
 // from ticket 85). Replies to the review come first, oldest first (their
@@ -41,8 +49,12 @@ type OpenForm = "review" | string | null;
 // Reply button under the review and a small Reply link on every reply,
 // each opening the same small form (up to 300 characters), and can delete
 // their own replies after an "are you sure?" step; deleting a reply
-// deletes the answers under it too, and the step says so (ticket 87). No
-// editing. Changes go straight into the page's copy of the reviews
+// deletes the answers under it too, and the step says so (ticket 87).
+// Their own replies also get Edit, which opens the same form in place of
+// the text, filled in; an edited reply shows "· edited" (ticket 95).
+// Every reply has a small Helpful button, the same as reviews (ticket 96):
+// logged out, or on your own reply, only the count.
+// Changes go straight into the page's copy of the reviews
 // (onChange), so the list updates at once.
 export function ReviewReplies({
   reviewId,
@@ -96,9 +108,9 @@ export function ReviewReplies({
     return ids;
   };
 
-  const openFormFor = (target: OpenForm) => {
+  const openFormFor = (target: OpenForm, startText = "") => {
     setOpenForm(target);
-    setText("");
+    setText(startText);
     setError(null);
     setStatus(null);
     setPostedId(null);
@@ -118,13 +130,28 @@ export function ReviewReplies({
         setError("Please log in again, then try again.");
         return;
       }
-      const parentId = openForm === "review" ? null : openForm;
-      const saved = await createReply(token, reviewId, text.trim(), parentId);
-      onChange([...replies, saved]);
+      if (openForm?.startsWith(EDIT)) {
+        // Editing: the saved reply takes the old one's place, keeping its
+        // Helpful count (the edit answer does not carry it).
+        const saved = await updateReply(token, openForm.slice(EDIT.length), text.trim());
+        onChange(
+          replies.map((r) =>
+            r.id === saved.id
+              ? { ...saved, helpful_count: r.helpful_count, liked_by_me: r.liked_by_me }
+              : r,
+          ),
+        );
+        setStatus("Your reply is updated.");
+        setPostedId(saved.id);
+      } else {
+        const parentId = openForm === "review" ? null : openForm;
+        const saved = await createReply(token, reviewId, text.trim(), parentId);
+        onChange([...replies, saved]);
+        setStatus("Your reply is posted.");
+        setPostedId(saved.id);
+      }
       setText("");
       setOpenForm(null);
-      setStatus("Your reply is posted.");
-      setPostedId(saved.id);
     } catch (e) {
       setError(backendMessage(e) ?? "Something went wrong. Please try again.");
     } finally {
@@ -144,8 +171,10 @@ export function ReviewReplies({
       const deleted = await deleteReply(token, replyId);
       const gone = threadIds(replyId);
       onChange(replies.filter((r) => !gone.has(r.id)));
-      // A form open under a deleted answer goes with it.
-      if (openForm && openForm !== "review" && gone.has(openForm)) setOpenForm(null);
+      // A form open under (or editing) a deleted answer goes with it.
+      if (openForm && openForm !== "review" && gone.has(openForm.replace(EDIT, ""))) {
+        setOpenForm(null);
+      }
       setConfirmingId(null);
       setStatus(deleted.message);
       setPostedId(null);
@@ -161,6 +190,7 @@ export function ReviewReplies({
 
   const form = (
     <ReplyForm
+      editing={!!openForm?.startsWith(EDIT)}
       text={text}
       busy={busy}
       error={error}
@@ -188,6 +218,7 @@ export function ReviewReplies({
     // Only answers drawn inside their parent get the curve; deeper ones sit
     // beside it and say "Replying to <name>" instead.
     const curved = depth > 1 && depth <= MAX_INDENT;
+    const editing = openForm === EDIT + reply.id;
     const item = (
       <li
         key={reply.id}
@@ -213,20 +244,42 @@ export function ReviewReplies({
               </span>
             )}
           </span>
-          <time dateTime={reply.created_at} className="text-white/65">
-            {formatDate(reply.created_at)}
-          </time>
+          <span className="text-white/65">
+            <time dateTime={reply.created_at}>{formatDate(reply.created_at)}</time>
+            {reply.updated_at && " · edited"}
+          </span>
         </div>
-        <p className="mt-1 whitespace-pre-line wrap-anywhere text-sm leading-relaxed text-white/90">
-          {reply.comment}
-        </p>
+        {editing ? (
+          <div className="mt-2">{form}</div>
+        ) : (
+          <p className="mt-1 whitespace-pre-line wrap-anywhere text-sm leading-relaxed text-white/90">
+            {reply.comment}
+          </p>
+        )}
+        {!editing && (
+          <div className="mt-1.5">
+            <HelpfulButton
+              item={reply}
+              user={user}
+              kind="reply"
+              small
+              onChange={(count, liked) =>
+                onChange(
+                  replies.map((r) =>
+                    r.id === reply.id ? { ...r, helpful_count: count, liked_by_me: liked } : r,
+                  ),
+                )
+              }
+            />
+          </div>
+        )}
         {status && postedId === reply.id && (
           <p role="status" className="mt-1 text-sm text-white/85">
             {status}
           </p>
         )}
 
-        {user && (
+        {user && !editing && (
           <div className="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-2">
             {confirmingId === reply.id ? (
               <>
@@ -265,6 +318,16 @@ export function ReviewReplies({
                   >
                     <MessageCircle aria-hidden="true" />
                     Reply
+                  </button>
+                )}
+                {own && (
+                  <button
+                    type="button"
+                    onClick={() => openFormFor(EDIT + reply.id, reply.comment)}
+                    aria-label="Edit your reply"
+                    className="rounded text-sm font-medium text-white/85 underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-white"
+                  >
+                    Edit
                   </button>
                 )}
                 {own && (
@@ -336,73 +399,6 @@ export function ReviewReplies({
         ))}
 
       {error && openForm === null && (
-        <p role="alert" className="text-sm text-amber-200">
-          {error}
-        </p>
-      )}
-    </div>
-  );
-}
-
-// The small reply form: text box, Post reply, Cancel, a 0 / 300 counter
-// and any refusal message. Used under the review and under a reply.
-function ReplyForm({
-  text,
-  busy,
-  error,
-  onText,
-  onPost,
-  onCancel,
-}: {
-  text: string;
-  busy: boolean;
-  error: string | null;
-  onText: (value: string) => void;
-  onPost: () => void;
-  onCancel: () => void;
-}) {
-  const fieldId = useId();
-  const length = text.trim().length;
-  return (
-    <div className="space-y-2">
-      <label htmlFor={fieldId} className="text-sm font-semibold">
-        Your reply
-      </label>
-      <Textarea
-        id={fieldId}
-        value={text}
-        onChange={(e) => onText(e.target.value)}
-        rows={2}
-        autoFocus
-        placeholder="Answer a question or add a tip"
-        className="border-white/25 bg-white/10 text-white placeholder:text-white/50"
-      />
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <div className="flex flex-wrap gap-2">
-          <button
-            type="button"
-            onClick={onPost}
-            disabled={busy}
-            className={cn(pillButton({ kind: "main" }), small)}
-          >
-            {busy ? <Spinner /> : <Send aria-hidden="true" />}
-            {busy ? "Posting…" : "Post reply"}
-          </button>
-          <button
-            type="button"
-            onClick={onCancel}
-            disabled={busy}
-            className={cn(pillButton({ kind: "glass" }), small)}
-          >
-            <X aria-hidden="true" />
-            Cancel
-          </button>
-        </div>
-        <span className={`text-xs ${length > MAX_REPLY ? "text-amber-200" : "text-white/70"}`}>
-          {length} / {MAX_REPLY}
-        </span>
-      </div>
-      {error && (
         <p role="alert" className="text-sm text-amber-200">
           {error}
         </p>

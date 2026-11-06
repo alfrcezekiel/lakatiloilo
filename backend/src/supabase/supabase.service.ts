@@ -28,10 +28,9 @@ export class SupabaseService {
     return this.anon;
   }
 
-  // A brand-new Supabase client for one sign-up or log-in. Each request
-  // gets its own, so one traveler's login can never be mixed up with
-  // another's inside the backend.
-  freshClient(): SupabaseClient {
+  // The project's address and publishable (anon) key, from backend/.env
+  // or Vercel. Throws a plain message when either is missing.
+  private settings(): { url: string; anonKey: string } {
     const url = this.config.get<string>('SUPABASE_URL');
     const anonKey = this.config.get<string>('SUPABASE_ANON_KEY');
     if (!url || !anonKey) {
@@ -39,6 +38,14 @@ export class SupabaseService {
         'SUPABASE_URL or SUPABASE_ANON_KEY is not set. Add them to backend/.env (see .env.example) and to Vercel.',
       );
     }
+    return { url, anonKey };
+  }
+
+  // A brand-new Supabase client for one sign-up or log-in. Each request
+  // gets its own, so one traveler's login can never be mixed up with
+  // another's inside the backend.
+  freshClient(): SupabaseClient {
+    const { url, anonKey } = this.settings();
     // The backend keeps no login of its own between requests.
     return createClient(url, anonKey, {
       auth: { persistSession: false, autoRefreshToken: false },
@@ -51,13 +58,7 @@ export class SupabaseService {
   // the tables (review extras round, ticket 81). One per request, so two
   // travelers' logins can never mix.
   travelerClient(accessToken: string): SupabaseClient {
-    const url = this.config.get<string>('SUPABASE_URL');
-    const anonKey = this.config.get<string>('SUPABASE_ANON_KEY');
-    if (!url || !anonKey) {
-      throw new Error(
-        'SUPABASE_URL or SUPABASE_ANON_KEY is not set. Add them to backend/.env (see .env.example) and to Vercel.',
-      );
-    }
+    const { url, anonKey } = this.settings();
     return createClient(url, anonKey, {
       auth: { persistSession: false, autoRefreshToken: false },
       global: { headers: { Authorization: `Bearer ${accessToken}` } },
@@ -81,6 +82,29 @@ export class SupabaseService {
     const { data, error } = await this.client().auth.getUser(accessToken);
     if (error || !data.user) return null;
     return data.user;
+  }
+
+  // Changes the details (user_metadata) on the traveler's own account,
+  // for example their display name (profile & replies round, ticket 94).
+  // Supabase's updateUser() needs a stored login, which the backend never
+  // keeps, so this asks Supabase Auth's "update my account" address
+  // directly with the traveler's own token and the publishable key.
+  // Supabase merges `data` into the existing details. Answers the updated
+  // account, or null when the token is not accepted.
+  async updateOwnDetails(accessToken: string, data: Record<string, string>): Promise<User | null> {
+    const { url, anonKey } = this.settings();
+    const response = await fetch(`${url.replace(/\/$/, '')}/auth/v1/user`, {
+      method: 'PUT',
+      headers: {
+        apikey: anonKey,
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ data }),
+    });
+    if (response.status === 401 || response.status === 403) return null;
+    if (!response.ok) throw new Error(`Supabase Auth answered ${response.status} to an account update`);
+    return (await response.json()) as User;
   }
 
   // The same, but only the account id (what the reviews need).

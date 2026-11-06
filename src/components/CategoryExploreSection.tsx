@@ -101,7 +101,7 @@ export function CategoryExploreSection({
         </Reveal>
 
         <Reveal delay={0.1} className="flex justify-center mb-8">
-          <div className="inline-flex bg-white/10 backdrop-blur-md border border-white/20 rounded-full p-1">
+          <div className="inline-flex bg-white/10 border border-white/20 rounded-full p-1">
             {locationFilters.map((filter) => (
               <button
                 key={filter.id}
@@ -109,7 +109,7 @@ export function CategoryExploreSection({
                 className={`px-6 py-2 rounded-full text-sm font-medium transition-all ${
                   selectedLocation === filter.id
                     ? "bg-white text-teal-900"
-                    : "text-white hover:bg-white/10"
+                    : "text-white/80 hover:text-white"
                 }`}
               >
                 {filter.label}

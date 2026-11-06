@@ -177,7 +177,7 @@ export function HomePage({ places }: { places: Promise<HomePlaces> }) {
           <div className="mx-auto max-w-6xl px-4 pt-16 sm:px-6">
             <div
               role="alert"
-              className="rounded-2xl border border-white/25 bg-white/15 p-6 text-white backdrop-blur-md"
+              className="rounded-2xl border border-white/25 bg-white/15 p-6 text-white"
             >
               <p className="font-semibold">
                 We couldn&apos;t load places right now.

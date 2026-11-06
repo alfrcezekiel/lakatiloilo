@@ -19,7 +19,8 @@ export type LiveTable =
   | "accommodations"
   | "reviews"
   | "review_likes"
-  | "review_replies";
+  | "review_replies"
+  | "reply_likes";
 
 // What to listen to: a table name means every change in it. The longer
 // form narrows it to one kind of change and/or rows matching a filter that

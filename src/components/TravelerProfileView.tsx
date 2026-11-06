@@ -1,9 +1,11 @@
 "use client";
 
-import { MapPin } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
+import { MapPin, UserPen } from "lucide-react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import type { ProfileReview } from "@/lib/api";
+import { usePathname, useRouter } from "next/navigation";
+import { useState } from "react";
+import type { ProfileReview, Traveler } from "@/lib/api";
 import { travelerTypeLabels } from "@/lib/labels";
 import { cn } from "@/lib/utils";
 import { Card, CardContent } from "@/components/ui/card";
@@ -11,30 +13,62 @@ import { BackLink, tones } from "@/components/PlaceDetail";
 import { Reveal } from "@/components/Reveal";
 import { Stars, formatDate, glassCard } from "@/components/ReviewsSection";
 import { HelpfulCount } from "@/components/HelpfulButton";
+import { ReviewPhoto } from "@/components/ReviewPhoto";
 import { Skeleton } from "@/components/ui/skeleton";
 import { displayNameOf, useCurrentUser } from "@/lib/login";
+import { pillButton } from "@/components/ui/button";
+import { EditProfileForm } from "@/components/EditProfileForm";
 
 const reviewsWord = (n: number) => `${n} review${n === 1 ? "" : "s"}`;
 
 // A traveler's profile page (profiles & likes round, ticket 73): their name
 // in large serif letters, their traveler type, how many reviews they have
 // written, and every review, newest first, each linking to its place.
+// A review with a photo shows it under the text, the same as on the place
+// page, and clicking it opens it larger (ticket 99).
 // Only what their reviews already show to everyone: never an email.
 //
 // `emptyMessage` is shown instead of the list when there are no reviews
 // (used by "My profile", ticket 74).
+//
+// On the traveler's own profile (travelerId is theirs), an Edit profile
+// button opens a form to change their name and traveler type (ticket 94),
+// and the header shows the account's current name straight away.
 export function TravelerProfileView({
+  travelerId,
   name,
   travelerType,
   reviews,
   emptyMessage,
 }: {
+  travelerId: string;
   name: string;
   travelerType: string | null;
   reviews: ProfileReview[];
   emptyMessage?: string;
 }) {
-  const typeLabel = travelerType ? travelerTypeLabels[travelerType] : undefined;
+  const { user } = useCurrentUser();
+  const queryClient = useQueryClient();
+  const router = useRouter();
+  const [editing, setEditing] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const isMine = !!user && user.id === travelerId;
+  const shownName = isMine ? displayNameOf(user) : name;
+  const shownType = isMine ? user.traveler_type : travelerType;
+  const typeLabel = shownType ? travelerTypeLabels[shownType] : undefined;
+
+  const handleSaved = (updated: Traveler) => {
+    // "Who is logged in" now has the new name (navbar dropdown, this
+    // header). The profile's reviews and any place's reviews are asked for
+    // again, because the database has copied the new name onto them.
+    queryClient.setQueriesData<Traveler | null>({ queryKey: ["who-is-logged-in"] }, (old) =>
+      old && old.id === updated.id ? updated : old,
+    );
+    void queryClient.invalidateQueries({ queryKey: ["reviews"] });
+    router.refresh();
+    setEditing(false);
+    setSaved(true);
+  };
 
   return (
     <main className={cn("min-h-screen text-white", tones.destination.page)}>
@@ -46,7 +80,7 @@ export function TravelerProfileView({
             Traveler profile
           </p>
           <h1 className="mt-2 font-fraunces text-5xl font-medium leading-[0.95] tracking-tight wrap-anywhere sm:text-6xl">
-            {name}
+            {shownName}
           </h1>
           <div className="mt-4 flex flex-wrap items-center gap-2 text-sm">
             {typeLabel && (
@@ -56,6 +90,25 @@ export function TravelerProfileView({
             )}
             <span className="text-white/80">{reviewsWord(reviews.length)}</span>
           </div>
+          {isMine && !editing && (
+            <button
+              type="button"
+              onClick={() => {
+                setEditing(true);
+                setSaved(false);
+              }}
+              className={`${pillButton({ kind: "glass" })} mt-5`}
+            >
+              <UserPen aria-hidden="true" />
+              Edit profile
+            </button>
+          )}
+          {isMine && editing && (
+            <EditProfileForm user={user} onSaved={handleSaved} onCancel={() => setEditing(false)} />
+          )}
+          <p role="status" className="mt-3 text-sm text-white/85 empty:hidden">
+            {saved ? "Your profile is updated." : ""}
+          </p>
         </header>
 
         <section aria-labelledby="profile-reviews" className="mt-10">
@@ -92,6 +145,7 @@ export function TravelerProfileView({
                         <p className="whitespace-pre-line wrap-anywhere leading-relaxed text-white/90">
                           {review.comment}
                         </p>
+                        {review.photo_url && <ReviewPhoto url={review.photo_url} reviewerName={shownName} />}
                         <HelpfulCount count={review.helpful_count} />
                       </CardContent>
                     </Card>
@@ -157,6 +211,7 @@ export function TravelerNotFoundOrMine() {
   if (user && user.id === id) {
     return (
       <TravelerProfileView
+        travelerId={id}
         name={displayNameOf(user)}
         travelerType={user.traveler_type}
         reviews={[]}

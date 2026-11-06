@@ -134,7 +134,7 @@ function PlaceTitle({ name }: { name: string }) {
 // One small glass tile in the row under the photo: "TYPE / Hotel".
 export function StatTile({ label, children }: { label: string; children: ReactNode }) {
   return (
-    <div className="min-w-0 rounded-xl border border-white/20 bg-white/10 p-3 backdrop-blur-md sm:p-4">
+    <div className="min-w-0 rounded-xl border border-white/20 bg-white/10 p-3 sm:p-4">
       <p className="text-[0.65rem] font-semibold uppercase tracking-[0.14em] text-white/60">
         {label}
       </p>
@@ -162,6 +162,8 @@ export function SectionHeading({ id, children }: { id?: string; children: ReactN
 }
 
 // The glass side panel: a small label, a serif title, then its contents.
+// On a laptop it rises into the photo, so it keeps its blur: without it the
+// photo shows sharply behind the white text (.claude/rules/no-white-hover-backdrop.md).
 export function SidePanel({
   eyebrow,
   title,

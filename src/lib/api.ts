@@ -135,6 +135,12 @@ export interface Reply {
   traveler_type: string | null;
   comment: string;
   created_at: string;
+  // When its writer last edited the text, or null if never (ticket 95).
+  updated_at: string | null;
+  // How many travelers found it helpful, and whether the traveler asking
+  // did (ticket 96). Missing on a reply just posted (it has none yet).
+  helpful_count?: number;
+  liked_by_me?: boolean;
 }
 
 // Adds the logged-in traveler's reply under a review (POST
@@ -178,6 +184,17 @@ export const reportReview = async (
   return data;
 };
 
+// Changes the text of the traveler's own reply (PATCH /v1/replies/:id,
+// ticket 95) and answers with the saved reply, including updated_at.
+export const updateReply = async (accessToken: string, replyId: string, comment: string) => {
+  const { data } = await api().patch<Reply>(
+    `/v1/replies/${encodeURIComponent(replyId)}`,
+    { comment },
+    { headers: { Authorization: `Bearer ${accessToken}` } },
+  );
+  return data;
+};
+
 // Deletes the traveler's own reply (DELETE /v1/replies/:id). Answers with
 // the backend's message, "Your reply has been deleted."
 export const deleteReply = async (accessToken: string, replyId: string) => {
@@ -216,6 +233,8 @@ export interface ProfileReview {
   // null only if the place was removed after the review was written.
   place_name: string | null;
   helpful_count: number;
+  // The photo's public address, or null when the review has none (ticket 99).
+  photo_url: string | null;
 }
 
 // A traveler's public profile (GET /v1/travelers/:id, anyone). Built from
@@ -241,10 +260,16 @@ export interface LikeState {
 
 // Marks someone else's review "Helpful" (POST /v1/reviews/:id/like), or
 // removes the traveler's own mark (DELETE), as the logged-in traveler.
-// Answers the new count. Refusals carry a plain message, for example
-// "You can't mark your own review as helpful."
-export const setHelpful = async (accessToken: string, reviewId: string, helpful: boolean) => {
-  const path = `/v1/reviews/${encodeURIComponent(reviewId)}/like`;
+// The same for a reply (POST/DELETE /v1/replies/:id/like, ticket 96) with
+// kind "reply". Answers the new count. Refusals carry a plain message, for
+// example "You can't mark your own review as helpful."
+export const setHelpful = async (
+  accessToken: string,
+  id: string,
+  helpful: boolean,
+  kind: "review" | "reply" = "review",
+) => {
+  const path = `/v1/${kind === "reply" ? "replies" : "reviews"}/${encodeURIComponent(id)}/like`;
   const headers = { Authorization: `Bearer ${accessToken}` };
   const { data } = helpful
     ? await api().post<LikeState>(path, null, { headers })
@@ -347,6 +372,19 @@ export interface Traveler {
 export const getMe = async (accessToken: string) =>
   (
     await api().get<Traveler>("/v1/auth/me", {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    })
+  ).data;
+
+// Changes the logged-in traveler's own display name and traveler type
+// (PATCH /v1/auth/me, ticket 94) and answers like getMe. The database
+// copies them onto all their reviews and replies.
+export const updateMe = async (
+  accessToken: string,
+  details: { display_name: string; traveler_type: string },
+) =>
+  (
+    await api().patch<Traveler>("/v1/auth/me", details, {
       headers: { Authorization: `Bearer ${accessToken}` },
     })
   ).data;

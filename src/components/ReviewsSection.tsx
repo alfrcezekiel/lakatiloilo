@@ -200,7 +200,7 @@ export function ReviewsSection() {
                             (ticket 80) on the right of the same row. */}
                         <div className="flex flex-wrap items-center justify-between gap-2">
                           <HelpfulButton
-                            review={review}
+                            item={review}
                             user={user}
                             onChange={(count, liked) =>
                               setReviews(

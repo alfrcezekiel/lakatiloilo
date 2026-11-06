@@ -6,6 +6,7 @@ import {
   Headers,
   HttpCode,
   Param,
+  Patch,
   Post,
 } from '@nestjs/common';
 import { loginToken } from '../login-token';
@@ -61,6 +62,47 @@ export class RepliesController {
       replyText(body),
       parentReplyId(body),
     );
+  }
+
+  // PATCH /v1/replies/<id>   (header: Authorization: Bearer <login token>)
+  // body: { comment }
+  // Changes the text of the traveler's own reply (ticket 95) and answers
+  // 200 with it, including updated_at. Refusals: 401 not logged in, 400
+  // text outside 1–300 characters, 404 "We couldn't find that reply among
+  // yours." for someone else's reply.
+  @Patch('replies/:id')
+  @HttpCode(200)
+  update(
+    @Headers('authorization') authorization: string | undefined,
+    @Param('id', idOf('reply')) replyId: string,
+    @Body() body: { comment?: unknown } | undefined,
+  ) {
+    return this.repliesService.update(loginToken(authorization), replyId, replyText(body));
+  }
+
+  // POST /v1/replies/<id>/like   (header: Authorization: Bearer <login token>)
+  // Marks someone else's reply as helpful (ticket 96). Answers 200 with
+  // { helpful_count, liked: true }. Refusals: 401 not logged in, 404 no
+  // such reply, 400 "You can't mark your own reply as helpful."
+  @Post('replies/:id/like')
+  @HttpCode(200)
+  like(
+    @Headers('authorization') authorization: string | undefined,
+    @Param('id', idOf('reply')) replyId: string,
+  ) {
+    return this.repliesService.like(loginToken(authorization), replyId);
+  }
+
+  // DELETE /v1/replies/<id>/like   (header: Authorization: Bearer <login token>)
+  // Removes the traveler's own like. Answers 200 with
+  // { helpful_count, liked: false }.
+  @Delete('replies/:id/like')
+  @HttpCode(200)
+  unlike(
+    @Headers('authorization') authorization: string | undefined,
+    @Param('id', idOf('reply')) replyId: string,
+  ) {
+    return this.repliesService.unlike(loginToken(authorization), replyId);
   }
 
   // DELETE /v1/replies/<id>   (header: Authorization: Bearer <login token>)

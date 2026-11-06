@@ -34,6 +34,14 @@ Threaded replies round: logged-in travelers can answer a reply, not only a revie
 
 Live updates round: pages keep themselves up to date. When a destination or accommodation is added, changed or removed, or another traveler writes, edits or deletes a review, a reply, a photo or a Helpful mark, the open page shows it within a few seconds, without the traveler reloading. Supabase Realtime is only the doorbell that says "something changed"; the page then asks the NestJS backend again, so all data still comes through the backend.
 
+The team moved six parked ideas into the spec on 2026-11-05, as three rounds of about one session each, built and checked live one after the other:
+
+Profile & replies round: travelers can change their display name and traveler type from their own profile, and every review and reply they wrote follows. They can edit their own replies and mark other travelers' replies "Helpful". An unknown traveler's profile page answers with a real "not found" status. Their profile also shows the photo on each of their reviews, so visitors see what they saw.
+
+Thread care round: deleting a reply that has answers leaves "This reply was deleted" in its place, so the conversation under it stays. Long threads fold away behind "Show more replies". A bell in the navbar tells a traveler when someone replies to their review or answers their reply.
+
+Moderation & photos round: a review reported by three different travelers hides itself until the team looks at it. Admins get a Reports screen to keep, hide or delete reported reviews. A review can have up to four photos.
+
 ## The user
 Travelers planning weekend trips around Iloilo Province. No login required for browsing; an account is needed only to write a review.
 
@@ -69,6 +77,13 @@ Travelers planning weekend trips around Iloilo Province. No login required for b
 29. As a logged-in traveler, I want to answer someone's reply and see answers indented under it, so that I can follow and join a conversation under a review.
 30. As a traveler, I want new, changed and removed destinations and accommodations, and their ratings, to show on the open page by themselves, so that I never plan around old information.
 31. As a traveler reading a place's reviews, I want other travelers' new reviews, replies, photos and Helpful marks to appear by themselves, so that I can follow the conversation without reloading.
+32. As a logged-in traveler, I want to change my display name and traveler type, so that my reviews and replies show who I am now.
+33. As a logged-in traveler, I want to fix a typo in my reply and mark other travelers' replies helpful, so that conversations stay accurate and the best answers stand out.
+34. As a traveler reading a thread, I want answers to stay when the reply above them is deleted, and long threads to fold away, so that conversations stay readable.
+35. As a logged-in traveler, I want to be told when someone replies to my review or answers my reply, so that I can answer back.
+36. As a traveler, I want a review that many travelers report to hide itself, and the team to have a screen to deal with reports, so that spam does not stay up.
+37. As a logged-in traveler, I want to add up to four photos to my review, so that others see more of the place.
+38. As any visitor, I want to see a traveler's review photos on their profile, so that I can judge their taste from what they saw, not only what they wrote.
 
 ## Screens
 1. Home page hero — redesigned to match the team's mockup:
@@ -163,8 +178,8 @@ Travelers planning weekend trips around Iloilo Province. No login required for b
    - **Reply to a reply:** logged in, every reply gets a small **Reply** link that opens the same small form (up to 300 characters) right under that reply. The new reply shows indented under the one it answers, and the list updates at once. The Reply button under the review still adds a reply to the review itself.
    - **Threads:** answers to the same reply show newest first under it, joined by the thin left line, so a new answer appears right under the reply it answers, where its form was; "Your reply is posted." shows under the new reply. Replies to the review itself stay oldest first. (Changed on 2026-11-02 at the team's request: answers to a reply used to show oldest first, so a new answer could land below older answers and their threads.)
    - **Curved lines:** each answer drawn inside the reply it answers (levels 2 and 3) gets a small curved line branching from that reply's thin line into the answer's name, so it is clear whose reply it answers. Deeper answers keep "Replying to <name>" instead of a curve. (Added on 2026-11-02 at the team's request.) Replies can go any number of levels deep, but the indent stops growing after 3 levels; deeper replies start with "Replying to <name>" so it stays readable on a 375 px phone.
-   - **Deleting:** the traveler's own reply keeps its Delete button. When it has answers under it, the confirm step says "Delete this reply and its answers?", and the whole thread under it is deleted with it.
-   - Unchanged: the replier's name (linking to their profile), traveler type tag and date; no editing replies.
+   - **Deleting:** the traveler's own reply keeps its Delete button. When it has answers under it, the confirm step says "Delete this reply and its answers?", and the whole thread under it is deleted with it. (Changes in round 26: answers stay under "This reply was deleted".)
+   - Unchanged: the replier's name (linking to their profile), traveler type tag and date; no editing replies (editing comes in round 25).
 
 24. Live updates round — pages keep themselves up to date, with no reload:
    - **Home page:** when a destination or accommodation is added, changed or removed in Supabase, or a place's rating changes, the cards and star ratings update by themselves within a few seconds.
@@ -173,6 +188,25 @@ Travelers planning weekend trips around Iloilo Province. No login required for b
    - **Nothing is lost:** a review or reply being typed, an open Report pop-up, a delete confirm step and the scroll position stay as they are when an update arrives.
    - **Coming back:** after the phone sleeps, the tab sits in the background, or the connection drops, the page catches up by itself when it is back.
    - No new buttons or messages: updates arrive quietly. With "reduce motion" on, they just appear.
+
+25. Profile & replies round — change your name, edit replies, Helpful on replies:
+   - **Edit profile:** on their own profile, a logged-in traveler sees an **Edit profile** button. It opens a small form with the display name (2–40 characters) and "I'm traveling as" (the same three choices as sign-up), with Save and Cancel. After saving, "Your profile is updated." shows, and the new name and tag appear on the profile, in the navbar dropdown, and on every review and reply they have written. Nobody else sees the button.
+   - **Edit a reply:** the traveler's own replies get **Edit** next to Delete. The same small form (up to 300 characters) opens in place of the reply's text, filled in, with Save and Cancel. An edited reply shows "· edited" after its date.
+   - **Helpful on replies:** every reply gets a small glass **Helpful · 3** button, the same as on reviews: logged in, it turns amber when marked and back when clicked again; logged out, only the count shows; on the traveler's own reply, only the count.
+   - **Unknown traveler:** the page looks the same as today ("We couldn't find this traveler" and Back to Home), but it now answers with a real 404 ("not found") status, so search engines and checking tools know it does not exist.
+   - **Photos on the profile:** on a traveler's profile, a review with a photo shows it under the review's text, the same small picture as on the place page; clicking it opens it larger. A review without a photo looks the same as today. Everyone sees the photos, logged in or not, including on the traveler's own profile. (Added on 2026-11-06 at the team's request.)
+   - **Change (2026-11-06, team request): no white box on hover or click, and less blur.** Hovering, clicking or arrow-key highlighting a dropdown item, search suggestion, option row or the unselected side of a pill switcher no longer paints a see-through white box behind it: the text changes colour instead (amber in menus and suggestions, brighter white in switchers), and bordered rows brighten their border. Buttons that already have a glass fill may still brighten it. Cards and tiles on the plain teal background, the navbar, the profile dropdown, the search suggestions and the phone menu no longer use a frosted-glass blur (it showed light stripes in some browsers); they use a plain glass fill or solid teal. Blur stays only over photos (the hero search box, category chips, the back link and the side panel on a place photo, the login card). Keyboard focus outlines are unchanged.
+
+26. Thread care round — kinder deleting, folding threads, and a notifications bell:
+   - **Deleting a reply with answers:** the reply stays in its place as "This reply was deleted" in grey, with no name, tag, text or buttons, and its answers stay under it. A reply with no answers disappears completely, as today. The confirm step says "Delete this reply?" in both cases. (Replaces round 23's "Delete this reply and its answers?")
+   - **Folding long threads:** a reply with more than 3 answers shows the newest 3 and a **Show N more replies** link that opens the rest. Every reply with answers gets a **Hide replies** / **Show replies** link that folds and unfolds the thread under it. A new answer always opens its thread so the traveler sees it.
+   - **Notifications bell:** logged in, a bell sits beside the profile icon (in the phone menu, a "Notifications" line), with a small red dot and number when something is unread. Clicking it opens a glass list, newest first, up to 20: "Maria replied to your review of Bucari Little Baguio" or "Juan answered your reply on Hotel del Rio", with how long ago. Clicking one opens that place's page and marks it read; **Mark all as read** sits at the top. Empty: "No notifications yet." The bell updates by itself within a few seconds, like the live updates round. In-app only: no emails.
+   - Travelers are never notified about their own replies.
+
+27. Moderation & photos round — auto-hide, a Reports screen for admins, and more photos:
+   - **Auto-hide:** when 3 different travelers have reported a review, it disappears from the place page, the ratings and the reviewer's public profile. Its writer still sees it on the place page with a grey note: "Hidden while the team reviews it."
+   - **Reports screen (admins only):** admins see **Reports** in the profile dropdown (and the phone menu). The page lists every review with at least one report, most reports first: the place, the reviewer's name, stars, text, photos, whether it is hidden, the number of reports, and each report's reason and note. Each has three buttons: **Keep it** (removes its reports and shows it again), **Hide it**, and **Delete review** (with a "Yes, delete" step). Anyone who is not an admin, logged in or not, gets the site's "not found" page there.
+   - **Up to four photos:** the review form's "Add photos" takes up to 4 photos (each JPG, PNG or WebP, up to 2 MB), each with a preview and its own Remove button. Editing a review can add and remove photos. Under the review, the photos show as a row of small pictures; clicking one opens it larger, with next and previous buttons, arrow keys and Escape. Existing single photos show as before. A traveler's profile shows a review's photos as the same row of small pictures.
 
 ## Data
 
@@ -255,9 +289,9 @@ Profiles & likes round: profiles need no new table or column. A traveler's profi
 - comment — the reply text, 1 to 300 characters
 - created_at — timestamp
 
-Row Level Security policy for review_replies: anyone may read. Only a logged-in traveler may add a reply, and only with their own user_id. Only the traveler who wrote a reply may delete it. No one may edit a reply.
+Row Level Security policy for review_replies: anyone may read. Only a logged-in traveler may add a reply, and only with their own user_id. Only the traveler who wrote a reply may delete it. No one may edit a reply. (From the profile & replies round, the writer may edit its text; see below.)
 
-**review_replies table, threaded replies round:** gains parent_reply_id — the reply being answered, or empty when the reply answers the review itself. The database refuses a parent reply that is under a different review. Deleting a reply deletes every answer under it (all levels), the same way deleting a review deletes its replies. Travelers may now send review_id, parent_reply_id and the text; everything else is still filled in by the database. The Row Level Security policy is unchanged.
+**review_replies table, threaded replies round:** gains parent_reply_id — the reply being answered, or empty when the reply answers the review itself. The database refuses a parent reply that is under a different review. Deleting a reply deletes every answer under it (all levels), the same way deleting a review deletes its replies (until the thread care round, which keeps the answers; see below). Travelers may now send review_id, parent_reply_id and the text; everything else is still filled in by the database. The Row Level Security policy is unchanged.
 
 **review_reports table (review extras round):**
 - id — unique identifier for each report
@@ -268,11 +302,11 @@ Row Level Security policy for review_replies: anyone may read. Only a logged-in 
 - created_at — timestamp
 - One report per traveler per review (review_id and user_id together are unique).
 
-Row Level Security policy for review_reports: no one may read reports through the app; the team reads them in the Supabase dashboard. Only a logged-in traveler may add a report, only with their own user_id, and never on their own review. No one may edit or delete a report through the app.
+Row Level Security policy for review_reports: no one may read reports through the app; the team reads them in the Supabase dashboard. Only a logged-in traveler may add a report, only with their own user_id, and never on their own review. No one may edit or delete a report through the app. (From the moderation & photos round, admins may read and delete reports; see below.)
 
 **Live updates round:** no new table or column. One SQL file adds destinations, accommodations, reviews, review_likes and review_replies to Supabase's Realtime list (the supabase_realtime publication), so Supabase can announce changes to them. Row Level Security is unchanged and still decides: Realtime only tells a viewer about rows they may already read, and all five are already readable by anyone. review_reports stays off the list (nobody may read reports through the app). The browser uses Realtime only as a signal that a table changed; it never uses the rows Realtime sends.
 
-**reviews table, review extras round:** gains photo_path — where the review's photo is kept in Storage, or empty when there is no photo. Like the stars and comment, only the review's writer may set or clear it.
+**reviews table, review extras round:** gains photo_path — where the review's photo is kept in Storage, or empty when there is no photo. Like the stars and comment, only the review's writer may set or clear it. (Replaced by the review_photos table in the moderation & photos round; see below.)
 
 **review-photos Storage bucket (review extras round):** anyone may view the photos. A logged-in traveler may upload only into a folder named after their own user_id, and only that traveler may replace or delete files there. Photos are JPG, PNG or WebP, up to 2 MB, so an upload stays under Vercel's 4.5 MB request limit. Uploads go through the backend as the logged-in traveler, so these Storage policies decide, like Row Level Security does for the tables.
 
@@ -281,6 +315,35 @@ Likes on TypeORM round: no database change, no new SQL, and nothing to run in Su
 (Before the backend round, the browser read and wrote reviews directly through Supabase with the same keys and the same Row Level Security policy.)
 
 The traveler type is saved on the Supabase Auth account, next to the display name. The database copies it onto each review, the same way it copies reviewer_name, so it can never be typed in from the browser. The reviews Row Level Security policy is unchanged.
+
+**Profile & replies round:**
+- **Display name and traveler type** stay on the Supabase Auth account. The backend changes them with the traveler's own login and the publishable key, never the service_role key. A database trigger on the account (security definer, like the existing name-copying triggers) then copies the new name and type onto every reviews and review_replies row with that user_id, without changing their "last edited" time. The browser can still never type a name onto any row.
+- **review_replies** gains **updated_at** — when the reply's text was last edited, or empty if never. New Row Level Security policy: only the reply's writer may edit it, and only its comment (1–300 characters); review_id, parent_reply_id, user_id, the name and type cannot change.
+- **reply_likes table (new):** reply_id (removed with the reply), user_id (from Supabase Auth), created_at. One like per traveler per reply (reply_id and user_id together are unique). Row Level Security: anyone may read. Only a logged-in traveler may add a like, only with their own user_id, and never on their own reply. Only that traveler may remove their like. No one may edit a like. Added to the Realtime list like review_likes.
+- **Short names (added 2026-11-06, code review):** the database uses "Traveler" on reviews and replies for any display name under 2 characters, as it already did for an empty one, so a name changed outside the website still follows the 2–40 rule. One shared name rule is used by every trigger that copies a name.
+- **Photos on the profile (added 2026-11-06):** no table or Storage changes. Review photos are already public (the review-photos bucket, review extras round); the profile only reads them. Row Level Security is unchanged.
+
+**Thread care round:**
+- **review_replies** gains **deleted_at** — when its writer deleted it, or empty. Deleting a reply that has answers does not remove the row: the database clears its comment, replier_name and traveler_type, removes its Helpful likes and sets deleted_at, and its answers stay. Deleting a reply with no answers removes the row, as today; when the last answer under a deleted reply goes, the deleted reply goes too. Only the reply's writer may do either. A deleted reply cannot be edited, liked or answered.
+- **notifications table (new):**
+  - id — unique identifier
+  - user_id — the traveler the notification is for
+  - kind — one of: "review_reply" (someone replied to your review), "reply_answer" (someone answered your reply)
+  - review_id — the review the conversation is under (the notification is removed with it)
+  - reply_id — the new reply (removed with it)
+  - actor_name — the replier's display name, copied by the database
+  - read_at — when it was read, or empty
+  - created_at — timestamp
+- Notifications are created only by the database, by a trigger when a reply is added, and never for the traveler's own reply. Row Level Security: a traveler may read only their own notifications, and may change only read_at on their own. No one may add or delete notifications through the app. Added to the Realtime list, where Row Level Security means each traveler only hears about their own.
+
+**Moderation & photos round:**
+- **admins table (new):** user_id — an account that may use the Reports screen. The team adds and removes rows by hand in the Supabase SQL Editor; the app can never change it. Row Level Security: a traveler may read only their own row (so the app can ask "am I an admin?"); no one may write through the app.
+- **reviews** gains **hidden_at** — when the review was hidden, or empty. A database trigger sets it when a review reaches 3 reports (it runs as security definer, because travelers cannot read reports). The reviews read policy changes to: anyone may read reviews whose hidden_at is empty; the writer and admins may read all. Hidden reviews do not count toward a place's average rating or review count, and are left off public profiles. Only admins may set or clear hidden_at; the writer cannot unhide their own review.
+- **reviews**, admins: admins may also delete any review (its replies, likes, reports, photos and notifications go with it, as today).
+- **review_reports:** admins may now read and delete reports ("Keep it" deletes them). Everyone else still cannot read them, and review_reports stays off the Realtime list.
+- **review_photos table (new):** id, review_id (removed with the review), photo_path (where it is kept in Storage), position (1 to 4), created_at. At most 4 per review. Row Level Security: anyone may read photos of reviews they may read; only the review's writer may add or remove them. It replaces reviews.photo_path: the round's SQL moves every existing photo into it as position 1, then drops the old column. Added to the Realtime list.
+- **review-photos Storage bucket:** unchanged for travelers (their own folder only, JPG, PNG or WebP, up to 2 MB). Admins may also delete files, so deleting a review removes its photos. Each photo is sent in its own request, because four 2 MB photos would go over Vercel's 4.5 MB request limit.
+- Nothing in these rounds uses the service_role key or any sb_secret_ key: admin rights come from the admins table and Row Level Security.
 
 PostGIS extension: Enabled on Supabase database. The `location` column stores geography points for spatial queries (e.g., find destinations within X km of a point).
 
@@ -338,6 +401,30 @@ When Supabase Auth refuses, the backend answers with Supabase's own status and c
 
 **Change (2026-11-05, team request — evaluation A1 and B5):** no new endpoints. An id that is not a real id (for example /v1/reviews/abc or /v1/destinations/abc) answers 404 with a plain sentence ("We couldn't find that review." — or destination, accommodation, reply), the same as an unknown id; an unknown destination or accommodation also answers "We couldn't find that destination." / "…accommodation." instead of "Destination <id> not found". GET /v1/reviews without a valid place_id answers 400 "Please choose a destination or accommodation." Every answer carries X-Content-Type-Options: nosniff and X-Frame-Options: DENY, and no longer X-Powered-By.
 
+**Profile & replies round (v1):**
+- PATCH /v1/auth/me — logged-in traveler; changes their own display name (2–40 characters) and traveler type, and answers the same as GET /v1/auth/me (400 outside the limits, 401 not logged in)
+- PATCH /v1/replies/:id — logged-in traveler; edits the text of their own reply (1–300 characters) and answers with it (404 "We couldn't find that reply among yours.", 400 outside the limits)
+- POST /v1/replies/:id/like and DELETE /v1/replies/:id/like — logged-in traveler; marks or unmarks a reply helpful and answers { helpful_count, liked } (400 "You can't mark your own reply as helpful.", 404 no such reply)
+- GET /v1/reviews — each reply also carries helpful_count, liked_by_me (with a login) and updated_at
+- GET /v1/travelers/:id — the website's profile page now answers 404 when this answers 404; each review also carries its photo's address (photo_url, or empty when there is no photo; added 2026-11-06)
+
+**Thread care round (v1):**
+- DELETE /v1/replies/:id — a reply with answers becomes "This reply was deleted" instead of taking its answers with it; same answer and messages as before
+- GET /v1/reviews — each reply also carries deleted (true or false); a deleted reply has no name, tag, text or Helpful count
+- GET /v1/notifications — logged-in traveler; their own 20 newest notifications (kind, actor_name, the place's type, id and name, read, created_at) and unread_count (401 not logged in)
+- POST /v1/notifications/read — logged-in traveler; marks one of their notifications read ({ id }), or all of them with no id; answers { unread_count }
+
+**Moderation & photos round (v1):**
+- GET /v1/auth/me — also answers is_admin
+- GET /v1/admin/reports — admins only; reported reviews, most reports first, with their reports (403 "This page is for the Lakat Iloilo team." for anyone else)
+- POST /v1/admin/reviews/:id/keep — admins only; deletes the review's reports and shows it again
+- POST /v1/admin/reviews/:id/hide — admins only; hides the review
+- DELETE /v1/admin/reviews/:id — admins only; deletes the review and its photos
+- POST /v1/reviews/:id/photos — the review's writer; adds one photo (JPG, PNG or WebP, up to 2 MB) and answers { id, url, position } (400 "A review can have up to 4 photos.", 400 for a wrong file as today)
+- DELETE /v1/reviews/:id/photos/:photoId — the review's writer; removes that photo from the review and from Storage
+- POST /v1/reviews and PATCH /v1/reviews/:id — no longer take a photo: the website saves the review first, then sends each new photo on its own
+- GET /v1/reviews — each review carries photos (a list of { id, url, position }) instead of photo_url, and hidden: true on a hidden review shown to its writer or an admin; hidden reviews are left out for everyone else. GET /v1/ratings and GET /v1/travelers/:id leave hidden reviews out
+
 All writes in these rounds run as the logged-in traveler (the asTraveler step), so Row Level Security and the Storage policies decide. The backend never uses the service_role key.
 
 **Likes on TypeORM round (v1):** no endpoint changes. POST and DELETE /v1/reviews/:id/like, GET /v1/reviews and GET /v1/travelers/:id keep the same inputs, answers and refusal messages.
@@ -387,6 +474,8 @@ Own login round: the website keeps its own copy of the login. "Who is logged in"
 Navigation round: no change for travelers. "Who is logged in" is shared through TanStack Query; renewal (about once an hour, one tab at a time, retrying every 30 seconds) keeps its own code.
 
 Profiles & likes, review extras and threaded replies rounds: browsing, profiles, likes counts, replies and photos are visible to everyone. Marking a review helpful, replying, reporting and adding a photo need an account, like writing a review.
+
+Profile & replies, thread care, and moderation & photos rounds: changing your name, editing replies, marking replies helpful and the notifications bell need an account. The Reports screen needs an account that the team has added to the admins table by hand; there is no way to become an admin from the app.
 
 ## Done for the demo
 - [x] NestJS backend project structure created in `backend/` directory
@@ -508,22 +597,44 @@ Profiles & likes, review extras and threaded replies rounds: browsing, profiles,
 - [x] After the phone sleeps or the tab sits in the background, the page catches up when it comes back
 - [x] Row Level Security is unchanged on all five tables, and review_reports is not in the Realtime list
 
+**Profile & replies round (live URL):**
+- [ ] A traveler changes their display name and traveler type on their profile, and the new ones show on the profile, the dropdown and all their old reviews and replies after a refresh
+- [ ] A traveler can edit their own reply; it shows "· edited"; editing someone else's reply is refused by the database
+- [ ] A logged-in traveler can mark another traveler's reply Helpful and unmark it; their own reply only shows the count, and the database refuses a like on it
+- [ ] An unknown traveler's profile page shows "We couldn't find this traveler" and answers 404 (checked with curl)
+- [ ] A traveler's profile shows the photo on each review that has one, and clicking it opens it larger; reviews without a photo look the same
+
+**Thread care round (live URL):**
+- [ ] Deleting a reply with answers leaves "This reply was deleted" with its answers still under it; deleting a reply with none removes it
+- [ ] A reply with more than 3 answers shows "Show N more replies"; Hide replies and Show replies fold and unfold a thread, on a laptop and a phone
+- [ ] Replying to a review from a second account puts a notification on the review writer's bell within a few seconds; clicking it opens the place and marks it read; Mark all as read works
+- [ ] A traveler's own replies never notify them, and one traveler cannot read another's notifications (checked through the backend)
+
+**Moderation & photos round (live URL):**
+- [ ] After 3 different accounts report a review, it disappears for everyone else and from the rating, and its writer sees "Hidden while the team reviews it."
+- [ ] An admin sees Reports in the dropdown; Keep it, Hide it and Delete review all work; a non-admin gets "not found" on that page and 403 from its endpoints
+- [ ] A traveler can add up to 4 photos to a review, remove one, and open them larger with next and previous; a 5th is refused; old single photos still show
+- [ ] Row Level Security is on for admins, notifications, reply_likes and review_photos, and no service_role or sb_secret_ key appears anywhere
+
 ## Out of scope
+- Moderation & photos round: an admin screen for destinations and accommodations, becoming an admin from the app, banning travelers, appeals, seeing new reports live, keeping reports when a review is deleted, reordering photos, and photos over 2 MB
+- Thread care round: email or phone notifications (a custom email sender is still parked), notifications for Helpful marks or new reviews, and a limit on thread depth or reply rate
+- Profile & replies round: changing the email or password from the profile, profile pictures, and a public profile for travelers with no reviews
 - Live updates round: live reports (no screen shows reports and nobody may read them through the app; seeing reports as they arrive needs an admin screen), "new review" pop-ups or sounds, live traveler profile pages, and using the rows Realtime sends directly in the page
 - Likes on TypeORM round: moving the other hand-written SQL (adding, editing and deleting reviews, the act-as-the-traveler step) onto TypeORM, and any change travelers can see
 - Navigation round: login renewal through TanStack Query, the old page animating out, and the experimental "view transitions" setting (parked in docs/LATER.md)
 - Polish round: fetching places in the browser (parked in docs/LATER.md); "who is logged in" and page transitions moved into the navigation round
 - Login for anything other than reviews (browsing stays open to everyone)
-- Changing the display name or traveler type after sign-up (the profile page shows them but cannot change them: every old review copies them too), and a custom email sender for reset emails
+- A custom email sender for reset emails (changing the display name and traveler type moved into the profile & replies round on 2026-11-05)
 - Social logins
-- Threaded replies round: keeping answers when the reply above them is deleted ("This reply was deleted"), collapsing threads, and notifying a traveler when someone answers them
-- Profiles & likes and review extras rounds: editing replies, likes on replies, hiding reported reviews automatically, any admin screen for reports, more than one photo per review, and photos over 2 MB
+- Threaded replies round: nothing left here; "This reply was deleted", folding threads and notifications moved into the thread care round on 2026-11-05
+- Profiles & likes and review extras rounds: photos over 2 MB (editing replies and likes on replies moved into the profile & replies round; auto-hiding reported reviews, the Reports screen and up to four photos into the moderation & photos round, on 2026-11-05)
 - Buttons & cards round: email confirmation for new accounts (parked: a custom email sender needs an outside service the team has not agreed to), and a "Get directions in Google Maps" button on destinations
 - Filtering or sorting by rating (star ratings on the home page cards moved into the buttons & cards round)
 - Booking/payments for any services
 - Map integration (PostGIS added for future use, but no map UI in MVP). A Mapbox map is parked in docs/LATER.md until the team decides on it
 - A full search results page, advanced filters, or searching inside descriptions (live suggestions match names and addresses only)
-- Admin UI for managing data
+- Admin UI for managing destinations and accommodations (only the Reports screen is in scope, in the moderation & photos round)
 - Social features (sharing, favorites)
 - Advanced spatial queries beyond radius search
 - Password reset through the backend, "Nearby places" using the /near endpoints, and keeping the backend address private (all parked in docs/LATER.md)

@@ -8,9 +8,10 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { In, QueryFailedError, Repository } from 'typeorm';
+import { QueryFailedError, type QueryRunner, Repository } from 'typeorm';
 import { Review } from '../../entities/review.entity';
 import { ReviewReply } from '../../entities/review-reply.entity';
+import { ReplyLike, replyHelpfulCountOf } from '../../entities/reply-like.entity';
 import { TravelerTransactions } from '../traveler-transactions';
 
 // What the website gets for each reply. Never an email (the table holds
@@ -25,7 +26,18 @@ export type ReplyDto = Pick<
   | 'traveler_type'
   | 'comment'
   | 'created_at'
+  | 'updated_at'
 >;
+
+// A reply as GET /v1/reviews sends it: the reply, plus its "Helpful"
+// count and whether the traveler asking marked it (ticket 96).
+export type ReplyWithLikes = ReplyDto & { helpful_count: number; liked_by_me: boolean };
+
+// What the website gets after marking or unmarking a reply as helpful.
+export interface ReplyLikeState {
+  helpful_count: number;
+  liked: boolean;
+}
 
 // What the website gets after deleting a reply.
 export interface DeletedReply {
@@ -42,9 +54,16 @@ const REPLY_COLUMNS: (keyof ReplyDto)[] = [
   'traveler_type',
   'comment',
   'created_at',
+  'updated_at',
 ];
 
 const reviewNotFound = () => new NotFoundException("We couldn't find that review.");
+const replyNotFound = () => new NotFoundException("We couldn't find that reply.");
+
+// How many travelers found a reply helpful, counted inside the same
+// transaction, so the answer includes the like just added or removed.
+const replyHelpfulCount = (runner: QueryRunner, replyId: string) =>
+  runner.manager.count(ReplyLike, { where: { reply_id: replyId } });
 const parentNotUnderReview = () => new BadRequestException("That reply isn't under this review.");
 const replyNotYours = () =>
   new NotFoundException("We couldn't find that reply among yours. Please log in again and try.");
@@ -64,16 +83,34 @@ export class RepliesService {
   ) {}
 
   // The replies under these reviews, oldest first, grouped by review id.
-  // One request for a whole page of reviews.
-  async forReviews(reviewIds: string[]): Promise<Map<string, ReplyDto[]>> {
-    const byReview = new Map<string, ReplyDto[]>();
+  // One request for a whole page of reviews. Each reply also says how many
+  // travelers found it helpful, and (with a valid login, viewerId) whether
+  // this traveler did (ticket 96), as small sub-queries like the reviews'
+  // own Helpful columns. Every value travels as a named parameter.
+  async forReviews(
+    reviewIds: string[],
+    viewerId: string | null = null,
+  ): Promise<Map<string, ReplyWithLikes[]>> {
+    const byReview = new Map<string, ReplyWithLikes[]>();
     if (reviewIds.length === 0) return byReview;
     try {
-      const rows = await this.replies.find({
-        select: REPLY_COLUMNS,
-        where: { review_id: In(reviewIds) },
-        order: { created_at: 'ASC' },
-      });
+      let query = this.replies.createQueryBuilder('p');
+      for (const column of REPLY_COLUMNS) query = query.addSelect(`p.${column}`, column);
+      const rows = await query
+        .addSelect(replyHelpfulCountOf('p'), 'helpful_count')
+        .addSelect(
+          (mine) =>
+            mine
+              .select('COUNT(*) > 0')
+              .from(ReplyLike, 'm')
+              .where('m.reply_id = p.id')
+              .andWhere('m.user_id = CAST(:viewerId AS uuid)'),
+          'liked_by_me',
+        )
+        .where('p.review_id IN (:...reviewIds)', { reviewIds })
+        .setParameter('viewerId', viewerId)
+        .orderBy('p.created_at', 'ASC')
+        .getRawMany<ReplyWithLikes>();
       for (const reply of rows) {
         const list = byReview.get(reply.review_id) ?? [];
         list.push(reply);
@@ -115,6 +152,87 @@ export class RepliesService {
           .updateEntity(false)
           .execute();
         return (result.raw as ReplyDto[])[0];
+      },
+      (error) => this.toHttpError(error),
+    );
+  }
+
+  // Changes the text of the traveler's own reply (ticket 95) and answers
+  // with the saved reply; the database sets updated_at (031). Row Level
+  // Security lets nobody change someone else's reply, so for those (or a
+  // reply that no longer exists) nothing changes and the answer is "not
+  // found among yours", like deleting.
+  update(accessToken: string, replyId: string, comment: string): Promise<ReplyDto> {
+    return this.travelerTransactions.run(
+      accessToken,
+      async (runner) => {
+        const result = await runner.manager
+          .createQueryBuilder()
+          .update(ReviewReply)
+          .set({ comment })
+          .where('id = :replyId', { replyId })
+          .returning(REPLY_COLUMNS)
+          .updateEntity(false)
+          .execute();
+        const saved = (result.raw as ReplyDto[])[0];
+        if (!saved) throw replyNotYours();
+        return saved;
+      },
+      (error) => this.toHttpError(error),
+    );
+  }
+
+  // Marks someone else's reply as helpful (POST /v1/replies/:id/like,
+  // ticket 96), as the logged-in traveler, so the reply_likes policies
+  // (032) decide. The checks first only give friendlier messages; the
+  // database refuses a like on your own reply by itself too. Marking twice
+  // changes nothing (orIgnore = "on conflict do nothing").
+  like(accessToken: string, replyId: string): Promise<ReplyLikeState> {
+    return this.travelerTransactions.run(
+      accessToken,
+      async (runner) => {
+        const reply = await runner.manager.findOne(ReviewReply, {
+          select: { user_id: true },
+          where: { id: replyId },
+        });
+        if (!reply) throw replyNotFound();
+        const [me]: { id: string }[] = await runner.query('select auth.uid() as id');
+        if (reply.user_id === me.id) {
+          throw new BadRequestException("You can't mark your own reply as helpful.");
+        }
+        // Only reply_id is sent: user_id and created_at are filled in by the
+        // database (see ReplyLike).
+        await runner.manager
+          .createQueryBuilder()
+          .insert()
+          .into(ReplyLike)
+          .values({ reply_id: replyId })
+          .orIgnore()
+          .updateEntity(false)
+          .execute();
+        return { helpful_count: await replyHelpfulCount(runner, replyId), liked: true };
+      },
+      (error) => this.toHttpError(error),
+    );
+  }
+
+  // Removes the traveler's own like on a reply (DELETE
+  // /v1/replies/:id/like). Only this traveler's like (auth.uid()), and Row
+  // Level Security allows nothing else. Unmarking twice changes nothing.
+  unlike(accessToken: string, replyId: string): Promise<ReplyLikeState> {
+    return this.travelerTransactions.run(
+      accessToken,
+      async (runner) => {
+        const replyExists = await runner.manager.exists(ReviewReply, { where: { id: replyId } });
+        if (!replyExists) throw replyNotFound();
+        await runner.manager
+          .createQueryBuilder()
+          .delete()
+          .from(ReplyLike)
+          .where('reply_id = :replyId', { replyId })
+          .andWhere('user_id = auth.uid()')
+          .execute();
+        return { helpful_count: await replyHelpfulCount(runner, replyId), liked: false };
       },
       (error) => this.toHttpError(error),
     );

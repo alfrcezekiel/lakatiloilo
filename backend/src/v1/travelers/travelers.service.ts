@@ -5,10 +5,12 @@ import { Accommodation } from '../../entities/accommodation.entity';
 import { Destination } from '../../entities/destination.entity';
 import { Review } from '../../entities/review.entity';
 import { helpfulCountOf } from '../../entities/review-like.entity';
+import { ReviewPhotosService } from '../reviews/review-photos.service';
 
 // One review as it shows on a traveler's profile: the review, the place it
-// is about (with its name, so the page can link to it) and its "Helpful"
-// count.
+// is about (with its name, so the page can link to it), its "Helpful"
+// count, and its photo's public address, or null when it has none
+// (ticket 99).
 export interface ProfileReview {
   id: string;
   rating: number;
@@ -18,6 +20,7 @@ export interface ProfileReview {
   place_id: string;
   place_name: string | null;
   helpful_count: number;
+  photo_url: string | null;
 }
 
 // A traveler's public profile (profiles & likes round, ticket 73). Only
@@ -43,10 +46,17 @@ export const travelerNotFound = () => new NotFoundException("We couldn't find th
 export class TravelersService {
   private readonly logger = new Logger(TravelersService.name);
 
-  constructor(@InjectDataSource() private readonly dataSource: DataSource) {}
+  constructor(
+    @InjectDataSource() private readonly dataSource: DataSource,
+    private readonly photos: ReviewPhotosService,
+  ) {}
 
   async profile(id: string): Promise<TravelerProfile> {
-    let rows: (ProfileReview & { reviewer_name: string; traveler_type: string | null })[];
+    let rows: (Omit<ProfileReview, 'photo_url'> & {
+      reviewer_name: string;
+      traveler_type: string | null;
+      photo_path: string | null;
+    })[];
     try {
       // Built with TypeORM's query builder on the entities (likes on
       // TypeORM round, ticket 77), still one database request. The id
@@ -66,6 +76,7 @@ export class TravelersService {
         .addSelect('r.place_id', 'place_id')
         .addSelect('r.reviewer_name', 'reviewer_name')
         .addSelect('r.traveler_type', 'traveler_type')
+        .addSelect('r.photo_path', 'photo_path')
         .addSelect('COALESCE(d.name, a.name)', 'place_name')
         .addSelect(helpfulCountOf('r'), 'helpful_count')
         .where('r.user_id = :id', { id })
@@ -94,6 +105,9 @@ export class TravelersService {
         place_id: r.place_id,
         place_name: r.place_name,
         helpful_count: r.helpful_count,
+        // The public address, never where it is kept in Storage, the same
+        // as GET /v1/reviews.
+        photo_url: this.photos.urlFor(r.photo_path),
       })),
     };
   }

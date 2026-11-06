@@ -243,7 +243,7 @@ export function LoginForm() {
                 type="button"
                 aria-pressed={mode === m}
                 onClick={() => switchMode(m)}
-                className={`flex-1 rounded-full px-4 py-2 text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-white ${mode === m ? "bg-white text-teal-900 shadow" : "text-white hover:bg-white/10"
+                className={`flex-1 rounded-full px-4 py-2 text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-white ${mode === m ? "bg-white text-teal-900 shadow" : "text-white/80 hover:text-white"
                   }`}
               >
                 {m === "login" ? "Log in" : "Create account"}

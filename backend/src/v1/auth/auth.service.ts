@@ -1,5 +1,5 @@
 import { HttpException, Injectable, Logger, UnauthorizedException } from '@nestjs/common';
-import type { AuthError, Session } from '@supabase/supabase-js';
+import type { AuthError, Session, User } from '@supabase/supabase-js';
 import { SupabaseService } from '../../supabase/supabase.service';
 
 // "Who is logged in": the traveler's own account details, and nothing
@@ -74,6 +74,23 @@ export class AuthService {
   async me(accessToken: string): Promise<Traveler> {
     const user = await this.supabase.userFor(accessToken);
     if (!user) throw new UnauthorizedException('Please log in, then try again.');
+    return this.travelerFrom(user);
+  }
+
+  // Changes the traveler's own display name and traveler type (profile &
+  // replies round, ticket 94) and answers like me(). Only their own
+  // account, through their own login token. The database then copies the
+  // new name and type onto all their reviews and replies (supabase/sql/030).
+  async updateMe(
+    accessToken: string,
+    details: { display_name: string; traveler_type: SignUpRequest['traveler_type'] },
+  ): Promise<Traveler> {
+    const user = await this.supabase.updateOwnDetails(accessToken, details);
+    if (!user) throw new UnauthorizedException('Please log in, then try again.');
+    return this.travelerFrom(user);
+  }
+
+  private travelerFrom(user: User): Traveler {
     const name = user.user_metadata?.display_name;
     const type = user.user_metadata?.traveler_type;
     return {

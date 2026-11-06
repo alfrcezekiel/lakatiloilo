@@ -14,7 +14,7 @@ export function AboutIloilo() {
         </Reveal>
 
         <div className="grid md:grid-cols-2 gap-8 mb-12">
-          <Reveal className="bg-white/15 backdrop-blur-md border border-white/25 rounded-2xl p-8">
+          <Reveal className="bg-white/15 border border-white/25 rounded-2xl p-8">
             <h3 className="text-xl font-semibold text-white mb-4">
               For Locals
             </h3>
@@ -23,7 +23,7 @@ export function AboutIloilo() {
             </p>
           </Reveal>
 
-          <Reveal delay={0.12} className="bg-white/15 backdrop-blur-md border border-white/25 rounded-2xl p-8">
+          <Reveal delay={0.12} className="bg-white/15 border border-white/25 rounded-2xl p-8">
             <h3 className="text-xl font-semibold text-white mb-4">
               For Tourists
             </h3>
@@ -33,7 +33,7 @@ export function AboutIloilo() {
           </Reveal>
         </div>
 
-        <Reveal className="bg-white/15 backdrop-blur-md border border-white/25 rounded-2xl p-8">
+        <Reveal className="bg-white/15 border border-white/25 rounded-2xl p-8">
           <h3 className="text-xl font-semibold text-white mb-4 text-center">
             The Heart of the Philippines
           </h3>

@@ -42,7 +42,7 @@ export default function CreditsPage() {
           {photoCredits.map((credit) => (
             <li
               key={credit.source}
-              className="rounded-2xl border border-white/20 bg-white/10 p-4 backdrop-blur-md sm:p-5"
+              className="rounded-2xl border border-white/20 bg-white/10 p-4 sm:p-5"
             >
               <p className="font-semibold">{credit.usedFor}</p>
               <p className="mt-1 text-sm text-white/80">

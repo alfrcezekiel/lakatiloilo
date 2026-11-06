@@ -242,7 +242,7 @@ export function SearchBar({
         {showDropdown && (
           // z-10 keeps the list above the Category field, which sits right
           // below it when the bar is stacked on a phone.
-          <div className="absolute top-full left-0 z-10 mt-3 w-full overflow-hidden rounded-2xl border border-white/20 bg-teal-950/95 shadow-2xl backdrop-blur-xl sm:w-md">
+          <div className="absolute top-full left-0 z-10 mt-3 w-full overflow-hidden rounded-2xl border border-white/20 bg-teal-950 shadow-2xl sm:w-md">
             {query.trim() === "" ? (
               // aria-hidden: the status line above already reads this out.
               <p aria-hidden="true" className="px-5 py-4 text-sm text-white/70">
@@ -268,10 +268,10 @@ export function SearchBar({
                     // On a phone the details go under the name, so long names
                     // are not cut short.
                     className={`flex cursor-pointer flex-col gap-0.5 px-5 py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4 ${
-                      index === activeIndex ? "bg-white/15" : ""
+                      index === activeIndex ? "text-amber-300" : "text-white"
                     }`}
                   >
-                    <span className="truncate font-medium text-white">
+                    <span className="truncate font-medium">
                       {suggestion.name}
                     </span>
                     <span className="shrink-0 text-xs text-white/60">
@@ -322,7 +322,7 @@ export function SearchBar({
               className={`flex-1 whitespace-nowrap rounded-full px-4 py-2 text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-white sm:px-5 ${
                 isSelected
                   ? "bg-white text-teal-900 shadow"
-                  : "text-white hover:bg-white/10"
+                  : "text-white/80 hover:text-white"
               }`}
             >
               {option.label}

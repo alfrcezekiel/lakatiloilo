@@ -78,8 +78,12 @@ export class ReviewsController {
     }
     const viewerId = await this.reviewsService.viewerIdFor(authorization);
     const reviews = await this.reviewsService.findForPlace(placeType as PlaceType, placeId, viewerId);
-    // Each review's replies, oldest first (review extras round, ticket 79).
-    const replies = await this.repliesService.forReviews(reviews.map((r) => r.id));
+    // Each review's replies, oldest first (review extras round, ticket 79),
+    // with their Helpful counts (ticket 96).
+    const replies = await this.repliesService.forReviews(
+      reviews.map((r) => r.id),
+      viewerId,
+    );
     return reviews.map((review) => ({
       ...this.withPhotoUrl(review),
       replies: replies.get(review.id) ?? [],

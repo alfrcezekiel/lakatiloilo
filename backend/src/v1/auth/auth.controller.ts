@@ -1,4 +1,4 @@
-import { BadRequestException, Body, Controller, Get, Header, Headers, HttpCode, Post } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Get, Header, Headers, HttpCode, Patch, Post } from '@nestjs/common';
 import { loginToken } from '../login-token';
 import { AuthService, SignUpRequest } from './auth.service';
 
@@ -61,6 +61,33 @@ export class AuthController {
   @Header('Cache-Control', 'no-store')
   me(@Headers('authorization') authorization: string | undefined) {
     return this.authService.me(loginToken(authorization));
+  }
+
+  // PATCH /v1/auth/me   (header: Authorization: Bearer <login token>)
+  // body: { display_name, traveler_type }
+  // Changes the traveler's own display name (2 to 40 characters) and
+  // traveler type, and answers like GET /v1/auth/me. The database copies
+  // them onto all their reviews and replies (supabase/sql/030).
+  @Patch('me')
+  @HttpCode(200)
+  @Header('Cache-Control', 'no-store')
+  updateMe(
+    @Headers('authorization') authorization: string | undefined,
+    @Body() body: Record<string, unknown> | undefined,
+  ) {
+    const token = loginToken(authorization);
+    const displayName = typeof body?.display_name === 'string' ? body.display_name.trim() : '';
+    const travelerType = body?.traveler_type;
+    if (displayName.length < 2 || displayName.length > 40) {
+      throw new BadRequestException({ statusCode: 400, code: 'display_name_invalid', message: 'Your display name needs 2 to 40 characters.' });
+    }
+    if (typeof travelerType !== 'string' || !TRAVELER_TYPES.includes(travelerType)) {
+      throw new BadRequestException({ statusCode: 400, code: 'traveler_type_invalid', message: "Please pick how you're traveling." });
+    }
+    return this.authService.updateMe(token, {
+      display_name: displayName,
+      traveler_type: travelerType as SignUpRequest['traveler_type'],
+    });
   }
 
   // POST /v1/auth/logout   (header: Authorization: Bearer <login token>)

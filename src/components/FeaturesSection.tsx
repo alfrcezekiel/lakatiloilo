@@ -63,7 +63,7 @@ export function FeaturesSection() {
               as="li"
               key={feature.title}
               delay={(index % 3) * 0.1}
-              className="w-full md:w-[calc((100%-1.5rem)/2)] lg:w-[calc((100%-3rem)/3)] bg-white/15 backdrop-blur-md border border-white/25 rounded-2xl p-6"
+              className="w-full md:w-[calc((100%-1.5rem)/2)] lg:w-[calc((100%-3rem)/3)] bg-white/15 border border-white/25 rounded-2xl p-6"
             >
               <feature.icon aria-hidden="true" strokeWidth={1.75} className="size-10 mb-4 text-white" />
               <h3 className="text-xl font-semibold text-white mb-3">

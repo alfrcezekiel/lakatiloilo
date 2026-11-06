@@ -32,22 +32,16 @@ then the review extras round (replies, reports, photos). They stay two
 rounds, each about one session, built and checked live one after the
 other.
 
+On 2026-11-05 the team moved the rest of this list into the spec as
+three rounds, built one after the other: the profile & replies round
+(changing the display name and traveler type, editing replies, likes on
+replies, a real 404 for an unknown traveler's profile), the thread care
+round ("This reply was deleted", folding long threads, a notifications
+bell) and the moderation & photos round (auto-hiding reported reviews, a
+Reports screen for admins, up to four photos per review).
+
 Still parked:
 - Social logins
-- Changing the display name or traveler type on the profile page (every
-  old review and reply copies them, so they would all need updating)
-- Editing replies and likes on replies (replies to replies moved into the
-  spec as the threaded replies round on 2026-11-02)
-- Keeping answers when the reply above them is deleted ("This reply was
-  deleted"), collapsing long threads, and telling a traveler when someone
-  answers them
-- Hiding reported reviews automatically, and an admin screen for reports
-  (needs the admin UI below)
-- More than one photo per review
-- A 404 ("not found") status for an unknown traveler's profile page. It
-  answers 200 today; Next.js's notFound() showed its own default page
-  instead of ours (tried 2026-11-01, see ticket 75). Untried idea: a
-  pass-through layout.tsx in the travelers folder
 
 ### Email confirmation for new accounts
 Turned off for the demo on 2026-10-21 (ticket 38). Before real launch:
@@ -70,7 +64,6 @@ login extras round (tickets 43–47). Still parked:
 - "By creating an account you agree to the Terms and Privacy Policy"
   (needs those pages first)
 - Language switch: English / Hiligaynon / Filipino
-- Changing the traveler type after sign-up (the profile page now exists but only shows it; see "User accounts and reviews")
 - A custom email sender, so reset emails are not limited to a few an hour
 
 ### From the user test (Elizabeth and Mark, 2026-10-25)
@@ -119,9 +112,9 @@ Parked by the team; none is needed for the demo. Details in
   proper tabs (`role="tablist"`) would need arrow-key handling.
 
 ### From the live updates round (2026-11-02)
-- See new reports as they arrive. Needs an admin screen and an admin
-  login first (see "Admin UI" in the spec's Out of scope); today the team
-  reads reports in the Supabase dashboard.
+- See new reports as they arrive. The Reports screen and admins come in
+  the moderation & photos round (2026-11-05); making it live is still
+  parked.
 - Live traveler profile pages, and "new review" pop-ups or sounds.
 
 ### From the live updates round code review (2026-11-02)

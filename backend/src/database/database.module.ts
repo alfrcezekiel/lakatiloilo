@@ -7,6 +7,7 @@ import { Review } from '../entities/review.entity';
 import { ReviewLike } from '../entities/review-like.entity';
 import { ReviewReply } from '../entities/review-reply.entity';
 import { ReviewReport } from '../entities/review-report.entity';
+import { ReplyLike } from '../entities/reply-like.entity';
 
 // Supabase signs its database certificates with its own root CA, which
 // Node does not trust by default. With DATABASE_CA_CERT set (the contents of
@@ -49,7 +50,7 @@ const sslOptions = (caCert?: string) => {
         type: 'postgres',
         url: configService.get<string>('DATABASE_URL'),
         ssl: sslOptions(configService.get<string>('DATABASE_CA_CERT')),
-        entities: [Destination, Accommodation, Review, ReviewLike, ReviewReply, ReviewReport],
+        entities: [Destination, Accommodation, Review, ReviewLike, ReviewReply, ReviewReport, ReplyLike],
         synchronize: false,
         // PostGIS is already installed by the SQL scripts; never try to
         // create extensions (the backend's lakat_api role is not allowed to).

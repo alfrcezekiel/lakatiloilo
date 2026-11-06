@@ -8,7 +8,7 @@ import type { Traveler } from "@/lib/api";
 import { displayNameOf } from "@/lib/login";
 
 const item =
-  "flex h-10 w-full items-center gap-2.5 rounded-lg px-3 text-left text-[0.9375rem] font-medium tracking-[0.01em] text-white/90 hover:text-white transition-colors hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-white";
+  "flex h-10 w-full items-center gap-2.5 rounded-lg px-3 text-left text-[0.9375rem] font-medium tracking-[0.01em] text-white/90 transition-colors hover:text-amber-300 focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-white";
 
 // The logged-in traveler's menu in the navbar on tablets and laptops
 // (change 2026-11-01, team request): a round profile icon beside Explore.
@@ -69,7 +69,7 @@ export function ProfileMenu({ user, onLogOut }: { user: Traveler; onLogOut: () =
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -6 }}
             transition={{ duration: 0.15 }}
-            className="absolute right-0 top-full z-50 mt-3 w-56 rounded-xl border border-white/20 bg-teal-900/95 p-1.5 backdrop-blur-xl"
+            className="absolute right-0 top-full z-50 mt-3 w-56 rounded-xl border border-white/20 bg-teal-900 p-1.5 shadow-2xl"
           >
             {/* The traveler's name in the site's serif (Fraunces), like
                 the headings, so the menu reads as theirs at a glance. */}

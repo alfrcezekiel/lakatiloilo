@@ -11,7 +11,9 @@ import { Review } from './review.entity';
 // the account by the trigger) and created_at.
 // So those columns are insert: false, and TypeORM never names them when
 // saving; if it did, even with DEFAULT, the database would refuse the reply.
-// update: false everywhere: nobody may edit a reply.
+// Editing (ticket 95, supabase/sql/031): the writer may change only the
+// comment, so every other column is update: false. updated_at is set by
+// the database when the comment changes.
 @Entity('review_replies')
 export class ReviewReply {
   @PrimaryColumn({ type: 'uuid', insert: false, update: false })
@@ -30,7 +32,7 @@ export class ReviewReply {
   @Column({ type: 'text', nullable: true, insert: false, update: false })
   traveler_type: string | null;
 
-  @Column({ type: 'text', update: false })
+  @Column({ type: 'text' })
   comment: string;
 
   // The reply this one answers, or null when it answers the review
@@ -41,6 +43,10 @@ export class ReviewReply {
 
   @Column({ type: 'timestamptz', insert: false, update: false })
   created_at: Date;
+
+  // When the writer last edited the text, or null if never (031).
+  @Column({ type: 'timestamptz', nullable: true, insert: false, update: false })
+  updated_at: Date | null;
 
   // The review this reply is under. The database removes replies together
   // with their review ("on delete cascade" in 025); synchronize is off, so
