@@ -50,10 +50,13 @@ let channelCount = 0;
 //     unless catchUpOnReturn is false (the reviews already do that
 //     themselves through TanStack Query).
 // The half-second quiet time turns several of these into one request.
+//
+// quietMs shortens the quiet time where a change should show at once (the
+// notifications bell, ticket 104).
 export function useTableChanges(
   tables: readonly LiveListen[],
   onChange: () => void,
-  { catchUpOnReturn = true }: { catchUpOnReturn?: boolean } = {},
+  { catchUpOnReturn = true, quietMs = QUIET_MS }: { catchUpOnReturn?: boolean; quietMs?: number } = {},
 ) {
   // The latest onChange, without listening again every time it changes.
   const onChangeRef = useRef(onChange);
@@ -70,7 +73,7 @@ export function useTableChanges(
     let timer: ReturnType<typeof setTimeout> | undefined;
     const ring = () => {
       clearTimeout(timer);
-      timer = setTimeout(() => onChangeRef.current(), QUIET_MS);
+      timer = setTimeout(() => onChangeRef.current(), quietMs);
     };
 
     channelCount += 1;
@@ -116,5 +119,5 @@ export function useTableChanges(
       window.removeEventListener("online", catchUp);
       void supabase.removeChannel(channel);
     };
-  }, [listenList, catchUpOnReturn]);
+  }, [listenList, catchUpOnReturn, quietMs]);
 }

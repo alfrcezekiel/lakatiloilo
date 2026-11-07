@@ -1,7 +1,7 @@
 "use client";
 
 import { Check, LogIn } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -10,15 +10,26 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { Review } from "@/lib/api";
 import { useCurrentUser } from "@/lib/login";
+import { FOCUS_EVENT, useFocusTarget } from "@/lib/focus-target";
+import { cn } from "@/lib/utils";
 import { ReviewForm } from "@/components/ReviewForm";
 import { MyReviewBox } from "@/components/MyReviewBox";
 import { HelpfulButton } from "@/components/HelpfulButton";
 import { ReviewReplies } from "@/components/ReviewReplies";
 import { ReportReview } from "@/components/ReportReview";
 import { ReviewPhoto } from "@/components/ReviewPhoto";
+import { FromNotification, notifiedTint } from "@/components/FromNotification";
 import { SectionHeading } from "@/components/PlaceDetail";
 import { averageRating, usePlaceReviews } from "@/components/PlaceReviews";
 import { travelerTypeLabels } from "@/lib/labels";
+
+// Scrolls a review or reply into view (below the navbar, scroll-mt-28),
+// one frame later so a thread that just opened has its full height.
+function scrollToItem(id: string) {
+  requestAnimationFrame(() =>
+    document.getElementById(id)?.scrollIntoView({ block: "start" }),
+  );
+}
 
 // The review type lives with the backend calls; other components import it
 // from here.
@@ -49,6 +60,28 @@ export function ReviewsSection() {
 
   // This traveler's own review of this place, if they wrote one.
   const myReview = user ? reviews?.find((r) => r.user_id === user.id) : undefined;
+
+  // Opened from a notification (ticket 103): "?focus=" names a review or a
+  // reply ("review-<id>" / "reply-<id>", the ids on their list items). The
+  // reviews arrive after the page opens, so the browser cannot jump there
+  // by itself; once that item is on screen (ReviewReplies unfolds the
+  // thread around a reply), scroll to it, once per notification. It glows
+  // amber for a moment (animate-highlight).
+  const focus = useFocusTarget();
+  const scrolledTo = useRef<string | null>(null);
+  useEffect(() => {
+    if (!reviews || !focus || scrolledTo.current === focus) return;
+    if (!document.getElementById(focus)) return;
+    scrolledTo.current = focus;
+    scrollToItem(focus);
+  }, [reviews, focus]);
+  // A notification clicked while this page is open, even one whose address
+  // is already the current one: scroll to it again.
+  useEffect(() => {
+    const onFocus = (event: Event) => scrollToItem((event as CustomEvent<string>).detail);
+    window.addEventListener(FOCUS_EVENT, onFocus);
+    return () => window.removeEventListener(FOCUS_EVENT, onFocus);
+  }, []);
 
 
   return (
@@ -151,14 +184,25 @@ export function ReviewsSection() {
                 {reviews.map((review) => (
                   <motion.li
                     key={review.id}
+                    id={`review-${review.id}`}
                     layout
                     initial={{ opacity: 0, y: -16, height: 0 }}
                     animate={{ opacity: 1, y: 0, height: "auto" }}
                     exit={{ opacity: 0, scale: 0.96, height: 0 }}
-                    className="overflow-hidden pb-3"
+                    className="scroll-mt-28 overflow-hidden pb-3"
                   >
-                    <Card className={glassCard}>
+                    {/* The review a notification opened (a Helpful mark
+                        on it): amber border, soft amber background and a
+                        "From your notification" label (ticket 103). */}
+                    <Card
+                      className={cn(
+                        glassCard,
+                        focus === `review-${review.id}` && "border-amber-300/70",
+                        focus === `review-${review.id}` && notifiedTint,
+                      )}
+                    >
                       <CardContent className="p-5 space-y-2">
+                        {focus === `review-${review.id}` && <FromNotification />}
                         <div className="flex flex-wrap items-center justify-between gap-2">
                           {/* min-w-0 and flex-wrap let a long name and its
                               tags wrap onto a second line on narrow phones. */}

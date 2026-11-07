@@ -30,8 +30,14 @@ export type ReplyDto = Pick<
 >;
 
 // A reply as GET /v1/reviews sends it: the reply, plus its "Helpful"
-// count and whether the traveler asking marked it (ticket 96).
-export type ReplyWithLikes = ReplyDto & { helpful_count: number; liked_by_me: boolean };
+// count and whether the traveler asking marked it (ticket 96), and whether
+// it was deleted (ticket 100). A deleted reply carries no name, tag, text,
+// writer or Helpful count.
+export type ReplyWithLikes = ReplyDto & {
+  helpful_count: number;
+  liked_by_me: boolean;
+  deleted: boolean;
+};
 
 // What the website gets after marking or unmarking a reply as helpful.
 export interface ReplyLikeState {
@@ -65,6 +71,8 @@ const replyNotFound = () => new NotFoundException("We couldn't find that reply."
 const replyHelpfulCount = (runner: QueryRunner, replyId: string) =>
   runner.manager.count(ReplyLike, { where: { reply_id: replyId } });
 const parentNotUnderReview = () => new BadRequestException("That reply isn't under this review.");
+const replyWasDeleted = () =>
+  new BadRequestException("That reply was deleted, so it can't be answered.");
 const replyNotYours = () =>
   new NotFoundException("We couldn't find that reply among yours. Please log in again and try.");
 
@@ -94,9 +102,11 @@ export class RepliesService {
     const byReview = new Map<string, ReplyWithLikes[]>();
     if (reviewIds.length === 0) return byReview;
     try {
-      let query = this.replies.createQueryBuilder('p');
+      // select([]) first: only the columns named below, never the whole row.
+      let query = this.replies.createQueryBuilder('p').select([]);
       for (const column of REPLY_COLUMNS) query = query.addSelect(`p.${column}`, column);
       const rows = await query
+        .addSelect('p.deleted_at IS NOT NULL', 'deleted')
         .addSelect(replyHelpfulCountOf('p'), 'helpful_count')
         .addSelect(
           (mine) =>
@@ -111,7 +121,12 @@ export class RepliesService {
         .setParameter('viewerId', viewerId)
         .orderBy('p.created_at', 'ASC')
         .getRawMany<ReplyWithLikes>();
-      for (const reply of rows) {
+      for (const row of rows) {
+        // The database already cleared a deleted reply's text, name and
+        // type (034); its writer is left out too.
+        const reply: ReplyWithLikes = row.deleted
+          ? { ...row, user_id: '', helpful_count: 0, liked_by_me: false }
+          : row;
         const list = byReview.get(reply.review_id) ?? [];
         list.push(reply);
         byReview.set(reply.review_id, list);
@@ -192,10 +207,11 @@ export class RepliesService {
       accessToken,
       async (runner) => {
         const reply = await runner.manager.findOne(ReviewReply, {
-          select: { user_id: true },
+          select: { user_id: true, deleted_at: true },
           where: { id: replyId },
         });
-        if (!reply) throw replyNotFound();
+        // A deleted reply cannot be liked (034); to the traveler it is gone.
+        if (!reply || reply.deleted_at) throw replyNotFound();
         const [me]: { id: string }[] = await runner.query('select auth.uid() as id');
         if (reply.user_id === me.id) {
           throw new BadRequestException("You can't mark your own reply as helpful.");
@@ -238,21 +254,22 @@ export class RepliesService {
     );
   }
 
-  // Deletes the traveler's own reply. Row Level Security makes everyone
-  // else's replies impossible to delete, so for someone else's reply (or
-  // one that no longer exists) nothing is deleted and the answer is "not
-  // found among yours".
+  // Deletes the traveler's own reply, through the database's
+  // delete_own_reply function (ticket 100, supabase/sql/034): a reply with
+  // answers stays as "This reply was deleted" and keeps them; one without
+  // is removed. The function only touches this traveler's own replies
+  // (auth.uid()), so for someone else's reply, or one that is already
+  // deleted or missing, it answers null and the answer is "not found
+  // among yours".
   remove(accessToken: string, replyId: string): Promise<DeletedReply> {
     return this.travelerTransactions.run(
       accessToken,
       async (runner) => {
-        const result = await runner.manager
-          .createQueryBuilder()
-          .delete()
-          .from(ReviewReply)
-          .where('id = :replyId', { replyId })
-          .execute();
-        if (!result.affected) throw replyNotYours();
+        const [result]: { outcome: string | null }[] = await runner.query(
+          'select public.delete_own_reply($1) as outcome',
+          [replyId],
+        );
+        if (!result?.outcome) throw replyNotYours();
         return { id: replyId, message: 'Your reply has been deleted.' };
       },
       (error) => this.toHttpError(error),
@@ -276,6 +293,9 @@ export class RepliesService {
       // The parent reply is missing or under another review (028).
       case '22023':
         return parentNotUnderReview();
+      // The parent reply was deleted (034).
+      case '55000':
+        return replyWasDeleted();
       // Refused by Row Level Security or by the table's permissions.
       case '42501':
         return new UnauthorizedException('Please log in again, then try again.');

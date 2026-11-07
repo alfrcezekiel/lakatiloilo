@@ -178,6 +178,17 @@ Proposed 2026-10-21. Filters beyond today's chips and City/Province
 toggle, for example "rating 4★ and up" or sorting by rating. Needs the
 reviews round to be done first.
 
+### From the thread care round code review (2026-11-07)
+Notifications bell, lighter live updates. The bell asks the
+backend for the traveler's notifications again whenever anyone, anywhere
+on the site, adds or removes a reply or a Helpful mark (ticket 104,
+fix 2). Each logged-in visitor makes one small request per such change:
+fine at workshop size. If the site grows, listen to the notifications
+table itself with the traveler's login (Supabase did not register that
+connection when we tried it; see ticket 104), or narrow the doorbell to
+the traveler's own reviews and replies. The same would make "marked read
+on another device" show at once instead of on returning to the tab.
+
 ### Additional destination categories
 - Cultural sites and museums
 

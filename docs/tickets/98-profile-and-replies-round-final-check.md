@@ -4,12 +4,12 @@
 
 **Blocked by:** 94, 95, 96, 97, 99
 
-**Status:** todo
+**Status:** done
 
-- [ ] Every item in the "Profile & replies round" checklist works on the live URL
-- [ ] Reviews, replies, photos, reports, Helpful likes on reviews, profiles and log-in still work
+- [x] Every item in the "Profile & replies round" checklist works on the live URL
+- [x] Reviews, replies, photos, reports, Helpful likes on reviews, profiles and log-in still work
 - [x] /code-review has been run on the round and its findings handled
-- [ ] Works on the live URL
+- [x] Works on the live URL
 
 **Progress (2026-11-06):** /code-review run on all uncommitted work since 8ec9df2 (tickets 94–97 and 99, plus the team's no-white-hover and no-blur design change in 11 website files and .claude/rules/no-white-hover-backdrop.md). Re-checked: backend and website type-check, website lint and `npm run build` pass; reply_likes has Row Level Security on with four policies; no secret keys, .env files, raw HTML or console.log in the changes.
 
@@ -28,3 +28,5 @@ Not checked: the live URL (after "commit and push").
 Checked: backend type-check and lint, website type-check, lint and `npm run build` pass; the backend still answers (GET /v1/auth/me 401 without a login, a profile 200). Not checked: 033 run by the team, the side panel, replies and Helpful in a browser, and the live URL.
 
 **Team check (2026-11-06):** the team ran 033 in the SQL Editor and it succeeded. Read-only check through the backend's login afterwards: the helper answers Traveler, Traveler, Al; no review or reply name is under 2 characters; all three triggers use the helper; Row Level Security is still on for reviews, review_replies and reply_likes. The team checked the side panel on destinations and accommodations on a laptop: it reads clearly over the photo. Then, after a hard refresh, the team posted, edited and cancelled a reply, and Helpful works. Not checked yet: the live URL.
+
+**Live check (2026-11-06):** the team confirmed it works on the live URL (https://lakat-iloilo.vercel.app, commit f8e823a). curl on the live URL: /travelers/hello answers 404, and GET /v1/travelers/hello answers 404 "We couldn't find this traveler.". Status set to done at the team's request.

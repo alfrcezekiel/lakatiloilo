@@ -199,9 +199,10 @@ Travelers planning weekend trips around Iloilo Province. No login required for b
 
 26. Thread care round — kinder deleting, folding threads, and a notifications bell:
    - **Deleting a reply with answers:** the reply stays in its place as "This reply was deleted" in grey, with no name, tag, text or buttons, and its answers stay under it. A reply with no answers disappears completely, as today. The confirm step says "Delete this reply?" in both cases. (Replaces round 23's "Delete this reply and its answers?")
-   - **Folding long threads:** a reply with more than 3 answers shows the newest 3 and a **Show N more replies** link that opens the rest. Every reply with answers gets a **Hide replies** / **Show replies** link that folds and unfolds the thread under it. A new answer always opens its thread so the traveler sees it.
-   - **Notifications bell:** logged in, a bell sits beside the profile icon (in the phone menu, a "Notifications" line), with a small red dot and number when something is unread. Clicking it opens a glass list, newest first, up to 20: "Maria replied to your review of Bucari Little Baguio" or "Juan answered your reply on Hotel del Rio", with how long ago. Clicking one opens that place's page and marks it read; **Mark all as read** sits at the top. Empty: "No notifications yet." The bell updates by itself within a few seconds, like the live updates round. In-app only: no emails.
+   - **Folding long threads:** a reply with more than 3 answers shows the newest 3 and a **Show N more replies** link that opens the rest. Every reply with answers gets a **Hide replies** / **Show replies** link that folds and unfolds the thread under it. A new answer always opens its thread so the traveler sees it. **Change (2026-11-07, team request): threads start folded.** When the page loads, every reply with answers shows **Show replies** instead of its answers, so a review shows only its direct replies at first; opening one shows its answers, and each of their own threads stays folded until opened. The rest is unchanged.
+   - **Notifications bell:** logged in, a bell sits beside the profile icon (in the phone menu, a "Notifications" line), with a small red dot and number when something is unread. Clicking it opens a glass list, newest first, up to 20: "Maria replied to your review of Bucari Little Baguio" or "Juan answered your reply on Hotel del Rio", with how long ago. Clicking one opens that place's page and marks it read; **Mark all as read** sits at the top. Empty: "No notifications yet." **Change (2026-11-07, team request): loading and length.** While the list loads for the first time it shows three grey placeholder rows (a skeleton) instead of "Loading…". It starts with the newest 6; with more, a **See previous notifications** link at the bottom shows the rest of the 20. The bell updates by itself within a few seconds, like the live updates round. (Notifications marked read on another device show as read when the traveler comes back to the tab or opens the bell; added 2026-11-07, code review.) In-app only: no emails. **Change (2026-11-07, team request):** clicking a notification opens the place page scrolled to that review (not just the top of the page), and the red number goes down at once, disappearing when nothing is unread. **Change (2026-11-07, team request): it opens the exact reply.** A notification about a reply or answer (or a Helpful mark on a reply) opens the threads around that reply, even past "Show N more replies", scrolls to it and makes it glow amber for a moment; a Helpful mark on a review does the same for the review. **Change (2026-11-07, team request): a lasting mark.** The reply a notification opened keeps an amber line, a soft amber background and a small "From your notification" label (with a bell) for as long as the page shows it, so it stays easy to find after the glow; a review opened by a Helpful notification gets an amber border, the same background and label. The answers under the reply are not tinted. Each kind has its own small icon in the list: a speech bubble for a reply to your review, an arrow for an answer to your reply, an amber thumbs-up for a Helpful mark.
    - Travelers are never notified about their own replies.
+   - **Helpful likes notify too (added 2026-11-07, team request):** when another traveler marks your review or reply Helpful, the bell shows "Maria found your review of Bucari Little Baguio helpful" or "Juan found your reply on Hotel del Rio helpful". Never for your own. Removing the Helpful mark removes that notification, so marking on and off cannot flood the bell. They show whenever the traveler logs in, update live, and open the place at that review like the others.
 
 27. Moderation & photos round — auto-hide, a Reports screen for admins, and more photos:
    - **Auto-hide:** when 3 different travelers have reported a review, it disappears from the place page, the ratings and the reviewer's public profile. Its writer still sees it on the place page with a grey note: "Hidden while the team reviews it."
@@ -328,13 +329,14 @@ The traveler type is saved on the Supabase Auth account, next to the display nam
 - **notifications table (new):**
   - id — unique identifier
   - user_id — the traveler the notification is for
-  - kind — one of: "review_reply" (someone replied to your review), "reply_answer" (someone answered your reply)
+  - kind — one of: "review_reply" (someone replied to your review), "reply_answer" (someone answered your reply), and since 2026-11-07 "review_like" (someone marked your review Helpful) and "reply_like" (someone marked your reply Helpful)
   - review_id — the review the conversation is under (the notification is removed with it)
-  - reply_id — the new reply (removed with it)
+  - reply_id — the new reply, or the reply that was liked (removed with it); empty for "review_like"
+  - actor_id — who replied or liked (added 2026-11-07), so removing a Helpful mark can remove its notification
   - actor_name — the replier's display name, copied by the database
   - read_at — when it was read, or empty
   - created_at — timestamp
-- Notifications are created only by the database, by a trigger when a reply is added, and never for the traveler's own reply. Row Level Security: a traveler may read only their own notifications, and may change only read_at on their own. No one may add or delete notifications through the app. Added to the Realtime list, where Row Level Security means each traveler only hears about their own.
+- Notifications are created only by the database, by a trigger when a reply is added (and, since 2026-11-07, when a Helpful like is added on a review or reply), and never for the traveler's own reply, review or like. Removing a Helpful like removes its notification. Row Level Security: a traveler may read only their own notifications, and may change only read_at on their own. No one may add or delete notifications through the app. Added to the Realtime list, where Row Level Security means each traveler only hears about their own. **Change (2026-11-07, ticket 104 fix): the bell does not listen to this table.** Listening to it needs the Realtime connection to carry the traveler's login, and Supabase never registered that connection. Every notification is made or removed in the same moment as a reply or a Helpful mark, so the bell listens to review_replies, review_likes and reply_likes (public tables, like the place pages) and then asks the backend, which only answers the traveler's own notifications. The table stays on the list, with Row Level Security, but nothing listens to it.
 
 **Moderation & photos round:**
 - **admins table (new):** user_id — an account that may use the Reports screen. The team adds and removes rows by hand in the Supabase SQL Editor; the app can never change it. Row Level Security: a traveler may read only their own row (so the app can ask "am I an admin?"); no one may write through the app.
@@ -411,8 +413,8 @@ When Supabase Auth refuses, the backend answers with Supabase's own status and c
 **Thread care round (v1):**
 - DELETE /v1/replies/:id — a reply with answers becomes "This reply was deleted" instead of taking its answers with it; same answer and messages as before
 - GET /v1/reviews — each reply also carries deleted (true or false); a deleted reply has no name, tag, text or Helpful count
-- GET /v1/notifications — logged-in traveler; their own 20 newest notifications (kind, actor_name, the place's type, id and name, read, created_at) and unread_count (401 not logged in)
-- POST /v1/notifications/read — logged-in traveler; marks one of their notifications read ({ id }), or all of them with no id; answers { unread_count }
+- GET /v1/notifications — logged-in traveler; their own 20 newest notifications (kind, actor_name, the place's type, id and name, review_id, reply_id, read, created_at) and unread_count (401 not logged in)
+- POST /v1/notifications/read — logged-in traveler; marks one of their notifications read ({ id }), or all of them with no id; answers { unread_count } (400 for an id that is not an id, 401 not logged in; someone else's id changes nothing)
 
 **Moderation & photos round (v1):**
 - GET /v1/auth/me — also answers is_admin
@@ -598,17 +600,18 @@ Profile & replies, thread care, and moderation & photos rounds: changing your na
 - [x] Row Level Security is unchanged on all five tables, and review_reports is not in the Realtime list
 
 **Profile & replies round (live URL):**
-- [ ] A traveler changes their display name and traveler type on their profile, and the new ones show on the profile, the dropdown and all their old reviews and replies after a refresh
-- [ ] A traveler can edit their own reply; it shows "· edited"; editing someone else's reply is refused by the database
-- [ ] A logged-in traveler can mark another traveler's reply Helpful and unmark it; their own reply only shows the count, and the database refuses a like on it
-- [ ] An unknown traveler's profile page shows "We couldn't find this traveler" and answers 404 (checked with curl)
-- [ ] A traveler's profile shows the photo on each review that has one, and clicking it opens it larger; reviews without a photo look the same
+- [x] A traveler changes their display name and traveler type on their profile, and the new ones show on the profile, the dropdown and all their old reviews and replies after a refresh
+- [x] A traveler can edit their own reply; it shows "· edited"; editing someone else's reply is refused by the database
+- [x] A logged-in traveler can mark another traveler's reply Helpful and unmark it; their own reply only shows the count, and the database refuses a like on it
+- [x] An unknown traveler's profile page shows "We couldn't find this traveler" and answers 404 (checked with curl)
+- [x] A traveler's profile shows the photo on each review that has one, and clicking it opens it larger; reviews without a photo look the same
 
 **Thread care round (live URL):**
 - [ ] Deleting a reply with answers leaves "This reply was deleted" with its answers still under it; deleting a reply with none removes it
-- [ ] A reply with more than 3 answers shows "Show N more replies"; Hide replies and Show replies fold and unfold a thread, on a laptop and a phone
+- [ ] Threads start folded with "Show replies"; each level opens on its own; an open reply with more than 3 answers shows "Show N more replies"; Hide replies folds it again, on a laptop and a phone
 - [ ] Replying to a review from a second account puts a notification on the review writer's bell within a few seconds; clicking it opens the place and marks it read; Mark all as read works
 - [ ] A traveler's own replies never notify them, and one traveler cannot read another's notifications (checked through the backend)
+- [ ] Marking a review or reply Helpful from a second account notifies its writer within a few seconds; removing the mark removes the notification; your own never notify you
 
 **Moderation & photos round (live URL):**
 - [ ] After 3 different accounts report a review, it disappears for everyone else and from the rating, and its writer sees "Hidden while the team reviews it."
@@ -618,7 +621,7 @@ Profile & replies, thread care, and moderation & photos rounds: changing your na
 
 ## Out of scope
 - Moderation & photos round: an admin screen for destinations and accommodations, becoming an admin from the app, banning travelers, appeals, seeing new reports live, keeping reports when a review is deleted, reordering photos, and photos over 2 MB
-- Thread care round: email or phone notifications (a custom email sender is still parked), notifications for Helpful marks or new reviews, and a limit on thread depth or reply rate
+- Thread care round: email or phone notifications (a custom email sender is still parked), notifications for new reviews, and a limit on thread depth or reply rate (Helpful-mark notifications moved into the round on 2026-11-07, ticket 106)
 - Profile & replies round: changing the email or password from the profile, profile pictures, and a public profile for travelers with no reviews
 - Live updates round: live reports (no screen shows reports and nobody may read them through the app; seeing reports as they arrive needs an admin screen), "new review" pop-ups or sounds, live traveler profile pages, and using the rows Realtime sends directly in the page
 - Likes on TypeORM round: moving the other hand-written SQL (adding, editing and deleting reviews, the act-as-the-traveler step) onto TypeORM, and any change travelers can see

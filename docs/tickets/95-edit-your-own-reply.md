@@ -6,7 +6,7 @@ review_replies gains updated_at (empty until the first edit). A new Row Level Se
 
 **Blocked by:** None
 
-**Status:** todo
+**Status:** done
 
 - [x] A numbered SQL file adds updated_at and the edit policy; only the comment (1–300 characters) can change. The team has run it in the Supabase SQL Editor
 - [x] PATCH /v1/replies/:id edits the traveler's own reply and answers with it; 404 "We couldn't find that reply among yours." for someone else's reply, 400 outside the limits, 401 without a login
@@ -14,7 +14,7 @@ review_replies gains updated_at (empty until the first edit). A new Row Level Se
 - [x] Editing a reply updates it at once and shows "· edited", also after a refresh
 - [x] Editing someone else's reply is refused by the database, not just hidden in the page
 - [x] Looks tidy on a phone (375 px) and a laptop
-- [ ] Works on the live URL
+- [x] Works on the live URL
 
 **Progress (2026-11-05):** supabase/sql/031-edit-your-own-reply.sql adds updated_at to review_replies, a trigger that sets it only when the comment changes (so 030's name copy never marks a reply "· edited"), permission to change only the comment, and the policy "repliers can edit their own replies". Row Level Security stays on; the four policies from 025 are unchanged. The team ran it in the Supabase SQL Editor ("it worked").
 
@@ -32,3 +32,5 @@ Not checked: editing a real reply in the browser (the team tests real logins), t
 **Checked by the team on localhost (2026-11-05):** with a real login, editing their own reply worked and showed "· edited" (on the right, after the date); Edit then Cancel kept the original text; saving an empty reply showed the message; logged out, no reply has Edit; the layout stays responsive. Still to confirm: "· edited" after a refresh, no Edit on someone else's reply while logged in, and the live URL.
 
 **Checked by the team on localhost (2026-11-05):** after a hard refresh, the edited reply still shows the new text and "· edited"; logged in, someone else's reply shows only Reply, with no Edit or Delete. Only "Works on the live URL" is left.
+
+**Live check (2026-11-06):** the team confirmed it works on the live URL (https://lakat-iloilo.vercel.app, commit f8e823a). Status set to done at the team's request.

@@ -6,12 +6,12 @@ Tried before on 2026-11-01 (ticket 75): Next.js's notFound() showed its own defa
 
 **Blocked by:** None
 
-**Status:** todo
+**Status:** done
 
 - [x] An unknown traveler's profile answers 404 (checked with curl)
 - [x] The page still shows our own "We couldn't find this traveler" design with Back to Home, not Next.js's default page
 - [x] A real traveler's profile still answers 200 and looks the same
-- [ ] Works on the live URL
+- [x] Works on the live URL
 
 **Progress (2026-11-05):** the profile page now calls Next.js's notFound() when the backend answers 404 for the traveler, and a not-found.tsx next to the page shows TravelerNotFoundOrMine (Back to Home and "We couldn't find this traveler", or the logged-in traveler's own empty profile if the id is theirs), with the tab title "Traveler · Lakat Iloilo". When the backend cannot be reached, the page still shows the same screen with status 200, because the traveler may exist. Since ticket 75 the site has a root not-found.tsx (evaluation B4); with it in place, notFound() no longer falls back to Next.js's own default screen.
 
@@ -28,3 +28,5 @@ The team then opened their own profile, logged in: it showed their name and revi
 The team also logged in with a new account with no reviews on localhost:3000 and opened My profile: it showed their own profile with "You haven't written any reviews yet.", and the browser's Network tab showed the page answering 404 Not Found, as intended (no such public profile yet, but the browser recognises the owner).
 
 Not checked yet: the live URL.
+
+**Live check (2026-11-06):** the team confirmed it works on the live URL (https://lakat-iloilo.vercel.app, commit f8e823a). curl on the live URL: /travelers/hello answers 404, and GET /v1/travelers/hello answers 404 "We couldn't find this traveler.". Status set to done at the team's request.

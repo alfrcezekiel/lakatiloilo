@@ -6,14 +6,14 @@ The name and type stay on the Supabase Auth account. The backend changes them wi
 
 **Blocked by:** None
 
-**Status:** todo
+**Status:** done
 
 - [x] A numbered SQL file adds the trigger that copies a changed name and type onto the traveler's reviews and replies; Row Level Security is unchanged on both tables. The team has run it in the Supabase SQL Editor
 - [x] PATCH /v1/auth/me changes the traveler's own name and type and answers like GET /v1/auth/me; 400 outside the limits, 401 without a login
 - [x] Edit profile shows only on the traveler's own profile; Cancel leaves everything as it was
 - [x] After saving, the profile, the dropdown and all old reviews and replies show the new name and tag, also after a refresh
 - [x] Looks tidy on a phone (375 px) and a laptop
-- [ ] Works on the live URL
+- [x] Works on the live URL
 
 **Progress (2026-11-05):** supabase/sql/030-copy-profile-changes.sql adds a trigger on the account (auth.users) that copies a changed display name or traveler type onto all of that traveler's reviews and replies, using the same rules as 022 and 025. The reviews trigger now only changes updated_at when the stars, text or photo change, so a name change keeps each review's real "last edited" time. Row Level Security is unchanged. The team ran it in the Supabase SQL Editor ("succesfully ran").
 
@@ -32,3 +32,5 @@ Not checked: a real name change (the team tests real logins), old reviews and re
 **Checked by the team on localhost (2026-11-05):** Edit profile shows only on the logged-in traveler's own profile, never on someone else's; on a phone it looks tidy and responsive. Still to confirm: Cancel leaves everything as it was, and the live URL.
 
 **Checked by the team on localhost (2026-11-05):** Edit profile, then Cancel, still shows the old name. Only "Works on the live URL" is left.
+
+**Live check (2026-11-06):** the team confirmed it works on the live URL (https://lakat-iloilo.vercel.app, commit f8e823a). Status set to done at the team's request.

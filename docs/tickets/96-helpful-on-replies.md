@@ -6,7 +6,7 @@ A new reply_likes table: reply_id (removed with the reply), user_id, created_at,
 
 **Blocked by:** 95
 
-**Status:** todo
+**Status:** done
 
 - [x] A numbered SQL file creates reply_likes with Row Level Security on, the policies above, and adds it to the Realtime list. The team has run it in the Supabase SQL Editor
 - [x] POST and DELETE /v1/replies/:id/like mark and unmark and answer { helpful_count, liked }; 400 "You can't mark your own reply as helpful.", 404 no such reply, 401 without a login
@@ -14,7 +14,7 @@ A new reply_likes table: reply_id (removed with the reply), user_id, created_at,
 - [x] A logged-in traveler can mark and unmark another traveler's reply; it stays marked after a refresh
 - [x] A like on your own reply is refused by the database, not just hidden in the page
 - [x] With "reduce motion" on, the button only changes colour
-- [ ] Works on the live URL
+- [x] Works on the live URL
 
 **Progress (2026-11-05):** supabase/sql/032-reply-likes.sql creates reply_likes (reply_id, user_id, created_at; one like per traveler per reply; removed with the reply), lets travelers send only reply_id, turns Row Level Security on with four policies (anyone can read; like only as yourself and never your own reply; remove only your own; the backend may read) and adds it to the Realtime list. The team ran it in the Supabase SQL Editor ("it worked").
 
@@ -34,3 +34,5 @@ Not checked: marking and unmarking with a real login, "stays marked after a refr
 **Checked by the team on localhost (2026-11-05):** after a refresh, a reply they marked Helpful is still marked with the same count. Still to confirm: "reduce motion", and the live URL.
 
 **Checked by the team on localhost (2026-11-05):** with Chrome's "Emulate CSS media feature prefers-reduced-motion: reduce" (the console answered true), a reply's Helpful button changes colour without lifting. With only Ubuntu's own setting, the browser answered false (it does not pass that setting on to pages), so the button still lifted there; that is the browser, not the app. Only "Works on the live URL" is left.
+
+**Live check (2026-11-06):** the team confirmed it works on the live URL (https://lakat-iloilo.vercel.app, commit f8e823a). Status set to done at the team's request.

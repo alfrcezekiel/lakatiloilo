@@ -1,11 +1,12 @@
 "use client";
 
 import { CircleUserRound, LogOut, UserRound } from "lucide-react";
-import { useEffect, useId, useRef, useState } from "react";
+import { useCallback, useId, useRef, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import Link from "next/link";
 import type { Traveler } from "@/lib/api";
 import { displayNameOf } from "@/lib/login";
+import { useDismiss } from "@/lib/use-dismiss";
 
 const item =
   "flex h-10 w-full items-center gap-2.5 rounded-lg px-3 text-left text-[0.9375rem] font-medium tracking-[0.01em] text-white/90 transition-colors hover:text-amber-300 focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-white";
@@ -24,24 +25,8 @@ export function ProfileMenu({ user, onLogOut }: { user: Traveler; onLogOut: () =
   const menuId = useId();
   const name = displayNameOf(user);
 
-  useEffect(() => {
-    if (!open) return;
-    const onPointerDown = (event: PointerEvent) => {
-      if (!wrapper.current?.contains(event.target as Node)) setOpen(false);
-    };
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        setOpen(false);
-        button.current?.focus();
-      }
-    };
-    document.addEventListener("pointerdown", onPointerDown);
-    document.addEventListener("keydown", onKeyDown);
-    return () => {
-      document.removeEventListener("pointerdown", onPointerDown);
-      document.removeEventListener("keydown", onKeyDown);
-    };
-  }, [open]);
+  const close = useCallback(() => setOpen(false), []);
+  useDismiss(open, close, wrapper, button);
 
   return (
     <div ref={wrapper} className="relative">

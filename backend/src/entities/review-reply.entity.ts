@@ -13,7 +13,8 @@ import { Review } from './review.entity';
 // saving; if it did, even with DEFAULT, the database would refuse the reply.
 // Editing (ticket 95, supabase/sql/031): the writer may change only the
 // comment, so every other column is update: false. updated_at is set by
-// the database when the comment changes.
+// the database when the comment changes. Deleting goes through the
+// database's delete_own_reply function (034).
 @Entity('review_replies')
 export class ReviewReply {
   @PrimaryColumn({ type: 'uuid', insert: false, update: false })
@@ -37,7 +38,8 @@ export class ReviewReply {
 
   // The reply this one answers, or null when it answers the review
   // (threaded replies round, 028). Must be under the same review (the
-  // database checks it); deleting that reply deletes this one too.
+  // database checks it). Deleting that reply leaves "This reply was
+  // deleted" in its place, so this one stays (034).
   @Column({ type: 'uuid', nullable: true, update: false })
   parent_reply_id: string | null;
 
@@ -47,6 +49,13 @@ export class ReviewReply {
   // When the writer last edited the text, or null if never (031).
   @Column({ type: 'timestamptz', nullable: true, insert: false, update: false })
   updated_at: Date | null;
+
+  // When the writer deleted it, or null (thread care round, ticket 100,
+  // supabase/sql/034). A deleted reply that still has answers stays as
+  // "This reply was deleted", with its text, name and type cleared. Only
+  // the database's delete_own_reply function sets it.
+  @Column({ type: 'timestamptz', nullable: true, insert: false, update: false })
+  deleted_at: Date | null;
 
   // The review this reply is under. The database removes replies together
   // with their review ("on delete cascade" in 025); synchronize is off, so

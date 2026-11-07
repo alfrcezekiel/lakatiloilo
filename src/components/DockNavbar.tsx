@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import Link from "next/link";
 import { Logo } from "@/components/Logo";
+import { NotificationsBell, PhoneNotifications } from "@/components/NotificationsBell";
 import { ProfileMenu } from "@/components/ProfileMenu";
 import { scrollToSection } from "@/lib/utils/scroll";
 import { displayNameOf, logOut as logOutOnThisDevice, useCurrentUser } from "@/lib/login";
@@ -38,6 +39,8 @@ export function DockNavbar() {
   // profile icon beside Explore opens a dropdown with "My profile" and
   // "Log out" (ProfileMenu). The phone menu has no room for a dropdown, so
   // it lists the name (in serif), "My profile" and "Log out" directly.
+  // The notifications bell sits beside the profile icon; on phones it is a
+  // "Notifications" line that opens the list in place (ticket 102).
   const logInLink = (
     <Link
       href="/login"
@@ -48,7 +51,10 @@ export function DockNavbar() {
     </Link>
   );
   const barAccount = !ready ? null : user ? (
-    <ProfileMenu user={user} onLogOut={logOut} />
+    <span className="flex items-center gap-3">
+      <NotificationsBell user={user} />
+      <ProfileMenu user={user} onLogOut={logOut} />
+    </span>
   ) : (
     logInLink
   );
@@ -58,6 +64,7 @@ export function DockNavbar() {
       <p className="truncate font-fraunces text-2xl font-medium leading-tight tracking-tight text-white">
         {displayNameOf(user)}
       </p>
+      <PhoneNotifications user={user} onOpen={() => setIsOpen(false)} />
       <Link
         href={`/travelers/${user.id}`}
         onClick={() => setIsOpen(false)}
@@ -115,7 +122,11 @@ export function DockNavbar() {
               exit={{ x: "100%" }}
               className="fixed inset-0 z-50 sm:hidden"
             >
-              <div className="h-full bg-teal-900 p-6 flex flex-col">
+              {/* overflow-y-auto: the menu scrolls when it is taller than
+                  the screen (an open notifications list pushed My profile
+                  and Log out out of reach, team report 2026-11-07).
+                  overscroll-contain keeps the page behind it still. */}
+              <div className="h-full overflow-y-auto overscroll-contain bg-teal-900 p-6 flex flex-col">
                 <div className="flex items-center justify-between mb-8">
                   <Logo width={163} height={34} />
                   <button

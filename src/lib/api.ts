@@ -141,6 +141,10 @@ export interface Reply {
   // did (ticket 96). Missing on a reply just posted (it has none yet).
   helpful_count?: number;
   liked_by_me?: boolean;
+  // True when its writer deleted it but answers are still under it
+  // (thread care round, ticket 100): the page shows "This reply was
+  // deleted", and the name, tag, text and writer are empty.
+  deleted?: boolean;
 }
 
 // Adds the logged-in traveler's reply under a review (POST
@@ -196,7 +200,8 @@ export const updateReply = async (accessToken: string, replyId: string, comment:
 };
 
 // Deletes the traveler's own reply (DELETE /v1/replies/:id). Answers with
-// the backend's message, "Your reply has been deleted."
+// the backend's message, "Your reply has been deleted." A reply with
+// answers stays as "This reply was deleted" (ticket 100).
 export const deleteReply = async (accessToken: string, replyId: string) => {
   const { data } = await api().delete<{ id: string; message: string }>(
     `/v1/replies/${encodeURIComponent(replyId)}`,
@@ -447,3 +452,48 @@ export const backendMessage = (error: unknown): string | null => {
   return typeof message === "string" ? message : null;
 };
 
+
+// One notification for the logged-in traveler (thread care round, ticket
+// 102): someone replied to their review ("review_reply"), answered their
+// reply ("reply_answer"), or marked either Helpful (ticket 106), on this
+// place.
+export interface TravelerNotification {
+  id: string;
+  // Since ticket 106 also "review_like" / "reply_like": someone marked
+  // their review / reply Helpful.
+  kind: "review_reply" | "reply_answer" | "review_like" | "reply_like";
+  actor_name: string;
+  place_type: "destination" | "accommodation";
+  place_id: string;
+  place_name: string;
+  // The review the conversation is under: the bell opens the place page
+  // at this review (ticket 103).
+  review_id: string;
+  // The reply it is about (the new reply, or the liked one), or null for a
+  // Helpful mark on the review itself: the bell opens the page at it.
+  reply_id: string | null;
+  read: boolean;
+  created_at: string;
+}
+
+// The logged-in traveler's own 20 newest notifications, newest first, and
+// how many are unread (GET /v1/notifications).
+export const getNotifications = async (accessToken: string) =>
+  (
+    await api().get<{ notifications: TravelerNotification[]; unread_count: number }>(
+      "/v1/notifications",
+      { headers: { Authorization: `Bearer ${accessToken}` } },
+    )
+  ).data;
+
+// Marks one of the logged-in traveler's notifications read, or all of them
+// without an id (POST /v1/notifications/read, ticket 103). Answers how many
+// are still unread.
+export const markNotificationsRead = async (accessToken: string, id?: string) =>
+  (
+    await api().post<{ unread_count: number }>(
+      "/v1/notifications/read",
+      id ? { id } : {},
+      { headers: { Authorization: `Bearer ${accessToken}` } },
+    )
+  ).data;
