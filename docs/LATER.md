@@ -189,6 +189,31 @@ connection when we tried it; see ticket 104), or narrow the doorbell to
 the traveler's own reviews and replies. The same would make "marked read
 on another device" show at once instead of on returning to the tab.
 
+### Round 28 — Full admin management (next spec, team decision 2026-11-08)
+The team chose to build round 27 first and spec this next (/to-spec).
+The first admin is the team's manager; the team wants admins to manage
+the whole app. Proposed contents:
+- Places: add a destination or accommodation, delete one, and change
+  every field, including the category, type and location on the map
+- Reviews and replies: a searchable list of all reviews and replies,
+  with Hide and Delete on any of them (not only reported ones)
+- Helpful likes on reviews and replies: see who marked one Helpful, and
+  remove a like (for example a fake one)
+- Travelers' accounts stay parked below (banning and managing accounts
+  touches Supabase Auth and is the riskiest part)
+
+### From the admin dashboard spec (2026-11-08)
+Parked when the team asked for a full admin dashboard, to keep round 27
+to one session:
+- Adding and deleting destinations and accommodations, and uploading
+  their photos, from the dashboard (round 27 only edits text details)
+- Making someone an admin, or removing them, from the app (today: the
+  SQL Editor only)
+- Managing travelers' accounts, banning travelers, and appeals
+- Seeing new reports arrive live on the dashboard
+- Charts and history beyond the four stat tiles
+- A second login step (a code) for admins
+
 ### Additional destination categories
 - Cultural sites and museums
 

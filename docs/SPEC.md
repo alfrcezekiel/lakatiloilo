@@ -40,10 +40,12 @@ Profile & replies round: travelers can change their display name and traveler ty
 
 Thread care round: deleting a reply that has answers leaves "This reply was deleted" in its place, so the conversation under it stays. Long threads fold away behind "Show more replies". A bell in the navbar tells a traveler when someone replies to their review or answers their reply.
 
-Moderation & photos round: a review reported by three different travelers hides itself until the team looks at it. Admins get a Reports screen to keep, hide or delete reported reviews. A review can have up to four photos.
+Admin dashboard & moderation round (changed 2026-11-08, team request; it replaces the "moderation & photos round" and keeps all of it): the Lakat Iloilo team gets its own sign-in page and a glass admin dashboard — an overview, a Reports screen to keep, hide or delete reported reviews, and a Places screen to correct destination and accommodation details. A review reported by three different travelers hides itself until the team looks at it. A review can have up to four photos.
 
 ## The user
 Travelers planning weekend trips around Iloilo Province. No login required for browsing; an account is needed only to write a review.
+
+**Second user (added 2026-11-08, team request): the Lakat Iloilo team.** A few team members whose accounts the team has added to the admins table by hand. They sign in on their own page and use the admin dashboard to moderate reviews and correct place details. Travelers never see the dashboard.
 
 ## User stories
 1. As a traveler, I want to browse destinations organized by category (mountains, foods, walking areas, festivals, nature, heritage) and location (Iloilo City vs. Province), so that I can discover places to visit in the area I'm interested in.
@@ -81,9 +83,10 @@ Travelers planning weekend trips around Iloilo Province. No login required for b
 33. As a logged-in traveler, I want to fix a typo in my reply and mark other travelers' replies helpful, so that conversations stay accurate and the best answers stand out.
 34. As a traveler reading a thread, I want answers to stay when the reply above them is deleted, and long threads to fold away, so that conversations stay readable.
 35. As a logged-in traveler, I want to be told when someone replies to my review or answers my reply, so that I can answer back.
-36. As a traveler, I want a review that many travelers report to hide itself, and the team to have a screen to deal with reports, so that spam does not stay up.
+36. As a traveler, I want a review that many travelers report to hide itself, and the Lakat Iloilo team to deal with reports, so that spam does not stay up.
 37. As a logged-in traveler, I want to add up to four photos to my review, so that others see more of the place.
 38. As any visitor, I want to see a traveler's review photos on their profile, so that I can judge their taste from what they saw, not only what they wrote.
+39. As a member of the Lakat Iloilo team, I want my own sign-in and a clear, accessible dashboard with reports and place details, so that I can keep the site accurate and safe without using the Supabase dashboard.
 
 ## Screens
 1. Home page hero — redesigned to match the team's mockup:
@@ -204,9 +207,15 @@ Travelers planning weekend trips around Iloilo Province. No login required for b
    - Travelers are never notified about their own replies.
    - **Helpful likes notify too (added 2026-11-07, team request):** when another traveler marks your review or reply Helpful, the bell shows "Maria found your review of Bucari Little Baguio helpful" or "Juan found your reply on Hotel del Rio helpful". Never for your own. Removing the Helpful mark removes that notification, so marking on and off cannot flood the bell. They show whenever the traveler logs in, update live, and open the place at that review like the others.
 
-27. Moderation & photos round — auto-hide, a Reports screen for admins, and more photos:
+27. Admin dashboard & moderation round — the Lakat Iloilo team's own sign-in and dashboard, auto-hide, and more photos (changed 2026-11-08, team request: replaces the "moderation & photos round", keeping all of it, in one round):
    - **Auto-hide:** when 3 different travelers have reported a review, it disappears from the place page, the ratings and the reviewer's public profile. Its writer still sees it on the place page with a grey note: "Hidden while the team reviews it."
-   - **Reports screen (admins only):** admins see **Reports** in the profile dropdown (and the phone menu). The page lists every review with at least one report, most reports first: the place, the reviewer's name, stars, text, photos, whether it is hidden, the number of reports, and each report's reason and note. Each has three buttons: **Keep it** (removes its reports and shows it again), **Hide it**, and **Delete review** (with a "Yes, delete" step). Anyone who is not an admin, logged in or not, gets the site's "not found" page there.
+   - **Who is an admin:** a team member whose account the team has added to the admins table by hand in the Supabase SQL Editor. The app can never make anyone an admin. A hidden address is not the protection: the backend refuses every admin request from anyone else, and Row Level Security refuses admin changes in the database.
+   - **Admin sign-in (/admin/login):** not linked anywhere on the traveler site and hidden from search engines. A glass card over a darkened Iloilo photo: "Lakat Iloilo · Team", email, password, **Sign in**. An admin goes to the dashboard. Anyone else gets "This sign-in is for the Lakat Iloilo team." and is not logged in. Mistakes show plain messages, like the traveler login.
+   - **Dashboard home (/admin):** a glass sidebar — Overview, Reports, Places, Back to the site, Log out (on phones a top bar with a menu). Four stat tiles: reviews this week, reports waiting (with how many reviews they are on), hidden reviews, places listed. Under them, the 5 newest reports, each opening the Reports screen. Change (2026-11-09, team request): the Overview updates live (Supabase Realtime on reviews, review_visibility_signals and report_signals, then the backend is asked again), without a reload.
+   - **Reports (/admin/reports):** every review with at least one report, most reports first: the place, the reviewer's name, stars, text, photos, whether it is hidden, the number of reports, and each report's reason and note. Three buttons: **Keep it** (removes its reports and shows it again), **Hide it**, and **Delete review** (with a "Yes, delete" step). Also built (code review 2026-11-09): a "Check for new reports" button, and a newest report on the Overview opens Reports scrolled to that review.
+   - **Places (/admin/places):** destinations and accommodations in one searchable list (name, type, category or kind, address), with All / Destinations / Accommodations buttons to narrow it (code review 2026-11-09). **Edit** opens a glass form with the name, description and address (and contact details for accommodations), Save and Cancel; saved changes show on the site at once. No adding or deleting places.
+   - **Not an admin:** logged in or not, every /admin page except the sign-in shows the site's "not found" page, and every admin endpoint answers 401 without a login (or with an expired or fake one) and 403 "This page is for the Lakat Iloilo team." for a traveler's login Travelers see no admin links anywhere. **Change (2026-11-08, team request): a real 404.** The server checks before serving an admin page (a Next.js proxy, until Next.js 16 called middleware): the admin sign-in also keeps the admin's login in a cookie sent only to /admin pages, the proxy asks the backend whether it belongs to an admin, and anyone else gets the "not found" page with status 404, not 200.
+   - **Design:** glassmorphism, built to be easy to use and accessible. Every admin page sits over a full-screen, darkened Iloilo photo, so the frosted-glass blur follows the no-white-hover rule (blur only over photos); panels are glass with clear borders, no white boxes on hover. Fraunces for headings and the site's body font for text, with generous spacing; amber accents like the rest of the site; text meets WCAG AA contrast; every control is a real button, link or labelled field with a visible keyboard focus; works at 375 px and on a laptop.
    - **Up to four photos:** the review form's "Add photos" takes up to 4 photos (each JPG, PNG or WebP, up to 2 MB), each with a preview and its own Remove button. Editing a review can add and remove photos. Under the review, the photos show as a row of small pictures; clicking one opens it larger, with next and previous buttons, arrow keys and Escape. Existing single photos show as before. A traveler's profile shows a review's photos as the same row of small pictures.
 
 ## Data
@@ -325,7 +334,7 @@ The traveler type is saved on the Supabase Auth account, next to the display nam
 - **Photos on the profile (added 2026-11-06):** no table or Storage changes. Review photos are already public (the review-photos bucket, review extras round); the profile only reads them. Row Level Security is unchanged.
 
 **Thread care round:**
-- **review_replies** gains **deleted_at** — when its writer deleted it, or empty. Deleting a reply that has answers does not remove the row: the database clears its comment, replier_name and traveler_type, removes its Helpful likes and sets deleted_at, and its answers stay. Deleting a reply with no answers removes the row, as today; when the last answer under a deleted reply goes, the deleted reply goes too. Only the reply's writer may do either. A deleted reply cannot be edited, liked or answered.
+- **review_replies** gains **deleted_at** — when its writer deleted it, or empty. Deleting a reply that has answers does not remove the row: the database clears its comment, replier_name and traveler_type (and, since 2026-11-07, its user_id, so its writer cannot be looked up through Supabase's public data API either), removes its Helpful likes and sets deleted_at, and its answers stay. Deleting a reply with no answers removes the row, as today; when the last answer under a deleted reply goes, the deleted reply goes too. Only the reply's writer may do either. A deleted reply cannot be edited, liked or answered.
 - **notifications table (new):**
   - id — unique identifier
   - user_id — the traveler the notification is for
@@ -333,17 +342,20 @@ The traveler type is saved on the Supabase Auth account, next to the display nam
   - review_id — the review the conversation is under (the notification is removed with it)
   - reply_id — the new reply, or the reply that was liked (removed with it); empty for "review_like"
   - actor_id — who replied or liked (added 2026-11-07), so removing a Helpful mark can remove its notification
-  - actor_name — the replier's display name, copied by the database
+  - actor_name — the replier's display name, copied by the database; since 2026-11-07 it follows the replier's or liker's later name changes, like their reviews and replies
   - read_at — when it was read, or empty
   - created_at — timestamp
 - Notifications are created only by the database, by a trigger when a reply is added (and, since 2026-11-07, when a Helpful like is added on a review or reply), and never for the traveler's own reply, review or like. Removing a Helpful like removes its notification. Row Level Security: a traveler may read only their own notifications, and may change only read_at on their own. No one may add or delete notifications through the app. Added to the Realtime list, where Row Level Security means each traveler only hears about their own. **Change (2026-11-07, ticket 104 fix): the bell does not listen to this table.** Listening to it needs the Realtime connection to carry the traveler's login, and Supabase never registered that connection. Every notification is made or removed in the same moment as a reply or a Helpful mark, so the bell listens to review_replies, review_likes and reply_likes (public tables, like the place pages) and then asks the backend, which only answers the traveler's own notifications. The table stays on the list, with Row Level Security, but nothing listens to it.
 
-**Moderation & photos round:**
-- **admins table (new):** user_id — an account that may use the Reports screen. The team adds and removes rows by hand in the Supabase SQL Editor; the app can never change it. Row Level Security: a traveler may read only their own row (so the app can ask "am I an admin?"); no one may write through the app.
+**Admin dashboard & moderation round** (was "moderation & photos round"; changed 2026-11-08):
+- **admins table (new):** user_id — an account that may sign in to the admin dashboard. The team adds and removes rows by hand in the Supabase SQL Editor; the app can never change it. Row Level Security: a traveler may read only their own row (so the app can ask "am I an admin?"); no one may write through the app.
 - **reviews** gains **hidden_at** — when the review was hidden, or empty. A database trigger sets it when a review reaches 3 reports (it runs as security definer, because travelers cannot read reports). The reviews read policy changes to: anyone may read reviews whose hidden_at is empty; the writer and admins may read all. Hidden reviews do not count toward a place's average rating or review count, and are left off public profiles. Only admins may set or clear hidden_at; the writer cannot unhide their own review.
 - **reviews**, admins: admins may also delete any review (its replies, likes, reports, photos and notifications go with it, as today).
-- **review_reports:** admins may now read and delete reports ("Keep it" deletes them). Everyone else still cannot read them, and review_reports stays off the Realtime list.
-- **review_photos table (new):** id, review_id (removed with the review), photo_path (where it is kept in Storage), position (1 to 4), created_at. At most 4 per review. Row Level Security: anyone may read photos of reviews they may read; only the review's writer may add or remove them. It replaces reviews.photo_path: the round's SQL moves every existing photo into it as position 1, then drops the old column. Added to the Realtime list.
+- **review_visibility_signals** (ticket 109, change 2026-11-08): a tiny read-only table on the Realtime list. A trigger adds a row (place_type, place_id, created_at; never the review) whenever a review is hidden or shown again, so open place pages and the home page hear about it, because Realtime cannot announce a row the viewer may no longer read. Anyone may read it; nobody may write through the app; rows older than a day are cleared.
+- **report_signals** (team request 2026-11-09, supabase/sql/045): a tiny read-only table on the Realtime list. A trigger adds one row (only a time; never the review, place, reason, note or reporter) whenever reports are added or removed, so the admin Overview updates live without putting review_reports on the Realtime list. Anyone may read it; nobody may write through the app; rows older than a day are cleared.
+- **review_reports:** admins may now read and delete reports ("Keep it" deletes them). They may read the reason, note, review and date, but never who reported it (ticket 108, supabase/sql/039). Everyone else still cannot read them, and review_reports stays off the Realtime list.
+- **destinations and accommodations**, admins (added 2026-11-08): admins may change only the name, description and address (and, for accommodations, the contact details); every other column stays out of reach. Anyone may still read. No one may add or delete places through the app.
+- **review_photos table (new):** id, review_id (removed with the review), photo_path (where it is kept in Storage), position (1 to 4), created_at. At most 4 per review. Row Level Security: anyone may read photos of reviews they may read; only the review's writer may add or remove them. It replaces reviews.photo_path: the round's SQL (044) copies every existing photo into it as position 1. Change (2026-11-09): the old column is dropped only after the push, by a later file that first copies any photo added in between, because the live site uses it until then. Added to the Realtime list.
 - **review-photos Storage bucket:** unchanged for travelers (their own folder only, JPG, PNG or WebP, up to 2 MB). Admins may also delete files, so deleting a review removes its photos. Each photo is sent in its own request, because four 2 MB photos would go over Vercel's 4.5 MB request limit.
 - Nothing in these rounds uses the service_role key or any sb_secret_ key: admin rights come from the admins table and Row Level Security.
 
@@ -416,18 +428,24 @@ When Supabase Auth refuses, the backend answers with Supabase's own status and c
 - GET /v1/notifications — logged-in traveler; their own 20 newest notifications (kind, actor_name, the place's type, id and name, review_id, reply_id, read, created_at) and unread_count (401 not logged in)
 - POST /v1/notifications/read — logged-in traveler; marks one of their notifications read ({ id }), or all of them with no id; answers { unread_count } (400 for an id that is not an id, 401 not logged in; someone else's id changes nothing)
 
-**Moderation & photos round (v1):**
+**Admin dashboard & moderation round (v1)** (was "moderation & photos round"; changed 2026-11-08):
+- POST /v1/admin/login — anyone; { email, password }. Signs in like POST /v1/auth/login, then checks the admins table: an admin gets the same answer as a traveler login; anyone else gets 403 "This sign-in is for the Lakat Iloilo team." and the login is ended at once; a wrong email or password answers the same way as the traveler login
 - GET /v1/auth/me — also answers is_admin
-- GET /v1/admin/reports — admins only; reported reviews, most reports first, with their reports (403 "This page is for the Lakat Iloilo team." for anyone else)
+- GET /v1/admin/me — admins only; the signed-in admin's own details, the same as GET /v1/auth/me (added 2026-11-08, ticket 107)
+- GET /v1/admin/overview — admins only; { reviews_this_week (last 7 days, hidden included), reports_waiting, reported_reviews (how many reviews those reports are on), hidden_reviews, places, newest_reports (5: reason, note, date, place and reviewer name; never who reported) }
+- GET /v1/admin/reports — admins only; up to 100 reported reviews, most reports first, each with its reports (reason, note, date; never who reported) (403 "This page is for the Lakat Iloilo team." for anyone else)
 - POST /v1/admin/reviews/:id/keep — admins only; deletes the review's reports and shows it again
 - POST /v1/admin/reviews/:id/hide — admins only; hides the review
 - DELETE /v1/admin/reviews/:id — admins only; deletes the review and its photos
+- GET /v1/admin/places — admins only; every destination and accommodation (id, type, name, category or kind, address)
+- GET /v1/admin/places/:type/:id — admins only; one place with the fields the Edit form changes
+- PATCH /v1/admin/places/:type/:id — admins only; changes the name (1–100), description (1–1000) and address (1–200) (and phone ≤ 40 / email ≤ 120, empty for none, for accommodations), and answers with the saved place (400 with a plain sentence for an empty or too long field, 404 no such place; ticket 112, supabase/sql/043)
 - POST /v1/reviews/:id/photos — the review's writer; adds one photo (JPG, PNG or WebP, up to 2 MB) and answers { id, url, position } (400 "A review can have up to 4 photos.", 400 for a wrong file as today)
 - DELETE /v1/reviews/:id/photos/:photoId — the review's writer; removes that photo from the review and from Storage
 - POST /v1/reviews and PATCH /v1/reviews/:id — no longer take a photo: the website saves the review first, then sends each new photo on its own
-- GET /v1/reviews — each review carries photos (a list of { id, url, position }) instead of photo_url, and hidden: true on a hidden review shown to its writer or an admin; hidden reviews are left out for everyone else. GET /v1/ratings and GET /v1/travelers/:id leave hidden reviews out
+- GET /v1/reviews — each review carries photos (a list of { id, url, position }) instead of photo_url, and hidden: true on a hidden review shown to its writer (ticket 109; admins see hidden reviews on the Reports screen, not on the place page); hidden reviews are left out for everyone else. GET /v1/ratings and GET /v1/travelers/:id leave hidden reviews out
 
-All writes in these rounds run as the logged-in traveler (the asTraveler step), so Row Level Security and the Storage policies decide. The backend never uses the service_role key.
+All writes in these rounds run as the logged-in traveler (the asTraveler step), so Row Level Security and the Storage policies decide. Admin endpoints run the same way, as the logged-in admin, so the database checks the admins table on every change, not only the backend. Every admin endpoint except POST /v1/admin/login first goes through one backend check (a NestJS middleware, added 2026-11-08 at the team's request): 401 without a valid login, 403 "This page is for the Lakat Iloilo team." for anyone who is not in the admins table. The backend never uses the service_role key.
 
 **Likes on TypeORM round (v1):** no endpoint changes. POST and DELETE /v1/reviews/:id/like, GET /v1/reviews and GET /v1/travelers/:id keep the same inputs, answers and refusal messages.
 
@@ -478,6 +496,8 @@ Navigation round: no change for travelers. "Who is logged in" is shared through 
 Profiles & likes, review extras and threaded replies rounds: browsing, profiles, likes counts, replies and photos are visible to everyone. Marking a review helpful, replying, reporting and adding a photo need an account, like writing a review.
 
 Profile & replies, thread care, and moderation & photos rounds: changing your name, editing replies, marking replies helpful and the notifications bell need an account. The Reports screen needs an account that the team has added to the admins table by hand; there is no way to become an admin from the app.
+
+Admin dashboard & moderation round (changed 2026-11-08): the Lakat Iloilo team signs in on its own page, /admin/login, with the same kind of Supabase Auth account (email and password). Only accounts in the admins table get in; the app keeps the admin's login the same way as a traveler's, so an admin is also logged in on the traveler site. Nobody can become an admin through the app.
 
 ## Done for the demo
 - [x] NestJS backend project structure created in `backend/` directory
@@ -607,20 +627,24 @@ Profile & replies, thread care, and moderation & photos rounds: changing your na
 - [x] A traveler's profile shows the photo on each review that has one, and clicking it opens it larger; reviews without a photo look the same
 
 **Thread care round (live URL):**
-- [ ] Deleting a reply with answers leaves "This reply was deleted" with its answers still under it; deleting a reply with none removes it
-- [ ] Threads start folded with "Show replies"; each level opens on its own; an open reply with more than 3 answers shows "Show N more replies"; Hide replies folds it again, on a laptop and a phone
-- [ ] Replying to a review from a second account puts a notification on the review writer's bell within a few seconds; clicking it opens the place and marks it read; Mark all as read works
-- [ ] A traveler's own replies never notify them, and one traveler cannot read another's notifications (checked through the backend)
-- [ ] Marking a review or reply Helpful from a second account notifies its writer within a few seconds; removing the mark removes the notification; your own never notify you
+- [x] Deleting a reply with answers leaves "This reply was deleted" with its answers still under it; deleting a reply with none removes it
+- [x] Threads start folded with "Show replies"; each level opens on its own; an open reply with more than 3 answers shows "Show N more replies"; Hide replies folds it again, on a laptop and a phone
+- [x] Replying to a review from a second account puts a notification on the review writer's bell within a few seconds; clicking it opens the place and marks it read; Mark all as read works
+- [x] A traveler's own replies never notify them, and one traveler cannot read another's notifications (checked through the backend)
+- [x] Marking a review or reply Helpful from a second account notifies its writer within a few seconds; removing the mark removes the notification; your own never notify you
 
-**Moderation & photos round (live URL):**
+**Admin dashboard & moderation round (live URL):**
+- [ ] An admin signs in at /admin/login and sees the dashboard with its four tiles and newest reports; a traveler account is refused there with "This sign-in is for the Lakat Iloilo team." and is not logged in
+- [ ] Logged out or as a traveler, every /admin page except the sign-in shows "not found", and every admin endpoint answers 401 logged out and 403 for a traveler (checked with curl)
 - [ ] After 3 different accounts report a review, it disappears for everyone else and from the rating, and its writer sees "Hidden while the team reviews it."
-- [ ] An admin sees Reports in the dropdown; Keep it, Hide it and Delete review all work; a non-admin gets "not found" on that page and 403 from its endpoints
+- [ ] On Reports, Keep it, Hide it and Delete review all work
+- [ ] On Places, an admin edits a destination's and an accommodation's description and address, and the change shows on the site; a traveler cannot change a place (refused by the database)
+- [ ] The dashboard works with the keyboard alone, its text passes WCAG AA contrast, and it works at 375 px and on a laptop
 - [ ] A traveler can add up to 4 photos to a review, remove one, and open them larger with next and previous; a 5th is refused; old single photos still show
-- [ ] Row Level Security is on for admins, notifications, reply_likes and review_photos, and no service_role or sb_secret_ key appears anywhere
+- [ ] Row Level Security is on for admins, notifications, reply_likes, review_photos, destinations and accommodations, and no service_role or sb_secret_ key appears anywhere
 
 ## Out of scope
-- Moderation & photos round: an admin screen for destinations and accommodations, becoming an admin from the app, banning travelers, appeals, seeing new reports live, keeping reports when a review is deleted, reordering photos, and photos over 2 MB
+- Admin dashboard & moderation round (was "moderation & photos round"): adding or deleting places and uploading place photos from the dashboard, making someone an admin or removing them from the app, managing travelers, banning travelers, appeals, a live Reports list (change 2026-11-09: the Overview's numbers and newest reports do update live), charts or history beyond the four tiles, a second login step for admins, keeping reports when a review is deleted, reordering photos, and photos over 2 MB
 - Thread care round: email or phone notifications (a custom email sender is still parked), notifications for new reviews, and a limit on thread depth or reply rate (Helpful-mark notifications moved into the round on 2026-11-07, ticket 106)
 - Profile & replies round: changing the email or password from the profile, profile pictures, and a public profile for travelers with no reviews
 - Live updates round: live reports (no screen shows reports and nobody may read them through the app; seeing reports as they arrive needs an admin screen), "new review" pop-ups or sounds, live traveler profile pages, and using the rows Realtime sends directly in the page
