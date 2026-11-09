@@ -18,6 +18,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { loginToken } from '../login-token';
 import { NewReview, PlaceType, ReviewChanges, ReviewsService } from './reviews.service';
 import { RepliesService } from './replies.service';
+import { ReviewPhotoUploadsService } from './review-photo-uploads.service';
 import { PhotoTooLargeFilter } from './photo-too-large.filter';
 import { PHOTO_MESSAGE, type UploadedPhoto } from './review-photos.service';
 import { idOf, placeIdQuery } from '../id-param';
@@ -50,6 +51,7 @@ const starsAndComment = (body: Partial<Record<keyof ReviewChanges, unknown>> | u
 export class ReviewsController {
   constructor(
     private readonly reviewsService: ReviewsService,
+    private readonly photoUploads: ReviewPhotoUploadsService,
     private readonly repliesService: RepliesService,
   ) {}
 
@@ -180,7 +182,7 @@ export class ReviewsController {
   ) {
     const token = loginToken(authorization);
     if (!photo) throw new BadRequestException(PHOTO_MESSAGE);
-    return this.reviewsService.addPhoto(token, id, photo);
+    return this.photoUploads.add(token, id, photo);
   }
 
   // DELETE /v1/reviews/<id>/photos/<photo id>   (header: Authorization: Bearer <login token>)
@@ -193,7 +195,7 @@ export class ReviewsController {
     @Param('id', idOf('review')) id: string,
     @Param('photoId', idOf('photo')) photoId: string,
   ) {
-    return this.reviewsService.removePhoto(loginToken(authorization), id, photoId);
+    return this.photoUploads.remove(loginToken(authorization), id, photoId);
   }
 
   // DELETE /v1/reviews/<id>   (header: Authorization: Bearer <login token>)

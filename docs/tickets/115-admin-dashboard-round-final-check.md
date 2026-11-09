@@ -35,3 +35,9 @@ Still to do: /code-review on the round, then "commit and push", then the live ch
 - Left as they are, on purpose: the public signal tables (they hold no content and logged-out pages need them), and api.ts's size (the project rule keeps every backend call there).
 
 Checked: type-check and lint (website and backend), `npm run build`, curl (the notifications and admin endpoints still answer 401 without a login).
+
+**Second code review (2026-11-09, after the push), findings fixed:**
+- **Spec 1:** the admin 404 after the cookie ran out (see the fix note in ticket 107).
+- **🟡 1:** adding and removing review photos moved out of reviews.service.ts (460 → 383 lines) into review-photo-uploads.service.ts; the endpoints are unchanged.
+
+Checked: type-check and lint (website and backend), `npm run build`, and curl (place reviews 200 with their photos; the photo endpoints 401 without a login; /admin 404 logged out).

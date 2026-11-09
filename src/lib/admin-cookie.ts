@@ -23,8 +23,21 @@ function write(value: string, maxAgeSeconds: number) {
     `; SameSite=Strict${secure}`;
 }
 
-export function hasAdminCookie() {
-  return document.cookie.split("; ").some((part) => part.startsWith(`${ADMIN_COOKIE}=`));
+// "The login in this browser is an admin's", kept next to the login in
+// localStorage (code review 2026-11-09). The cookie itself cannot be used
+// for this: a page only sees the cookies for its own path, so on the main
+// site the /admin cookie looked missing and renewing the login there never
+// renewed the cookie. After about an hour the admin then got "not found"
+// at /admin while still signed in. It only decides whether the cookie is
+// renewed; the backend still decides who is an admin.
+const ADMIN_MARK = "lakat-admin";
+
+export function isAdminBrowser() {
+  try {
+    return localStorage.getItem(ADMIN_MARK) === "1";
+  } catch {
+    return false;
+  }
 }
 
 // Keep the admin's login for the server check, until it runs out
@@ -32,8 +45,18 @@ export function hasAdminCookie() {
 export function setAdminCookie(accessToken: string, expiresAt: number | null | undefined) {
   const seconds = expiresAt ? Math.floor(expiresAt - Date.now() / 1000) : 3600;
   if (seconds > 0) write(accessToken, seconds);
+  try {
+    localStorage.setItem(ADMIN_MARK, "1");
+  } catch {
+    // Storage blocked: the cookie still works until it runs out.
+  }
 }
 
 export function clearAdminCookie() {
   write("", 0);
+  try {
+    localStorage.removeItem(ADMIN_MARK);
+  } catch {
+    // Nothing to forget.
+  }
 }

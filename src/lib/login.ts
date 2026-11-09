@@ -4,7 +4,7 @@ import { useEffect, useSyncExternalStore } from "react";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import { getMe, logOutThroughBackend, refreshLogin, type Traveler } from "@/lib/api";
-import { clearAdminCookie, hasAdminCookie, setAdminCookie } from "@/lib/admin-cookie";
+import { clearAdminCookie, isAdminBrowser, setAdminCookie } from "@/lib/admin-cookie";
 
 export type { Traveler };
 
@@ -55,8 +55,9 @@ export function saveLogin(login: { access_token: string; refresh_token: string; 
     // logged in, but nothing breaks.
   }
   // An admin's renewed login also replaces the cookie the server checks
-  // before admin pages (ticket 107). Travelers have no such cookie.
-  if (hasAdminCookie()) setAdminCookie(saved.access_token, saved.expires_at);
+  // before admin pages (ticket 107), on whichever page it is renewed.
+  // Travelers have no such cookie.
+  if (isAdminBrowser()) setAdminCookie(saved.access_token, saved.expires_at);
   window.dispatchEvent(new Event(LOGIN_CHANGED));
   scheduleRenewal();
 }

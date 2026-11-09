@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { cn } from "@/lib/utils";
 import { BackLink, tones } from "@/components/PlaceDetail";
+import { AdminAccessRecovery } from "@/components/admin/AdminAccessRecovery";
 
 export const metadata: Metadata = {
   title: "Page not found · Lakat Iloilo",
@@ -10,6 +11,8 @@ export const metadata: Metadata = {
 // with a real 404 status. It looks like the "couldn't find this traveler"
 // page instead of Next.js's plain default (evaluation B4, 2026-11-04).
 // Missing destinations and accommodations keep their own friendly page.
+// Under /admin, a signed-in admin whose cookie ran out is let back in
+// (AdminAccessRecovery).
 export default function NotFound() {
   return (
     <main className={cn("min-h-screen text-white", tones.destination.page)}>
@@ -21,6 +24,7 @@ export default function NotFound() {
         <div className="mt-6">
           <BackLink />
         </div>
+        <AdminAccessRecovery />
       </div>
     </main>
   );

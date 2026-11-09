@@ -10,6 +10,7 @@ import { RepliesService } from './replies.service';
 import { ReportsController } from './reports.controller';
 import { ReportsService } from './reports.service';
 import { ReviewPhotosService } from './review-photos.service';
+import { ReviewPhotoUploadsService } from './review-photo-uploads.service';
 import { SupabaseModule } from '../../supabase/supabase.module';
 import { RatingsController } from './ratings.controller';
 import { ReviewsController } from './reviews.controller';
@@ -18,6 +19,13 @@ import { ReviewsService } from './reviews.service';
 @Module({
   imports: [TypeOrmModule.forFeature([Review, ReviewLike, ReviewReply, ReplyLike]), SupabaseModule],
   controllers: [ReviewsController, RatingsController, RepliesController, ReportsController],
-  providers: [ReviewsService, RepliesService, ReportsService, ReviewPhotosService, TravelerTransactions],
+  providers: [
+    ReviewsService,
+    RepliesService,
+    ReportsService,
+    ReviewPhotosService,
+    ReviewPhotoUploadsService,
+    TravelerTransactions,
+  ],
 })
 export class ReviewsModule {}

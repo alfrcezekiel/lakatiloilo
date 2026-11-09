@@ -14,13 +14,7 @@ import { Review } from '../../entities/review.entity';
 import { ReviewLike, helpfulCountOf } from '../../entities/review-like.entity';
 import { SupabaseService } from '../../supabase/supabase.service';
 import { TravelerTransactions } from '../traveler-transactions';
-import {
-  MAX_PHOTOS,
-  ReviewPhotosService,
-  TOO_MANY_PHOTOS,
-  type ReviewPhotoDto,
-  type UploadedPhoto,
-} from './review-photos.service';
+import { ReviewPhotosService, type ReviewPhotoDto } from './review-photos.service';
 
 // What the website gets for each review. Only the display name is ever
 // sent, never the reviewer's email (the reviews table does not hold it).
@@ -84,9 +78,7 @@ const reviewNotFound = () => new NotFoundException("We couldn't find that review
 const helpfulCount = (runner: QueryRunner, reviewId: string) =>
   runner.manager.count(ReviewLike, { where: { review_id: reviewId } });
 
-const photoNotFound = () => new NotFoundException("We couldn't find that photo.");
-
-const notYours = () =>
+export const notYours = () =>
   new NotFoundException("We couldn't find that review among yours. Please log in again and try.");
 
 // Reads and writes the reviews table with TypeORM, through the backend's
@@ -291,71 +283,6 @@ export class ReviewsService {
     return { id, message: 'Your review has been deleted.' };
   }
 
-  // Adds one photo to the traveler's own review (POST
-  // /v1/reviews/:id/photos, ticket 113). One photo per request, because
-  // four 2 MB photos together would go over Vercel's 4.5 MB request limit.
-  //   1. The photo is checked (type from its first bytes, size), and the
-  //      review must be theirs and have fewer than 4 photos.
-  //   2. It is uploaded into their own Storage folder.
-  //   3. The row is added; the database checks again (the writer only, own
-  //      folder, at most 4, supabase/sql/044). If that fails, the file is
-  //      deleted again, so no unused file is left behind.
-  async addPhoto(accessToken: string, reviewId: string, photo: UploadedPhoto): Promise<ReviewPhotoDto> {
-    this.photos.check(photo);
-    await this.asTraveler(accessToken, async (runner) => {
-      const [review]: { photos: number }[] = await runner.query(
-        `select (select count(*)::int from public.review_photos p where p.review_id = r.id) as photos
-           from public.reviews r
-          where r.id = $1 and r.user_id = auth.uid()`,
-        [reviewId],
-      );
-      if (!review) throw notYours();
-      if (review.photos >= MAX_PHOTOS) throw new BadRequestException(TOO_MANY_PHOTOS);
-    });
-    const path = await this.photos.upload(accessToken, photo);
-    try {
-      return await this.asTraveler(accessToken, async (runner) => {
-        const [row]: { id: string; position: number }[] = await runner.query(
-          `insert into public.review_photos (review_id, photo_path)
-              values ($1, $2)
-              returning id, position`,
-          [reviewId, path],
-        );
-        const photos = await this.photos.photosFor(runner, [reviewId]);
-        const saved = photos.get(reviewId)?.find((p) => p.id === row.id);
-        if (!saved) throw photoNotFound();
-        return saved;
-      });
-    } catch (error) {
-      await this.photos.remove(accessToken, path);
-      throw error;
-    }
-  }
-
-  // Removes one photo from the traveler's own review (DELETE
-  // /v1/reviews/:id/photos/:photoId, ticket 113), then deletes the file.
-  // Row Level Security only lets the writer remove it, so someone else's
-  // photo is simply "not found". While the old single-photo column (027)
-  // still exists, it is cleared too when it points at this file, so the
-  // later clean-up file cannot bring the photo back.
-  async removePhoto(accessToken: string, reviewId: string, photoId: string): Promise<{ id: string }> {
-    const path = await this.asTraveler(accessToken, async (runner) => {
-      const [rows]: [{ photo_path: string }[], number] = await runner.query(
-        'delete from public.review_photos where id = $1 and review_id = $2 returning photo_path',
-        [photoId, reviewId],
-      );
-      if (rows.length === 0) throw photoNotFound();
-      await runner.query(
-        `update public.reviews set photo_path = null
-          where id = $1 and user_id = auth.uid() and photo_path = $2`,
-        [reviewId, rows[0].photo_path],
-      );
-      return rows[0].photo_path;
-    });
-    await this.photos.remove(accessToken, path);
-    return { id: photoId };
-  }
-
   // Who is asking, for "liked by me" on GET /v1/reviews. Reading reviews
   // never needs a login, so a missing, wrong or expired login just means
   // "nobody" instead of an error.
@@ -437,13 +364,9 @@ export class ReviewsService {
       // The one-review-per-place rule (the "unique" line in supabase/sql/020).
       case '23505':
         return new ConflictException("You've already reviewed this place.");
-      // A rating or comment outside the limits, or a 5th photo (044).
+      // A rating or comment outside the limits.
       case '23514':
-        return new BadRequestException(
-          String((error as QueryFailedError).message).includes('up to 4 photos')
-            ? TOO_MANY_PHOTOS
-            : 'Please pick 1 to 5 stars and write 1 to 500 characters.',
-        );
+        return new BadRequestException('Please pick 1 to 5 stars and write 1 to 500 characters.');
       // The review was deleted while it was being liked.
       case '23503':
         return reviewNotFound();
