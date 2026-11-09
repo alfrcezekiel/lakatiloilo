@@ -86,6 +86,22 @@ with it. You will be asked.
 Run them in that order. The agent will refuse to write feature code
 before there is a spec — that is deliberate, not a bug.
 
+### Project helpers (Lakat Iloilo)
+
+Use these while you build, whenever the situation fits.
+
+| When                                  | Command             | Produces                               |
+|---------------------------------------|---------------------|----------------------------------------|
+| A ticket needs a backend endpoint     | `/new-endpoint`     | controller, service, api.ts, spec line |
+| A ticket needs a database change      | `/sql-change`       | `supabase/sql/NNN-*.sql` to run        |
+| Something looks wrong at one width    | `/responsive-check` | measured fix at 375–1440 px            |
+| The team says "commit and push"       | `/ship`             | one safe commit on `main`              |
+| After a push, or after the team tests | `/live-check`       | a test to follow, ticked ticket        |
+
+Project rules live in `.claude/rules/`: team habits always apply, and
+the backend, frontend and database rules apply when those files are
+worked on.
+
 ## The rules
 
 1. **Deploy first.** Live URL before features.
