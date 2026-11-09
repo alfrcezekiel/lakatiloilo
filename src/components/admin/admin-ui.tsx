@@ -2,6 +2,7 @@
 
 import { adminGlass } from "@/components/admin/AdminFrame";
 import { backendMessage } from "@/lib/api";
+import { readLogin } from "@/lib/login";
 import { cn } from "@/lib/utils";
 
 // Small pieces shared by the dashboard's screens (moved here in the code
@@ -13,6 +14,13 @@ export const plural = (count: number, word: string) => `${count} ${word}${count 
 // The cache label for the Reports list, shared by the screen and its
 // Keep it / Hide it / Delete review buttons.
 export const REPORTS_KEY = ["admin", "reports"] as const;
+
+// Settings for every dashboard data request (slow admin pages, team
+// report 2026-11-09). Each page starts its request straight away, next to
+// the "who is logged in" check instead of after it, so the two run at the
+// same time. Only with a login in this browser; a refusal is tried again
+// once, not three times.
+export const adminQuerySettings = () => ({ enabled: readLogin() !== null, retry: 1 });
 
 // A sentence to show when something failed: the backend's own message,
 // our own "Please log in again, then try again.", or a general one.

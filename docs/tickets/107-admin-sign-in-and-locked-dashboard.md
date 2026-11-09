@@ -41,3 +41,23 @@ Checked: backend type-check and lint; curl: GET /v1/admin/me 401 without a login
 **Fix (2026-11-09, code review):** an admin could get "not found" at /admin while still signed in, after about an hour on the main site or on coming back the next day. Cause: the cookie lasts as long as the login token (about an hour), and renewing the login only renewed the cookie when the page could see it. A page only sees the cookies for its own path, so on the main site it never could. Fix:
 - the browser now remembers "this login is an admin's" next to the login (lakat-admin in localStorage), so a renewal on any page renews the cookie
 - on the "not found" page under /admin, a signed-in browser renews the login, asks the backend (GET /v1/auth/me) whether it is an admin, and for an admin sets the cookie again and reloads once (at most one try per address every 30 seconds); travelers still get "not found"
+
+**Fix (2026-11-09, team report: slow /admin/login and dashboard navigation, two loading screens):**
+- **Measured:** each Supabase Auth login check took 170–820 ms and each admin-check transaction about 480 ms (5 database round trips of ~96 ms). One click between dashboard pages repeated them about 7 times, roughly 3 s:
+  - the proxy's GET /v1/admin/me: the middleware checked the login and admin, then the endpoint checked both again
+  - Next.js preloading each sidebar link, which ran that same proxy check
+  - the page's data request: the middleware, then the service, checked again
+- **Backend:**
+  - a genuine login check is remembered for 30 seconds (never past the token's expiry), under a fingerprint of the token, and forgotten at log-out and after a details change
+  - "is an admin" is remembered for 30 seconds
+  - the transaction sets who is asking and the role in one round trip (`set_config('role', 'authenticated', true)`, the same as "set local role"); proved in the database: the role is authenticated, a traveler still reads 0 reports, the backend's own role is back after commit, and the admin check took 374 ms instead of ~480
+  - Row Level Security still checks every read and change
+- **Proxy:**
+  - only full page loads (the request whose status is 404) are checked; in-app navigation and Next.js preloading fetch only the page's code (no data)
+  - an accepted admin login is remembered for 30 seconds
+  - curl: /admin, /admin/reports and a fake cookie still answer 404, and /admin/login answers 200
+- **Loading:**
+  - while access is checked, the shell draws the dashboard layout (sidebar, title) with the page's own skeleton, the same one the page shows while its data loads, so the screen goes skeleton → content in one step
+  - each page starts its data request at once, next to the "who is logged in" check
+  - the sign-in button stays busy ("Opening the dashboard…") until the dashboard opens, and the dashboard is preloaded on the sign-in page
+- **Logging out (team request 2026-11-09):** no skeleton any more. The dashboard stays on screen as it was, the button shows a spinner and "Logging out…", and the sign-in page opens; it never flashes "not found" in between.

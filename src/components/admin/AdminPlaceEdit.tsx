@@ -8,7 +8,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { AdminShell } from "@/components/admin/AdminShell";
 import { adminGlass } from "@/components/admin/AdminFrame";
 import { ADMIN_PLACES_KEY } from "@/components/admin/AdminPlaces";
-import { AdminLoadError, errorMessage } from "@/components/admin/admin-ui";
+import { AdminLoadError, adminQuerySettings, errorMessage } from "@/components/admin/admin-ui";
 import { GlassField, fieldInputClass } from "@/components/GlassField";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -258,9 +258,11 @@ function EditForm({ place }: { place: AdminPlaceDetails }) {
   );
 }
 
-function PlaceEditData() {
+// The place being edited. Called by the page itself too, so the request
+// starts at once (see adminQuerySettings).
+function usePlace() {
   const params = useParams<{ type: string; id: string }>();
-  const place = useQuery({
+  return useQuery({
     queryKey: ["admin", "place", params.type, params.id],
     queryFn: async () => {
       const token = await freshToken();
@@ -269,18 +271,37 @@ function PlaceEditData() {
     },
     // Keep the form as the admin left it while they type.
     refetchOnWindowFocus: false,
+    ...adminQuerySettings(),
   });
+}
 
-  if (place.isPending) {
-    return (
-      <div className="space-y-3">
-        <p role="status" className="sr-only">
-          Loading the place
-        </p>
-        <Skeleton className="h-[32rem] w-full rounded-2xl" />
-      </div>
-    );
-  }
+function PlaceEditSkeleton() {
+  return (
+    <div className="space-y-3">
+      <p role="status" className="sr-only">
+        Loading the place
+      </p>
+      <Skeleton className="h-[32rem] w-full rounded-2xl" />
+    </div>
+  );
+}
+
+// "All places", above the form and its skeleton.
+const backToPlaces = (
+  <Link
+    href="/admin/places"
+    className="mb-4 inline-flex min-h-11 items-center gap-2 font-semibold text-white/90 hover:text-amber-300 focus-visible:outline-2 focus-visible:outline-white"
+  >
+    <ArrowLeft aria-hidden="true" className="size-4" />
+    All places
+  </Link>
+);
+
+function PlaceEditData() {
+  const params = useParams<{ type: string; id: string }>();
+  const place = usePlace();
+
+  if (place.isPending) return <PlaceEditSkeleton />;
   if (place.isError) {
     return <AdminLoadError what="this place" error={place.error} onRetry={() => void place.refetch()} />;
   }
@@ -299,15 +320,18 @@ function PlaceEditData() {
 }
 
 export function AdminPlaceEdit() {
+  usePlace();
   return (
-    <AdminShell title="Edit place">
-      <Link
-        href="/admin/places"
-        className="mb-4 inline-flex min-h-11 items-center gap-2 font-semibold text-white/90 hover:text-amber-300 focus-visible:outline-2 focus-visible:outline-white"
-      >
-        <ArrowLeft aria-hidden="true" className="size-4" />
-        All places
-      </Link>
+    <AdminShell
+      title="Edit place"
+      skeleton={
+        <>
+          {backToPlaces}
+          <PlaceEditSkeleton />
+        </>
+      }
+    >
+      {backToPlaces}
       <PlaceEditData />
     </AdminShell>
   );

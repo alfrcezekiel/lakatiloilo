@@ -36,10 +36,13 @@ export class TravelerTransactions {
     try {
       // "set local" and the "true" below last only until this
       // transaction ends, so the next request starts clean.
-      await runner.query(`select set_config('request.jwt.claims', $1, true)`, [
-        JSON.stringify({ sub: userId, role: 'authenticated' }),
-      ]);
-      await runner.query('set local role authenticated');
+      // Who is asking, and the "authenticated" role, in one round trip
+      // (set_config('role', …, true) is the same as "set local role";
+      // slow admin pages, 2026-11-09).
+      await runner.query(
+        `select set_config('request.jwt.claims', $1, true), set_config('role', 'authenticated', true)`,
+        [JSON.stringify({ sub: userId, role: 'authenticated' })],
+      );
       const result = await work(runner);
       await runner.commitTransaction();
       return result;

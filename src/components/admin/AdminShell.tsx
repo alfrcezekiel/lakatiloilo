@@ -6,6 +6,7 @@ import Link from "next/link";
 import { notFound, usePathname, useRouter } from "next/navigation";
 import { Logo } from "@/components/Logo";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Spinner } from "@/components/ui/spinner";
 import { AdminFrame, adminGlass } from "@/components/admin/AdminFrame";
 import { displayNameOf, logOut, useCurrentUser } from "@/lib/login";
 import { cn } from "@/lib/utils";
@@ -80,19 +81,38 @@ function SectionLinks({ onPick }: { onPick: () => void }) {
 // This only decides what the screen shows; the backend refuses every
 // admin request from a non-admin, and the database checks the admins
 // table on every change.
-export function AdminShell({ title, children }: { title: string; children: React.ReactNode }) {
-  const { user, ready } = useCurrentUser();
+//
+// Loading (team report 2026-11-09): while "who is logged in" is checked,
+// the shell already draws the dashboard's layout (sidebar, title) with
+// the page's own skeleton (`skeleton`), the same one the page shows while
+// its data loads. So the screen goes skeleton -> content in one step,
+// instead of one loading screen and then a different one.
+export function AdminShell({
+  title,
+  skeleton,
+  children,
+}: {
+  title: string;
+  skeleton?: React.ReactNode;
+  children: React.ReactNode;
+}) {
+  const { user: currentUser, ready } = useCurrentUser();
   const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
-  // True while logging out, so the page shows the loading state instead
-  // of flashing "not found" before it moves to the sign-in.
-  const [leaving, setLeaving] = useState(false);
+  // While logging out: the admin who is leaving. The dashboard stays on
+  // screen as it was (no skeleton, team request 2026-11-09), with "Logging
+  // out…" on the button, until the sign-in page opens; and it never
+  // flashes "not found" once the login is gone.
+  const [leavingAs, setLeavingAs] = useState<typeof currentUser>(null);
+  const user = leavingAs ?? currentUser;
+  const leaving = leavingAs !== null;
 
-  if (ready && !user?.is_admin && !leaving) notFound();
+  if (ready && !user?.is_admin) notFound();
 
   const signOut = async () => {
+    if (leaving) return;
     setMenuOpen(false);
-    setLeaving(true);
+    setLeavingAs(currentUser);
     await logOut();
     router.replace("/admin/login");
   };
@@ -109,23 +129,55 @@ export function AdminShell({ title, children }: { title: string; children: React
       <button
         type="button"
         onClick={signOut}
-        className={cn(itemClass, "cursor-pointer border-transparent text-left text-white/90 hover:text-amber-300")}
+        disabled={leaving}
+        className={cn(
+          itemClass,
+          "cursor-pointer border-transparent text-left text-white/90 hover:text-amber-300 disabled:cursor-default disabled:opacity-80",
+        )}
       >
-        <LogOut aria-hidden="true" className="size-5 shrink-0" />
-        Log out
+        {leaving ? (
+          <Spinner className="size-5 shrink-0" />
+        ) : (
+          <LogOut aria-hidden="true" className="size-5 shrink-0" />
+        )}
+        <span role={leaving ? "status" : undefined}>{leaving ? "Logging out…" : "Log out"}</span>
       </button>
     </div>
   );
 
-  if (!ready || !user || leaving) {
+  if (!user) {
     return (
       <AdminFrame>
-        <div className="w-full space-y-4 px-4 py-10 lg:px-6">
-          <p role="status" className="sr-only">
-            Checking your access
-          </p>
-          <Skeleton className="h-10 w-56" />
-          <Skeleton className="h-40 w-full rounded-2xl" />
+        <p role="status" className="sr-only">
+          Checking your access
+        </p>
+        {/* The same places as the real shell below, as quiet shapes. */}
+        <div aria-hidden="true" className={cn(adminGlass, "mx-3 mt-3 flex items-center justify-between px-4 py-3 lg:hidden")}>
+          <Logo width={130} height={27} />
+          <Skeleton className="size-11 rounded-xl" />
+        </div>
+        <div className="flex w-full gap-6 px-3 py-6 lg:px-6">
+          <div
+            aria-hidden="true"
+            className={cn(adminGlass, "sticky top-6 hidden h-[calc(100vh-3rem)] w-64 shrink-0 flex-col p-4 lg:flex")}
+          >
+            <div className="px-2 pb-5">
+              <Logo width={140} height={29} />
+              <Skeleton className="mt-3 h-3 w-28" />
+            </div>
+            <div className="space-y-2">
+              {[0, 1, 2].map((i) => (
+                <Skeleton key={i} className="h-11 w-full rounded-xl" />
+              ))}
+            </div>
+          </div>
+          <div className="min-w-0 flex-1">
+            <Skeleton className="h-3 w-40" />
+            <h1 className="font-fraunces mt-1 mb-6 text-4xl leading-tight font-medium tracking-tight sm:text-5xl">
+              {title}
+            </h1>
+            {skeleton ?? <Skeleton className="h-64 w-full rounded-2xl" />}
+          </div>
         </div>
       </AdminFrame>
     );

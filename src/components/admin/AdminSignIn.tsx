@@ -36,6 +36,16 @@ export function AdminSignIn() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [busy, setBusy] = useState(false);
+  // Signed in and moving to the dashboard: the button keeps saying so until
+  // the dashboard is on screen (team report 2026-11-09: it went back to
+  // "Sign in" while the next page loaded).
+  const [opening, setOpening] = useState(false);
+
+  // Load the dashboard's page code while the admin types, so it opens at
+  // once after signing in.
+  useEffect(() => {
+    router.prefetch("/admin");
+  }, [router]);
   const [error, setError] = useState<string | null>(null);
 
   // An admin who is already signed in (for example after the cookie the
@@ -67,6 +77,7 @@ export function AdminSignIn() {
       saveLogin(session);
       // The server checks this before serving admin pages (src/proxy.ts).
       setAdminCookie(session.access_token, session.expires_at);
+      setOpening(true);
       router.replace("/admin");
     } catch (e) {
       const refusal = backendRefusal(e);
@@ -141,9 +152,9 @@ export function AdminSignIn() {
               </p>
             )}
 
-            <button type="submit" disabled={busy} className={cn(authButtonClass, "mt-3 gap-2")}>
-              {busy && <Spinner />}
-              {busy ? "Signing in…" : "Sign in"}
+            <button type="submit" disabled={busy || opening} className={cn(authButtonClass, "mt-3 gap-2")}>
+              {(busy || opening) && <Spinner />}
+              {opening ? "Opening the dashboard…" : busy ? "Signing in…" : "Sign in"}
             </button>
           </form>
         </div>

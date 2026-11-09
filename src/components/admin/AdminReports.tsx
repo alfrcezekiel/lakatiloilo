@@ -6,7 +6,7 @@ import { useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { AdminShell } from "@/components/admin/AdminShell";
 import { adminGlass } from "@/components/admin/AdminFrame";
-import { AdminLoadError, REPORTS_KEY, plural } from "@/components/admin/admin-ui";
+import { AdminLoadError, REPORTS_KEY, adminQuerySettings, plural } from "@/components/admin/admin-ui";
 import { ModerationButtons } from "@/components/admin/ModerationButtons";
 import { ReviewPhotos } from "@/components/ReviewPhoto";
 import { Stars, formatDate } from "@/components/ReviewsSection";
@@ -115,6 +115,20 @@ function ReportedReviewCard({
   );
 }
 
+// The reported reviews. Called by the page itself too, so the request
+// starts at once (see adminQuerySettings).
+function useReports() {
+  return useQuery({
+    queryKey: REPORTS_KEY,
+    queryFn: async () => {
+      const token = await freshToken();
+      if (!token) throw new Error("Please log in again, then try again.");
+      return getAdminReports(token);
+    },
+    ...adminQuerySettings(),
+  });
+}
+
 function ReportsSkeleton() {
   return (
     <div className="space-y-4">
@@ -139,14 +153,7 @@ function ReportsList() {
     requestAnimationFrame(() => doneLine.current?.focus());
   };
 
-  const reports = useQuery({
-    queryKey: REPORTS_KEY,
-    queryFn: async () => {
-      const token = await freshToken();
-      if (!token) throw new Error("Please log in again, then try again.");
-      return getAdminReports(token);
-    },
-  });
+  const reports = useReports();
 
   // Opened from a newest report on the dashboard home (ticket 111):
   // "#reported-<review id>". The list arrives after the page opens, so the
@@ -219,8 +226,9 @@ function ReportsList() {
 }
 
 export function AdminReports() {
+  useReports();
   return (
-    <AdminShell title="Reports">
+    <AdminShell title="Reports" skeleton={<ReportsSkeleton />}>
       <ReportsList />
     </AdminShell>
   );

@@ -95,6 +95,8 @@ export class AuthService {
   ): Promise<Traveler> {
     const user = await this.supabase.updateOwnDetails(accessToken, details);
     if (!user) throw new UnauthorizedException('Please log in, then try again.');
+    // The remembered check holds the old details.
+    this.supabase.forgetLogin(accessToken);
     return this.travelerFrom(user);
   }
 
@@ -166,6 +168,9 @@ export class AuthService {
   // own token and the publishable key ("admin" here is just the name of
   // Supabase's method; no secret key is involved).
   async logOut(accessToken: string): Promise<{ message: string }> {
+    // This login must not be accepted from memory any more.
+    this.supabase.forgetLogin(accessToken);
+    this.adminAccess.forget(accessToken);
     const { error } = await this.supabase.freshClient().auth.admin.signOut(accessToken, 'local');
     if (error) {
       const status = error.status ?? 0;

@@ -1,3 +1,4 @@
+import { createHash } from 'crypto';
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { SupabaseClient, User, createClient } from '@supabase/supabase-js';
@@ -13,9 +14,32 @@ import { SupabaseClient, User, createClient } from '@supabase/supabase-js';
 // Settings (backend/.env on your computer, Environment Variables on Vercel):
 //   SUPABASE_URL       - the project's address, e.g. https://xxxx.supabase.co
 //   SUPABASE_ANON_KEY  - the publishable (anon) key
+// How long a genuine login check is remembered, and for how many logins.
+const LOGIN_CHECK_MS = 30_000;
+const MAX_REMEMBERED = 1000;
+
+// A login is remembered under a fingerprint of its token, never the token
+// itself.
+const tokenKey = (accessToken: string) => createHash('sha256').update(accessToken).digest('hex');
+
+// When the token itself says it runs out (its "exp", in milliseconds), or
+// now when it cannot be read: then it is not remembered at all.
+const tokenExpiryMs = (accessToken: string) => {
+  try {
+    const payload = JSON.parse(Buffer.from(accessToken.split('.')[1] ?? '', 'base64url').toString()) as {
+      exp?: unknown;
+    };
+    return typeof payload.exp === 'number' ? payload.exp * 1000 : Date.now();
+  } catch {
+    return Date.now();
+  }
+};
+
 @Injectable()
 export class SupabaseService {
   private anon: SupabaseClient | null = null;
+  // Genuine login checks, remembered briefly (see userFor).
+  private readonly checkedLogins = new Map<string, { user: User; until: number }>();
 
   constructor(private readonly config: ConfigService) {}
 
@@ -78,10 +102,39 @@ export class SupabaseService {
   // Asks Supabase Auth whose login token this is. Answers with that
   // traveler's account, or null if the token is not genuine, has expired,
   // or belongs to a logged-out session.
+  //
+  // A genuine answer is remembered for 30 seconds (never past the token's
+  // own expiry), so one page that makes several requests asks Supabase
+  // once instead of every time. Each ask took 170–800 ms, and an admin
+  // page asked up to 7 times (slow admin pages, team report 2026-11-09).
+  // Refused tokens are never remembered. Logging out and changing your
+  // details forget the token at once (forgetLogin). Row Level Security
+  // still checks every read and change in the database.
   async userFor(accessToken: string): Promise<User | null> {
+    const key = tokenKey(accessToken);
+    const remembered = this.checkedLogins.get(key);
+    if (remembered && remembered.until > Date.now()) return remembered.user;
+    this.checkedLogins.delete(key);
+
     const { data, error } = await this.client().auth.getUser(accessToken);
     if (error || !data.user) return null;
+
+    const until = Math.min(Date.now() + LOGIN_CHECK_MS, tokenExpiryMs(accessToken));
+    if (until > Date.now()) {
+      // Keep the list small: drop the oldest when it is full.
+      if (this.checkedLogins.size >= MAX_REMEMBERED) {
+        const oldest = this.checkedLogins.keys().next().value;
+        if (oldest !== undefined) this.checkedLogins.delete(oldest);
+      }
+      this.checkedLogins.set(key, { user: data.user, until });
+    }
     return data.user;
+  }
+
+  // Forgets a remembered login check (after logging out, or after the
+  // account's details changed).
+  forgetLogin(accessToken: string) {
+    this.checkedLogins.delete(tokenKey(accessToken));
   }
 
   // Changes the details (user_metadata) on the traveler's own account,

@@ -6,7 +6,7 @@ import { useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { AdminShell } from "@/components/admin/AdminShell";
 import { adminGlass } from "@/components/admin/AdminFrame";
-import { AdminLoadError, plural } from "@/components/admin/admin-ui";
+import { AdminLoadError, adminQuerySettings, plural } from "@/components/admin/admin-ui";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   getAdminOverview,
@@ -150,15 +150,22 @@ function OverviewContent({ data }: { data: AdminOverviewData }) {
   );
 }
 
-function OverviewData() {
-  const overview = useQuery({
+// The Overview's numbers. Called by the page itself too, so the request
+// starts at once (see adminQuerySettings).
+function useOverview() {
+  return useQuery({
     queryKey: ["admin", "overview"],
     queryFn: async () => {
       const token = await freshToken();
       if (!token) throw new Error("Please log in again, then try again.");
       return getAdminOverview(token);
     },
+    ...adminQuerySettings(),
   });
+}
+
+function OverviewData() {
+  const overview = useOverview();
   const { refetch } = overview;
   const refresh = useCallback(() => void refetch(), [refetch]);
   useTableChanges(OVERVIEW_TABLES, refresh);
@@ -171,8 +178,9 @@ function OverviewData() {
 }
 
 export function AdminOverview() {
+  useOverview();
   return (
-    <AdminShell title="Overview">
+    <AdminShell title="Overview" skeleton={<OverviewSkeleton />}>
       <OverviewData />
     </AdminShell>
   );

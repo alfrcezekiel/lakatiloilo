@@ -6,7 +6,7 @@ import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { AdminShell } from "@/components/admin/AdminShell";
 import { adminGlass } from "@/components/admin/AdminFrame";
-import { AdminLoadError } from "@/components/admin/admin-ui";
+import { AdminLoadError, adminQuerySettings } from "@/components/admin/admin-ui";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getAdminPlaces, type AdminPlaceRow, type AdminPlaceType } from "@/lib/api";
 import { freshToken } from "@/lib/login";
@@ -64,18 +64,37 @@ function PlaceRow({ place }: { place: AdminPlaceRow }) {
   );
 }
 
-function PlacesList() {
-  const [query, setQuery] = useState("");
-  const [filter, setFilter] = useState<Filter>("all");
-
-  const places = useQuery({
+// Every place. Called by the page itself too, so the request starts at
+// once (see adminQuerySettings).
+function usePlaces() {
+  return useQuery({
     queryKey: ADMIN_PLACES_KEY,
     queryFn: async () => {
       const token = await freshToken();
       if (!token) throw new Error("Please log in again, then try again.");
       return getAdminPlaces(token);
     },
+    ...adminQuerySettings(),
   });
+}
+
+function PlacesSkeleton() {
+  return (
+    <div className="space-y-3">
+      <p role="status" className="sr-only">
+        Loading places
+      </p>
+      <Skeleton className="h-36 w-full rounded-2xl" />
+      <Skeleton className="h-5 w-40" />
+      <Skeleton className="h-96 w-full rounded-2xl" />
+    </div>
+  );
+}
+
+function PlacesList() {
+  const [query, setQuery] = useState("");
+  const [filter, setFilter] = useState<Filter>("all");
+  const places = usePlaces();
 
   const shown = useMemo(() => {
     const words = query.toLowerCase().split(/\s+/).filter(Boolean);
@@ -84,17 +103,7 @@ function PlacesList() {
     );
   }, [places.data, query, filter]);
 
-  if (places.isPending) {
-    return (
-      <div className="space-y-3">
-        <p role="status" className="sr-only">
-          Loading places
-        </p>
-        <Skeleton className="h-14 w-full rounded-2xl" />
-        <Skeleton className="h-96 w-full rounded-2xl" />
-      </div>
-    );
-  }
+  if (places.isPending) return <PlacesSkeleton />;
 
   if (places.isError) {
     return <AdminLoadError what="the places" error={places.error} onRetry={() => void places.refetch()} />;
@@ -175,8 +184,9 @@ function PlacesList() {
 }
 
 export function AdminPlaces() {
+  usePlaces();
   return (
-    <AdminShell title="Places">
+    <AdminShell title="Places" skeleton={<PlacesSkeleton />}>
       <PlacesList />
     </AdminShell>
   );
