@@ -4,14 +4,14 @@
 
 **Blocked by:** 100
 
-**Status:** todo
+**Status:** done
 
 - [x] On load, every reply with answers shows "Show replies" and its answers are hidden; opening one shows its answers, whose own threads stay folded
 - [x] An open reply with more than 3 answers shows the newest 3 and "Show N more replies"; clicking it shows the rest
 - [x] "Hide replies" folds a thread and "Show replies" unfolds it, including under a deleted reply
 - [x] Posting an answer, or one arriving live, opens its thread
 - [x] Works at 375 px and on a laptop
-- [ ] Works on the live URL
+- [x] Works on the live URL
 
 **Progress (2026-11-06):** built on the website only (no database or backend change). A reply with more than 3 answers shows the newest 3 and "Show N more replies"; every reply with answers, including a deleted one, has "Hide replies" / "Show replies" (with aria-expanded for screen readers). A folded thread remembers when its newest answer was posted, so a newer answer (posted here or arriving live) opens it again, while deleting an answer keeps it folded.
 
@@ -22,3 +22,5 @@ Checked: website type-check, lint and `npm run build`; on localhost (laptop widt
 Checked: type-check and lint; on localhost (Jaro Cathedral) the page loads with 2 "Show replies" and no answers showing; opening the first shows "Hide replies" and two folded "Show replies" under it, and opening one of those opens only that level. Not checked: "Show N more replies", a new answer opening a folded thread, 375 px, and the live URL.
 
 **Team check (2026-11-07, localhost):** the team confirmed every box above in the browser. Not checked yet: the live URL (the team will commit and push when the round is finished).
+
+**Live check (2026-11-07):** the team confirmed it works on the live URL (https://lakat-iloilo.vercel.app, commit 092153e). Status set to done at the team's request.

@@ -4,12 +4,12 @@
 
 **Blocked by:** 100, 101, 102, 103, 104, 106
 
-**Status:** todo
+**Status:** done
 
-- [ ] Every item in the "Thread care round" checklist works on the live URL
-- [ ] Reviews, replies, photos, reports, Helpful likes, profiles and log-in still work
+- [x] Every item in the "Thread care round" checklist works on the live URL
+- [x] Reviews, replies, photos, reports, Helpful likes, profiles and log-in still work
 - [x] /code-review has been run on the round and its findings handled
-- [ ] Works on the live URL
+- [x] Works on the live URL
 
 **Progress (2026-11-07):** /code-review run on all uncommitted work since f8e823a (tickets 100–104 and 106). Re-checked: website and backend type-check, lint and `npm run build` pass; notifications has Row Level Security on with two policies; review_replies and reply_likes policies updated in 034; no secret keys, .env files, raw HTML, console.log or string-built SQL in the changes.
 
@@ -27,3 +27,20 @@ Not checked: the live URL (after "commit and push").
 Checked: website type-check, lint and `npm run build`, backend type-check. In the browser on localhost (no data changed): the place page opened with ?focus= on a nested reply still opens its thread, scrolls to it and highlights it, and "Show replies" still opens a thread; on the home page the bell opens and Escape closes it and returns the keyboard to the bell, and the profile menu opens and a click outside closes it. Not checked: the live URL.
 
 **Team check (2026-11-07, localhost):** the team confirmed the review fixes and the later fixes in the browser, the last being that scrolling the notifications no longer scrolls the page. Not checked yet: the live URL (after "commit and push").
+
+**Live check (2026-11-07):** the team confirmed it works on the live URL (https://lakat-iloilo.vercel.app, commit 092153e). Status set to done at the team's request.
+
+**Review of the pushed commit (2026-11-07, team request):** /code-review run on 092153e (the commit on GitHub) against f8e823a. Re-checked: no secret keys, .env files, raw HTML, console.log or string-built SQL in the commit; notifications has Row Level Security on with its two policies; website and backend type-check, lint and `npm run build` passed before the push. Findings (none must-fix): notifications keep the replier's or liker's old name after they change it; a deleted reply's writer id is still readable through Supabase's public data API (the backend hides it); NotificationsBell.tsx (433 lines) and ReviewReplies.tsx (464 lines) are past the ~300-line guideline; the dropdown's scroll guard covers the mouse wheel and touchpad, not keyboard scrolling over the heading. Waiting for the team's choice on which to fix.
+
+**Review fixes for 092153e (2026-11-07, team request "fix the spec 1 and safety and standards findings"):**
+- supabase/sql/037-names-and-deleted-writers.sql (not run yet): reply notifications record who replied (actor_id, filled in for the old ones), and a name change now updates actor_name on the notifications that person caused; deleting a reply that has answers also empties its user_id, and the 4 replies already deleted are cleared. Each function differs from the live one (035, 034) only in the lines marked "037" (checked by comparing them). Backend: a reply's user_id may be empty.
+- NotificationsBell.tsx (433 lines) split into src/lib/notifications.ts (fetching, marking read, live updates, words and links; 120), NotificationList.tsx (list, icons, skeleton; 186) and NotificationsBell.tsx (bell and phone line; 164).
+- ReviewReplies.tsx: each reply's Reply / Edit / Delete row and "Delete this reply?" step moved to ReplyActions.tsx (115 lines); ReviewReplies.tsx is 409 lines.
+- The bell's dropdown now closes if the page scrolls anyway (keyboard Space or Page Down, the scroll bar, or the wheel away from it).
+- docs/SPEC.md: Data lines for the deleted reply's user_id and for actor_name following name changes.
+
+Checked: website type-check, lint and `npm run build`, backend type-check. In the browser on localhost (nothing posted or deleted): the bell shows 6 notifications and "See previous notifications"; the open dropdown closes when the page scrolls (three times out of three, once the test tab had time to draw); on a place page the reply row shows Reply, Edit and Delete, Delete shows "Delete this reply?" and its Cancel closes it, and Reply opens the form. Not checked: 037 run by the team, the name change reaching notifications and the deleted-reply writer being cleared (after 037), and the live URL.
+
+**Team check (2026-11-07):** the team ran 037 and it worked. Checked through the backend's login: the three installed functions are exactly the ones in 037; no deleted reply still has a writer; user_id may now be empty; inside a rolled-back transaction (nothing kept), a writer deleting a reply that has an answer leaves it with user_id, name and text all empty. Localhost GET /v1/reviews for a place with deleted replies answers 200. The backend's login cannot read notifications or change an account's name (both by design), so the name change reaching notifications is for the team to check in the browser. Not checked yet: that check, and the live URL.
+
+**Team check (2026-11-07, localhost):** the team changed B's display name; A's bell showed B's new name on the notifications B caused, and the destination page showed it on B's reviews and replies. Not checked yet: the live URL (after "commit and push").

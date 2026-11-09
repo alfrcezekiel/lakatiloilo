@@ -1,10 +1,9 @@
 "use client";
 
-import { ChevronDown, ChevronUp, CornerDownRight, MessageCircle, Trash2 } from "lucide-react";
+import { ChevronDown, ChevronUp, CornerDownRight, MessageCircle } from "lucide-react";
 import Link from "next/link";
 import { type ReactNode, useState } from "react";
 import { pillButton } from "@/components/ui/button";
-import { Spinner } from "@/components/ui/spinner";
 import {
   backendMessage,
   createReply,
@@ -21,15 +20,13 @@ import { useThreadFolding } from "@/lib/thread-folding";
 import { formatDate } from "@/components/ReviewsSection";
 import { HelpfulButton } from "@/components/HelpfulButton";
 import { MAX_REPLY, ReplyForm, smallPill as small } from "@/components/ReplyForm";
+import { ReplyActions, textLink } from "@/components/ReplyActions";
 import { FromNotification, notifiedTint } from "@/components/FromNotification";
 
 // Threads indent one step per level up to this many levels (ticket 86).
 // Deeper answers stay at this indent and say who they answer, so a long
 // conversation stays readable on a phone.
 const MAX_INDENT = 3;
-// The small text links under a reply: Reply, Edit, Hide replies, …
-const textLink =
-  "inline-flex items-center gap-1.5 rounded text-sm font-medium text-white/85 underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-white [&_svg]:size-3.5";
 // The curved line that branches from the answered reply's line into a
 // nested answer's name row (team request, 2026-11-02). A nested answer
 // starts 20 px right of its parent's line (2 px line + 14 px padding +
@@ -339,77 +336,25 @@ export function ReviewReplies({
         )}
 
         {user && !editing && (
-          <div className="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-2">
-            {confirmingId === reply.id ? (
-              <>
-                <span className="text-sm">
-                  Delete this reply?
-                </span>
-                <button
-                  type="button"
-                  onClick={() => remove(reply.id)}
-                  disabled={deletingId === reply.id}
-                  className={cn(pillButton({ kind: "dangerSolid" }), small)}
-                >
-                  {deletingId === reply.id ? <Spinner /> : <Trash2 aria-hidden="true" />}
-                  {deletingId === reply.id ? "Deleting…" : "Yes, delete"}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setConfirmingId(null);
-                    setDeleteError(null);
-                  }}
-                  disabled={deletingId === reply.id}
-                  className={cn(pillButton({ kind: "glass" }), small)}
-                >
-                  Cancel
-                </button>
-              </>
-            ) : (
-              <>
-                {openForm !== reply.id && (
-                  <button
-                    type="button"
-                    onClick={() => openFormFor(reply.id)}
-                    aria-label={`Reply to ${reply.replier_name}`}
-                    className={textLink}
-                  >
-                    <MessageCircle aria-hidden="true" />
-                    Reply
-                  </button>
-                )}
-                {own && (
-                  <button
-                    type="button"
-                    onClick={() => openFormFor(EDIT + reply.id, reply.comment)}
-                    aria-label="Edit your reply"
-                    className="rounded text-sm font-medium text-white/85 underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-white"
-                  >
-                    Edit
-                  </button>
-                )}
-                {own && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setConfirmingId(reply.id);
-                      setDeleteError(null);
-                    }}
-                    className="rounded text-sm font-medium text-red-200 underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-white"
-                  >
-                    Delete
-                  </button>
-                )}
-              </>
-            )}
-          </div>
-        )}
-
-        {deleteError?.replyId === reply.id && (
-          <p role="alert" className="mt-1.5 text-sm text-amber-200">
-            {deleteError.message}
-          </p>
+          <ReplyActions
+            replierName={reply.replier_name}
+            own={!!own}
+            showReply={openForm !== reply.id}
+            confirming={confirmingId === reply.id}
+            deleting={deletingId === reply.id}
+            error={deleteError?.replyId === reply.id ? deleteError.message : null}
+            onReply={() => openFormFor(reply.id)}
+            onEdit={() => openFormFor(EDIT + reply.id, reply.comment)}
+            onAskDelete={() => {
+              setConfirmingId(reply.id);
+              setDeleteError(null);
+            }}
+            onConfirmDelete={() => remove(reply.id)}
+            onCancelDelete={() => {
+              setConfirmingId(null);
+              setDeleteError(null);
+            }}
+          />
         )}
 
         {openForm === reply.id && <div className="mt-2">{form}</div>}

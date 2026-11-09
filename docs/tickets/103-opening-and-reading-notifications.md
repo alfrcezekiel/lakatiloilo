@@ -4,12 +4,12 @@
 
 **Blocked by:** 102
 
-**Status:** todo
+**Status:** done
 
 - [x] Clicking a notification opens the right place's page, and it shows as read afterwards
 - [x] Mark all as read clears the red dot
 - [x] A traveler cannot mark someone else's notification read (checked through the backend)
-- [ ] Works on the live URL
+- [x] Works on the live URL
 
 **Change (2026-11-07, team request):** clicking a notification opens the place page scrolled to that review, not just the top of the page. docs/SPEC.md updated to match.
 
@@ -30,3 +30,5 @@ Checked: type-check, lint and `npm run build` (website and backend); in the brow
 Checked: type-check, lint and `npm run build`; in the browser on localhost (Jaro Cathedral, ?focus= on a nested reply): the label "From your notification" shows, the amber line sits at the same x (462 px) as the white thread line, and the answer under it is not tinted. Not checked: a review opened by a Helpful notification by eye, a phone, and the live URL.
 
 **Change (2026-11-07, team request): lightly rounded corners.** The notified reply's amber frame is now rounded 8 px on all four corners (it was rounded only on the right), with a faint amber outline and the stronger amber line on the left, still drawn over the thread's white line. Checked in the browser on localhost: all four corners 8 px, left line 2 px, outline 1 px, amber line at the same x (462 px) as the white thread line. `npm run build` passes.
+
+**Live check (2026-11-07):** the team confirmed it works on the live URL (https://lakat-iloilo.vercel.app, commit 092153e). Status set to done at the team's request.

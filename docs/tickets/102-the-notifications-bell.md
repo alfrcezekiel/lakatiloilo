@@ -4,7 +4,7 @@
 
 **Blocked by:** None
 
-**Status:** todo
+**Status:** done
 
 - [x] A numbered SQL file adds the notifications table with Row Level Security on and its policies, and the trigger that fills it; the team has run it in the Supabase SQL Editor
 - [x] A reply from a second account to your review, or an answer to your reply, shows in your bell's list after a refresh, with the right words, place and time
@@ -12,7 +12,7 @@
 - [x] The red dot shows the unread number; logged out, there is no bell
 - [x] One traveler cannot read another's notifications (checked through the backend)
 - [x] Works at 375 px (the phone menu line) and on a laptop
-- [ ] Works on the live URL
+- [x] Works on the live URL
 
 **Progress (2026-11-07):** built and waiting for the team to run supabase/sql/035-notifications.sql. It adds the notifications table (Row Level Security on: a traveler reads only their own and may change only read_at; nobody adds or deletes through the app), a trigger that adds one when someone replies to your review or answers your reply (never for your own), the table on the Realtime list for ticket 104, and makes deleting a reply also remove the notifications about it. Backend: GET /v1/notifications runs as the logged-in traveler and answers their 20 newest (with the place's name) and unread_count. Website: a bell beside the profile icon with a red unread number and a glass list ("Maria replied to your review of …", how long ago, "No notifications yet."); on phones a "Notifications" line in the menu opens the same list.
 
@@ -29,3 +29,5 @@ Checked: backend and website type-check and lint, website `npm run build`; GET /
 Checked: type-check, lint and `npm run build`; in the browser on localhost with the team's account (only opening the list, nothing marked read): opening the bell the moment it appeared showed the skeleton (3 rows) before the list; with 20 notifications the list showed 6 and "See previous notifications", and clicking it showed all 20 and the link went away. Not checked: a phone by eye, and the live URL.
 
 **Fix (2026-11-07, team report "scrolling the notifications also scrolls the home page" on a laptop):** root cause: "scroll chaining". The dropdown's list scrolls inside its own box; at its top or bottom, when it is too short to scroll, or over the heading, the browser passed the scroll on to the page behind it. Now the list has overscroll-contain, and while the dropdown is open a wheel listener stops any scroll that would leave it: inside the list it lets the list scroll, and only blocks at its top or bottom; over the heading or "Mark all as read" it always blocks. The phone menu already scrolls on its own (fix above). Checked: type-check, lint, `npm run build`; in the browser on localhost with the dropdown open (synthetic wheel events, because the test tool scrolls the page directly instead of sending a real wheel): down inside the list at its top and up at its bottom pass to the list; down at its bottom, up at its top and over the heading are blocked; the list's overscroll-behavior is "contain". Not checked: a real mouse wheel and touchpad by the team, and the live URL.
+
+**Live check (2026-11-07):** the team confirmed it works on the live URL (https://lakat-iloilo.vercel.app, commit 092153e). Status set to done at the team's request.

@@ -23,8 +23,10 @@ export class ReviewReply {
   @Column({ type: 'uuid', update: false })
   review_id: string;
 
-  @Column({ type: 'uuid', insert: false, update: false })
-  user_id: string;
+  // Empty (null) once the reply is "This reply was deleted": deleting
+  // forgets the writer (supabase/sql/037).
+  @Column({ type: 'uuid', nullable: true, insert: false, update: false })
+  user_id: string | null;
 
   @Column({ type: 'text', insert: false, update: false })
   replier_name: string;

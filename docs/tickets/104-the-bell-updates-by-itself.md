@@ -4,12 +4,12 @@
 
 **Blocked by:** 103
 
-**Status:** todo
+**Status:** done
 
 - [x] A reply from a second account puts the red dot on the review writer's bell within a few seconds, with no refresh
 - [x] After the phone sleeps or the tab sits in the background, the bell catches up when it comes back
 - [x] Another traveler's notifications never arrive on your bell
-- [ ] Works on the live URL
+- [x] Works on the live URL
 
 **Progress (2026-11-07, built together with 103 at the team's request):** no database change (035 already put notifications on the Realtime list). The bell listens to Supabase Realtime for the traveler's own new or changed notifications (filtered to their user_id; Realtime also checks Row Level Security) and for any deletion, then asks the backend again, the same "doorbell" way as the place page. It listens once per page, and catches up when the tab comes back, the browser is online again, or Realtime reconnects (the shared helper from ticket 92).
 
@@ -24,3 +24,5 @@ Checked: website type-check, lint and `npm run build`. Not checked (needs a real
 Checked: type-check, lint and `npm run build`; on localhost with the team's logged-in account open, a no-change update to one of that account's replies made the bell ask GET /v1/notifications again within about 2 seconds, with no refresh (and no request in the 6 seconds before). Not checked: a real reply or Helpful mark from a second account, and the live URL.
 
 **Team check (2026-11-07, localhost):** the team confirmed every box above in the browser. Not checked yet: the live URL (the team will commit and push when the round is finished).
+
+**Live check (2026-11-07):** the team confirmed it works on the live URL (https://lakat-iloilo.vercel.app, commit 092153e). Status set to done at the team's request.
