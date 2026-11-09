@@ -15,8 +15,9 @@ import { NextResponse, type NextRequest } from "next/server";
 // admin endpoint refuses non-admins on its own.
 //
 // Faster admin pages (team report 2026-11-09: slow navigation):
-//   - Only a full page load (typing the address, a reload, a link from
-//     outside) is checked here: that is the request whose status is 404.
+//   - With the admin cookie, only a full page load (typing the address, a
+//     reload, a link from outside) is checked with the backend: that is
+//     the request whose status is 404.
 //     Moving between dashboard pages, and Next.js quietly preloading the
 //     sidebar's pages, only fetch the page's code (an "RSC" request),
 //     which holds no data; the dashboard checks access in the browser
@@ -78,12 +79,14 @@ async function isAdmin(accessToken: string) {
 
 export async function proxy(request: NextRequest) {
   if (request.nextUrl.pathname === "/admin/login") return NextResponse.next();
+  const token = request.cookies.get(ADMIN_COOKIE)?.value;
   // Moving between pages inside the site, or preloading one: only the
-  // page's code, no data (see above).
-  if (request.headers.get("rsc") === "1" || request.headers.has("next-router-prefetch")) {
+  // page's code, no data (see above). Only with the admin cookie, which
+  // real admin clicks always carry and travelers never have (code review
+  // 2026-11-09: without it, anyone adding the header got 200, not 404).
+  if (token && (request.headers.get("rsc") === "1" || request.headers.has("next-router-prefetch"))) {
     return NextResponse.next();
   }
-  const token = request.cookies.get(ADMIN_COOKIE)?.value;
   if (token && (await isAdmin(token))) return NextResponse.next();
   return NextResponse.rewrite(new URL(NOT_FOUND, request.url));
 }

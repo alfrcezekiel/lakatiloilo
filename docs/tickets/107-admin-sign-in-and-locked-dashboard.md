@@ -61,3 +61,8 @@ Checked: backend type-check and lint; curl: GET /v1/admin/me 401 without a login
   - each page starts its data request at once, next to the "who is logged in" check
   - the sign-in button stays busy ("Opening the dashboard…") until the dashboard opens, and the dashboard is preloaded on the sign-in page
 - **Logging out (team request 2026-11-09):** no skeleton any more. The dashboard stays on screen as it was, the button shows a spinner and "Logging out…", and the sign-in page opens; it never flashes "not found" in between.
+- **Code review of 1748539 (2026-11-09), fixed:**
+  - the proxy's in-app shortcut now needs the admin cookie (before, adding the `rsc` header with curl got the page code with 200; now 404, checked with curl for a full page load, an in-app request and a preload)
+  - the remembered admin answer never outlives the token
+  - the login and admin memories share one helper, backend/src/v1/token-memory.ts
+  - the spec states the trade-off: each running copy of the backend keeps its own memory, so a logged-out login may still be accepted by another copy for at most 30 seconds
