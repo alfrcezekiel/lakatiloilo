@@ -7,7 +7,15 @@ import { Spinner } from "@/components/ui/spinner";
 import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { backendMessage, createReview, updateReview } from "@/lib/api";
+import {
+  addReviewPhoto,
+  backendMessage,
+  backendRefusal,
+  createReview,
+  deleteReviewPhoto,
+  updateReview,
+  type ReviewPhoto,
+} from "@/lib/api";
 import { loginToken } from "@/lib/login";
 import { ReviewPhotoPicker } from "@/components/ReviewPhotoPicker";
 import type { Review } from "@/components/ReviewsSection";
@@ -27,14 +35,28 @@ interface ReviewFormProps {
   existing?: Review;
   // Editing: called when the traveler clicks Cancel.
   onCancel?: () => void;
+  // A new review: true while it is being posted and its photos uploaded,
+  // false when done (ticket 113).
+  onPostingChange?: (posting: boolean) => void;
 }
 
 // The review form: 1 to 5 stars and up to 500 characters. Writes a new
 // review, or edits the traveler's own one when `existing` is given. The
 // database checks everything again (see supabase/sql/020), so this form
 // is about friendly messages, not about security.
-export function ReviewForm({ placeType, placeId, onSaved, existing, onCancel }: ReviewFormProps) {
-  const isEdit = !!existing;
+export function ReviewForm({
+  placeType,
+  placeId,
+  onSaved,
+  existing,
+  onCancel,
+  onPostingChange,
+}: ReviewFormProps) {
+  // The review as last saved. Normally `existing` (or nothing for a new
+  // review); after a save whose photos did not all upload, the saved
+  // review, so trying again edits it instead of posting a second one.
+  const [saved, setSaved] = useState<Review | undefined>(existing);
+  const isEdit = !!saved;
   const [rating, setRating] = useState(existing?.rating ?? 0);
   // The star under the mouse, so the stars light up before clicking.
   const [hovered, setHovered] = useState(0);
@@ -43,11 +65,13 @@ export function ReviewForm({ placeType, placeId, onSaved, existing, onCancel }: 
   const [commentError, setCommentError] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  // The photo: a newly chosen file (ticket 81; when editing it replaces
-  // the old one), and, when editing, whether the traveler removed the
-  // photo the review already had (ticket 82).
-  const [photo, setPhoto] = useState<File | null>(null);
-  const [removeCurrent, setRemoveCurrent] = useState(false);
+  // Photos (ticket 113): new files to upload when saving, and the ids of
+  // the review's current photos the traveler removed.
+  const [files, setFiles] = useState<File[]>([]);
+  const [removedIds, setRemovedIds] = useState<string[]>([]);
+  // "Adding photo 2 of 3…" while uploading.
+  const [progress, setProgress] = useState<string | null>(null);
+  const currentPhotos = (saved?.photos ?? []).filter((p) => !removedIds.includes(p.id));
 
   const length = comment.trim().length;
   const tooLong = length > MAX_COMMENT;
@@ -68,6 +92,10 @@ export function ReviewForm({ placeType, placeId, onSaved, existing, onCancel }: 
     if (newRatingError || newCommentError) return;
 
     setBusy(true);
+    onPostingChange?.(true);
+    // Stays true when a photo was refused, so the form (with its message)
+    // stays on screen until the traveler saves again.
+    let keepOpen = false;
     try {
       const token = await loginToken();
       if (!token) {
@@ -75,21 +103,63 @@ export function ReviewForm({ placeType, placeId, onSaved, existing, onCancel }: 
         return;
       }
       const fields = { rating, comment: comment.trim() };
-      // Both go to the NestJS backend with the traveler's login token:
-      // editing (PATCH /v1/reviews/:id) changes only the stars and
-      // comment; a new review (POST /v1/reviews) sends the place too, and
-      // the database fills in who wrote it, their name and the dates.
-      onSaved(
-        isEdit
-          ? await updateReview(token, existing.id, fields, { photo, removePhoto: removeCurrent })
-          : await createReview(token, { place_type: placeType, place_id: placeId, ...fields }, photo),
-      );
+      // 1. The review itself, as JSON: editing (PATCH /v1/reviews/:id)
+      //    changes only the stars and comment; a new review (POST
+      //    /v1/reviews) sends the place too, and the database fills in who
+      //    wrote it, their name and the dates. Removed photos go first, so
+      //    the saved review answers with the photos it still has.
+      let review: Review;
+      if (saved) {
+        for (const id of removedIds) {
+          await deleteReviewPhoto(token, saved.id, id).catch((error) => {
+            // Already gone (404) is fine; anything else stops here.
+            if (backendRefusal(error)?.status !== 404) throw error;
+          });
+        }
+        setRemovedIds([]);
+        review = await updateReview(token, saved.id, fields);
+      } else {
+        review = await createReview(token, { place_type: placeType, place_id: placeId, ...fields });
+      }
+      setSaved(review);
+
+      // 2. New photos, one request each (four 2 MB photos together would be
+      //    too big for one request). A refused photo stays in the form with
+      //    the reason, and the others are still added.
+      const added: ReviewPhoto[] = [];
+      const failed: File[] = [];
+      let reason: string | null = null;
+      for (const [index, file] of files.entries()) {
+        setProgress(`Adding photo ${index + 1} of ${files.length}…`);
+        try {
+          added.push(await addReviewPhoto(token, review.id, file));
+        } catch (error) {
+          failed.push(file);
+          reason ??= backendMessage(error) ?? fallbackError;
+        }
+      }
+      const withPhotos: Review = {
+        ...review,
+        photos: [...(review.photos ?? []), ...added].sort((a, b) => a.position - b.position),
+      };
+      setSaved(withPhotos);
+      setFiles(failed);
+      if (failed.length > 0) {
+        keepOpen = true;
+        setFormError(
+          `Your review was saved, but ${failed.length === 1 ? "a photo" : `${failed.length} photos`} could not be added: ${reason} Remove ${failed.length === 1 ? "it" : "them"} or try again.`,
+        );
+        return;
+      }
+      onSaved(withPhotos);
     } catch (error) {
       // The backend explains its refusals in plain words (for example
       // "You've already reviewed this place."); otherwise a general one.
       setFormError(backendMessage(error) ?? fallbackError);
     } finally {
       setBusy(false);
+      setProgress(null);
+      if (!keepOpen) onPostingChange?.(false);
     }
   };
 
@@ -179,11 +249,14 @@ export function ReviewForm({ placeType, placeId, onSaved, existing, onCancel }: 
           </div>
 
           <ReviewPhotoPicker
-            photo={photo}
-            onChange={setPhoto}
+            current={currentPhotos}
+            onRemoveCurrent={(id) => setRemovedIds((ids) => [...ids, id])}
+            files={files}
+            onFilesChange={(next) => {
+              setFiles(next);
+              setFormError(null);
+            }}
             disabled={busy}
-            currentUrl={isEdit && !removeCurrent ? existing?.photo_url : null}
-            onRemoveCurrent={() => setRemoveCurrent(true)}
           />
 
           <div className="flex flex-wrap items-center gap-3">
@@ -191,9 +264,7 @@ export function ReviewForm({ placeType, placeId, onSaved, existing, onCancel }: 
             <button type="submit" disabled={busy} className={pillButton({ kind: "main" })}>
               {busy ? <Spinner /> : isEdit ? <Check aria-hidden="true" /> : <Send aria-hidden="true" />}
               {busy
-                ? isEdit
-                  ? "Saving…"
-                  : "Posting…"
+                ? (progress ?? (isEdit ? "Saving…" : "Posting…"))
                 : isEdit
                   ? "Save changes"
                   : "Post review"}

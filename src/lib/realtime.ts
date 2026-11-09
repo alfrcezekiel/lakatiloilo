@@ -13,14 +13,25 @@ import { createClient } from "@/lib/supabase/client";
 // .claude/rules/frontend.md).
 //
 // Only these tables may be listened to. review_reports is deliberately not
-// one of them: nobody may read reports through the app.
+// one of them: only admins may read reports, so the Overview listens to
+// report_signals instead (045).
 export type LiveTable =
   | "destinations"
   | "accommodations"
   | "reviews"
   | "review_likes"
   | "review_replies"
-  | "reply_likes";
+  | "reply_likes"
+  // A review was hidden or shown again (ticket 109, supabase/sql/041).
+  // Realtime cannot announce that on reviews itself, because a hidden
+  // review is no longer readable by the people who should hear about it.
+  | "review_visibility_signals"
+  // A review's photos (ticket 113, supabase/sql/044).
+  | "review_photos"
+  // Reports were added or removed (supabase/sql/045). Holds only a time:
+  // the dashboard Overview listens to it instead of review_reports, which
+  // stays off the Realtime list.
+  | "report_signals";
 
 // What to listen to: a table name means every change in it. The longer
 // form narrows it to one kind of change and/or rows matching a filter that

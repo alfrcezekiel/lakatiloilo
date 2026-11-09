@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { AccommodationsModule } from './accommodations/accommodations.module';
+import { AdminModule } from './admin/admin.module';
 import { AuthModule } from './auth/auth.module';
 import { DestinationsModule } from './destinations/destinations.module';
 import { NotificationsModule } from './notifications/notifications.module';
@@ -14,6 +15,7 @@ import { TravelersModule } from './travelers/travelers.module';
     AuthModule,
     TravelersModule,
     NotificationsModule,
+    AdminModule,
   ],
 })
 export class V1Module {}

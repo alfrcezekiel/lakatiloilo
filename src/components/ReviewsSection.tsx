@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, LogIn } from "lucide-react";
+import { Check, EyeOff, LogIn } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import Link from "next/link";
@@ -17,10 +17,10 @@ import { MyReviewBox } from "@/components/MyReviewBox";
 import { HelpfulButton } from "@/components/HelpfulButton";
 import { ReviewReplies } from "@/components/ReviewReplies";
 import { ReportReview } from "@/components/ReportReview";
-import { ReviewPhoto } from "@/components/ReviewPhoto";
+import { ReviewPhotos } from "@/components/ReviewPhoto";
 import { FromNotification, notifiedTint } from "@/components/FromNotification";
 import { SectionHeading } from "@/components/PlaceDetail";
-import { averageRating, usePlaceReviews } from "@/components/PlaceReviews";
+import { averageRating, countedReviews, usePlaceReviews } from "@/components/PlaceReviews";
 import { travelerTypeLabels } from "@/lib/labels";
 
 // Scrolls a review or reply into view (below the navbar, scroll-mt-28),
@@ -52,6 +52,11 @@ export function ReviewsSection() {
   const { placeType, placeId, reviews, loadError, setReviews } = usePlaceReviews();
   // True right after this traveler posts, to say thank you.
   const [justPosted, setJustPosted] = useState(false);
+  // True while the form is posting a new review and uploading its photos
+  // (ticket 113). A live refresh can bring the new review in before the
+  // photos are done; the form stays until then, so its progress and any
+  // photo message stay on screen.
+  const [posting, setPosting] = useState(false);
   // The backend's message right after this traveler deletes their review,
   // for example "Your review has been deleted."
   const [deletedMessage, setDeletedMessage] = useState<string | null>(null);
@@ -108,14 +113,15 @@ export function ReviewsSection() {
               <Stars rating={average} className="text-xl" />
               <span className="text-lg font-semibold">{average.toFixed(1)}</span>
               <span className="text-white/70">
-                · {reviews.length} review{reviews.length === 1 ? "" : "s"}
+                · {countedReviews(reviews).length} review
+                {countedReviews(reviews).length === 1 ? "" : "s"}
               </span>
             </p>
           )}
 
           {/* Logged in: the form, or a note if they already reviewed. */}
           {ready && user && (
-            myReview ? (
+            myReview && !posting ? (
               // One review per place: their review's box with Edit and
               // Delete, instead of the form.
               <MyReviewBox
@@ -151,9 +157,13 @@ export function ReviewsSection() {
                 <ReviewForm
                   placeType={placeType}
                   placeId={placeId}
+                  onPostingChange={setPosting}
                   onSaved={(review) => {
-                    // Newest first, so the new review goes on top.
-                    setReviews((current) => [review, ...current]);
+                    // Newest first, so the new review goes on top. A live
+                    // refresh may already have brought it in while its
+                    // photos were uploading (ticket 113): then replace that
+                    // copy, so it is never listed twice.
+                    setReviews((current) => [review, ...current.filter((r) => r.id !== review.id)]);
                     setJustPosted(true);
                     setDeletedMessage(null);
                   }}
@@ -229,6 +239,15 @@ export function ReviewsSection() {
                             {formatDate(review.created_at)}
                           </time>
                         </div>
+                        {/* Only the writer ever gets their hidden review
+                            (ticket 109); a grey note says why nobody else
+                            sees it. */}
+                        {review.hidden && (
+                          <p className="flex items-center gap-2 rounded-lg border border-white/25 px-3 py-2 text-sm text-white/85">
+                            <EyeOff aria-hidden="true" className="size-4 shrink-0" />
+                            Hidden while the team reviews it.
+                          </p>
+                        )}
                         <Stars rating={review.rating} />
                         {/* wrap-anywhere: a word longer than the card (for
                             example a long link, or letters typed without
@@ -237,9 +256,7 @@ export function ReviewsSection() {
                         <p className="whitespace-pre-line wrap-anywhere text-white/90 leading-relaxed">
                           {review.comment}
                         </p>
-                        {review.photo_url && (
-                          <ReviewPhoto url={review.photo_url} reviewerName={review.reviewer_name} />
-                        )}
+                        <ReviewPhotos photos={review.photos} reviewerName={review.reviewer_name} />
                         {/* Helpful on the left, the small Report link
                             (ticket 80) on the right of the same row. */}
                         <div className="flex flex-wrap items-center justify-between gap-2">

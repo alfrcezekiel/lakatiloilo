@@ -6,8 +6,8 @@ import { TravelersService } from './travelers.service';
 
 // Traveler profiles (profiles & likes round). Reads only, through the
 // backend's own database login; no Supabase Auth and no login needed.
-// ReviewPhotosService only turns a review's photo into its public address
-// (ticket 99).
+// ReviewPhotosService reads each review's photos (up to 4, ticket 113)
+// and turns them into public addresses.
 @Module({
   imports: [SupabaseModule],
   controllers: [TravelersController],

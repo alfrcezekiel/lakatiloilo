@@ -52,3 +52,16 @@ paths:
   a `{ message }` body for DELETE, as the team asked).
 - New methods or headers must be added to `enableCors` in `main.ts`.
 - Every new endpoint gets a line in the spec's endpoint list.
+
+## Admin endpoints (admin dashboard, from ticket 107)
+
+- Every admin endpoint lives under `v1/admin` and goes through
+  `AdminOnlyMiddleware` (401 without a login, 403 "This page is for the
+  Lakat Iloilo team." for non-admins). It is applied in `AdminModule` with
+  `forRoutes(AdminController)`: **a new admin controller must be added to
+  that `forRoutes(...)`**, or its endpoints are unprotected. Only
+  `POST v1/admin/login` is excluded.
+- Admin endpoints still run their database work as the logged-in admin
+  (`TravelerTransactions`), so Row Level Security checks every change too.
+  Never check "is admin" from anything the browser sends; ask the
+  database's `is_admin()` (`AdminAccess`).

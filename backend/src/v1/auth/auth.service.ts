@@ -1,6 +1,7 @@
 import { HttpException, Injectable, Logger, UnauthorizedException } from '@nestjs/common';
 import type { AuthError, Session, User } from '@supabase/supabase-js';
 import { SupabaseService } from '../../supabase/supabase.service';
+import { AdminAccess } from '../admin-access';
 
 // "Who is logged in": the traveler's own account details, and nothing
 // else (never another account, never the password).
@@ -9,6 +10,9 @@ export interface Traveler {
   email: string | null;
   display_name: string;
   traveler_type: string | null;
+  // True for the Lakat Iloilo team (the admins table, ticket 107). Only
+  // in the answer to "who is logged in" (GET /v1/auth/me).
+  is_admin?: boolean;
 }
 
 // What a new traveler sends to create an account.
@@ -40,7 +44,10 @@ export interface SignUpResult {
 export class AuthService {
   private readonly logger = new Logger(AuthService.name);
 
-  constructor(private readonly supabase: SupabaseService) { }
+  constructor(
+    private readonly supabase: SupabaseService,
+    private readonly adminAccess: AdminAccess,
+  ) { }
 
   async signUp(request: SignUpRequest): Promise<SignUpResult> {
     const client = this.supabase.freshClient();
@@ -71,10 +78,11 @@ export class AuthService {
 
   // The traveler whose login token this is. Supabase Auth checks the
   // token is genuine and still active; otherwise the answer is 401.
+  // Also says whether they are on the Lakat Iloilo team (ticket 107).
   async me(accessToken: string): Promise<Traveler> {
     const user = await this.supabase.userFor(accessToken);
     if (!user) throw new UnauthorizedException('Please log in, then try again.');
-    return this.travelerFrom(user);
+    return { ...this.travelerFrom(user), is_admin: await this.adminAccess.isAdmin(accessToken) };
   }
 
   // Changes the traveler's own display name and traveler type (profile &

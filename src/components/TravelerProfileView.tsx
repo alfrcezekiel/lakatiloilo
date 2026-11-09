@@ -13,7 +13,7 @@ import { BackLink, tones } from "@/components/PlaceDetail";
 import { Reveal } from "@/components/Reveal";
 import { Stars, formatDate, glassCard } from "@/components/ReviewsSection";
 import { HelpfulCount } from "@/components/HelpfulButton";
-import { ReviewPhoto } from "@/components/ReviewPhoto";
+import { ReviewPhotos } from "@/components/ReviewPhoto";
 import { Skeleton } from "@/components/ui/skeleton";
 import { displayNameOf, useCurrentUser } from "@/lib/login";
 import { pillButton } from "@/components/ui/button";
@@ -145,7 +145,7 @@ export function TravelerProfileView({
                         <p className="whitespace-pre-line wrap-anywhere leading-relaxed text-white/90">
                           {review.comment}
                         </p>
-                        {review.photo_url && <ReviewPhoto url={review.photo_url} reviewerName={shownName} />}
+                        <ReviewPhotos photos={review.photos} reviewerName={shownName} />
                         <HelpfulCount count={review.helpful_count} />
                       </CardContent>
                     </Card>

@@ -11,6 +11,8 @@ import { SupabaseService } from '../../supabase/supabase.service';
 const BUCKET = 'review-photos';
 export const MAX_PHOTO_BYTES = 2 * 1024 * 1024; // 2 MB, the same as the bucket (027)
 export const PHOTO_MESSAGE = 'Please choose a JPG, PNG or WebP photo up to 2 MB.';
+export const MAX_PHOTOS = 4;
+export const TOO_MANY_PHOTOS = 'A review can have up to 4 photos.';
 
 // What the upload handling (multer) hands over for one uploaded file. Only
 // the parts used here, written out so the project needs no extra package.
@@ -22,6 +24,18 @@ export interface UploadedPhoto {
 }
 
 type PhotoType = { contentType: string; extension: string };
+
+// One of a review's photos as the website gets it (ticket 113).
+export interface ReviewPhotoDto {
+  id: string;
+  url: string;
+  // 1 to 4
+  position: number;
+}
+
+// Anything that can run a query: the backend's own connection, or a
+// traveler's or admin's transaction.
+export type Querier = { query: (sql: string, parameters?: unknown[]) => Promise<unknown> };
 
 // Works out the photo's real type from its first bytes, not from its name
 // or what the browser says, so a renamed file of another kind is refused.
@@ -97,8 +111,39 @@ export class ReviewPhotosService {
     }
   }
 
-  // The public address of a review's photo, or null when it has none.
-  urlFor(path: string | null | undefined): string | null {
-    return path ? this.supabase.publicFileUrl(BUCKET, path) : null;
+  // Each review's photos (up to 4, in order), with their public addresses,
+  // from the review_photos table (ticket 113). `db` decides who is asking:
+  // the backend's own login for public pages (it sees photos of visible
+  // reviews only), or a traveler's or admin's transaction, so Row Level
+  // Security shows them only the photos of reviews they may read (044).
+  async photosFor(db: Querier, reviewIds: string[]): Promise<Map<string, ReviewPhotoDto[]>> {
+    const byReview = new Map<string, ReviewPhotoDto[]>();
+    if (reviewIds.length === 0) return byReview;
+    const rows = (await db.query(
+      `select id, review_id, photo_path, position
+         from public.review_photos
+        where review_id = any($1::uuid[])
+        order by review_id, position`,
+      [reviewIds],
+    )) as { id: string; review_id: string; photo_path: string; position: number }[];
+    for (const row of rows) {
+      const list = byReview.get(row.review_id) ?? [];
+      list.push({ id: row.id, url: this.supabase.publicFileUrl(BUCKET, row.photo_path), position: row.position });
+      byReview.set(row.review_id, list);
+    }
+    return byReview;
+  }
+
+  // Where a review's files are kept, to delete them after the review is
+  // deleted: its photo rows, plus the old single photo (027) while that
+  // column still exists (it is the same file as its copied row).
+  async pathsOf(db: Querier, reviewId: string): Promise<string[]> {
+    const rows = (await db.query(
+      `select photo_path from public.review_photos where review_id = $1
+       union
+       select photo_path from public.reviews where id = $1 and photo_path is not null`,
+      [reviewId],
+    )) as { photo_path: string }[];
+    return rows.map((row) => row.photo_path);
   }
 }

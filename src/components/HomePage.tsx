@@ -42,7 +42,14 @@ export type HomePlaces = {
 
 // The tables whose changes the home page shows: the places themselves, and
 // reviews (they change the star ratings on the cards).
-const HOME_TABLES = ["destinations", "accommodations", "reviews"] as const;
+// review_visibility_signals: a hidden or shown review changes a card's
+// rating (ticket 109).
+const HOME_TABLES = [
+  "destinations",
+  "accommodations",
+  "reviews",
+  "review_visibility_signals",
+] as const;
 
 // The home page itself. The Next.js server has already started asking the
 // NestJS backend for the places, and passes that request in as `places`:

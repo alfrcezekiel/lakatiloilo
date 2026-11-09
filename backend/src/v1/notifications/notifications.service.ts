@@ -35,9 +35,14 @@ const LIMIT = 20;
 // transaction (so it counts a change just made).
 const unreadCount = async (runner: QueryRunner) => {
   const [row]: { count: number }[] = await runner.query(
+    // Joined to reviews like the list below, so a notification under a
+    // review the team hid (ticket 109) is not counted when it cannot be
+    // shown (code review 2026-11-09: the bell showed a number with nothing
+    // to click).
     `select count(*)::int as count
-       from public.notifications
-      where user_id = auth.uid() and read_at is null`,
+       from public.notifications n
+       join public.reviews r on r.id = n.review_id
+      where n.user_id = auth.uid() and n.read_at is null`,
   );
   return row.count;
 };

@@ -97,6 +97,17 @@ export const getAccommodation = (id: string) =>
   // there is no such place (evaluation B1, 2026-11-04).
   get<Accommodation>(`/v1/accommodations/${encodeURIComponent(id)}`, [400]);
 
+// One of a review's photos (ticket 113): its public address and its
+// place, 1 to 4.
+export interface ReviewPhoto {
+  id: string;
+  url: string;
+  position: number;
+}
+
+// The most photos a review can have (the database checks it too, 044).
+export const MAX_REVIEW_PHOTOS = 4;
+
 // A review as the backend sends it (backend round). Only the display name
 // is included, never the reviewer's email.
 export interface Review {
@@ -114,12 +125,16 @@ export interface Review {
   // backend has just saved, which nobody has marked yet.
   helpful_count?: number;
   liked_by_me?: boolean;
-  // The public address of the review's photo, or null when it has none
-  // (review extras round, ticket 81).
-  photo_url?: string | null;
+  // Its photos, up to 4, in order (ticket 113; one photo before that).
+  // Missing from older answers, which means none.
+  photos?: ReviewPhoto[];
   // The replies under it, oldest first (review extras round). Missing from
   // a review the backend has just saved, which has none yet.
   replies?: Reply[];
+  // True only for the logged-in traveler's own review that the team hid
+  // (ticket 109); nobody else ever gets a hidden review. It does not count
+  // toward the place's rating.
+  hidden?: boolean;
 }
 
 // A reply under a review (review extras round, ticket 79). The name and
@@ -169,6 +184,15 @@ export const createReply = async (
 // The reasons a traveler can give when reporting a review (the same list
 // as the backend and supabase/sql/026).
 export type ReportReason = "spam" | "offensive" | "not_about_place" | "other";
+
+// How each reason reads on screen: in the Report pop-up and on the team's
+// Reports screen (ticket 108).
+export const REPORT_REASON_LABELS: Record<ReportReason, string> = {
+  spam: "Spam",
+  offensive: "Offensive",
+  not_about_place: "Not about this place",
+  other: "Other",
+};
 
 // Reports someone else's review to the team (POST /v1/reviews/:id/report),
 // as the logged-in traveler. Answers { message: "Thanks — the team will take
@@ -238,8 +262,8 @@ export interface ProfileReview {
   // null only if the place was removed after the review was written.
   place_name: string | null;
   helpful_count: number;
-  // The photo's public address, or null when the review has none (ticket 99).
-  photo_url: string | null;
+  // Its photos, up to 4, in order (ticket 99; a list since ticket 113).
+  photos: ReviewPhoto[];
 }
 
 // A traveler's public profile (GET /v1/travelers/:id, anyone). Built from
@@ -285,11 +309,8 @@ export const setHelpful = async (
 // Adds the logged-in traveler's review through the backend (POST
 // /v1/reviews). `accessToken` is their Supabase login token: the backend
 // passes it on, so Row Level Security checks who is writing. Answers with
-// the saved review.
-//
-// With a photo (review extras round, ticket 81) the review is sent as form
-// fields plus the file ("multipart/form-data"), which is how a browser
-// sends files; without one it is sent as JSON, as before.
+// the saved review (no photos yet: they are sent one by one afterwards
+// with addReviewPhoto, ticket 113).
 export const createReview = async (
   accessToken: string,
   review: {
@@ -298,51 +319,51 @@ export const createReview = async (
     rating: number;
     comment: string;
   },
-  photo?: File | null,
 ) => {
-  let body: typeof review | FormData = review;
-  if (photo) {
-    const form = new FormData();
-    form.append("place_type", review.place_type);
-    form.append("place_id", review.place_id);
-    form.append("rating", String(review.rating));
-    form.append("comment", review.comment);
-    form.append("photo", photo);
-    body = form;
-  }
-  const { data } = await api().post<Review>("/v1/reviews", body, {
+  const { data } = await api().post<Review>("/v1/reviews", review, {
     headers: { Authorization: `Bearer ${accessToken}` },
   });
   return data;
 };
 
 // Changes the stars and comment of the traveler's own review through the
-// backend (PATCH /v1/reviews/:id). Answers with the saved review.
-//
-// The photo (ticket 82): `photo` replaces the old one (sent as form data,
-// like a new review); `removePhoto` removes it; with neither, the photo
-// stays as it is.
+// backend (PATCH /v1/reviews/:id). Answers with the saved review and its
+// photos.
 export const updateReview = async (
   accessToken: string,
   id: string,
   changes: { rating: number; comment: string },
-  photoChange: { photo?: File | null; removePhoto?: boolean } = {},
 ) => {
-  let body: Record<string, unknown> | FormData = {
-    ...changes,
-    remove_photo: !!photoChange.removePhoto,
-  };
-  if (photoChange.photo) {
-    const form = new FormData();
-    form.append("rating", String(changes.rating));
-    form.append("comment", changes.comment);
-    form.append("photo", photoChange.photo);
-    body = form;
-  }
-  const { data } = await api().patch<Review>(`/v1/reviews/${encodeURIComponent(id)}`, body, {
+  const { data } = await api().patch<Review>(`/v1/reviews/${encodeURIComponent(id)}`, changes, {
     headers: { Authorization: `Bearer ${accessToken}` },
   });
   return data;
+};
+
+// Adds one photo to the traveler's own review (POST /v1/reviews/:id/photos,
+// ticket 113). One photo per request: four 2 MB photos together would go
+// over the hosting's 4.5 MB request limit. Sent as form data, which is how
+// a browser sends a file. Refusals carry a plain message, for example "A
+// review can have up to 4 photos."
+export const addReviewPhoto = async (accessToken: string, reviewId: string, photo: File) => {
+  const form = new FormData();
+  form.append("photo", photo);
+  const { data } = await api().post<ReviewPhoto>(
+    `/v1/reviews/${encodeURIComponent(reviewId)}/photos`,
+    form,
+    // A photo can take longer than other requests on a slow connection.
+    { headers: { Authorization: `Bearer ${accessToken}` }, timeout: 60_000 },
+  );
+  return data;
+};
+
+// Removes one photo from the traveler's own review (DELETE
+// /v1/reviews/:id/photos/:photoId, ticket 113).
+export const deleteReviewPhoto = async (accessToken: string, reviewId: string, photoId: string) => {
+  await api().delete(
+    `/v1/reviews/${encodeURIComponent(reviewId)}/photos/${encodeURIComponent(photoId)}`,
+    { headers: { Authorization: `Bearer ${accessToken}` } },
+  );
 };
 
 // What the backend answers after deleting a review.
@@ -370,6 +391,9 @@ export interface Traveler {
   display_name: string;
   // "local", "domestic" or "foreign"; null for older accounts.
   traveler_type: string | null;
+  // True for the Lakat Iloilo team (the admins table, ticket 107). Missing
+  // when the answer did not come from the backend.
+  is_admin?: boolean;
 }
 
 // "Who is logged in" (GET /v1/auth/me), worked out by the backend from
@@ -436,6 +460,12 @@ export const logOutThroughBackend = async (accessToken: string) =>
 export const logInThroughBackend = async (email: string, password: string) =>
   (await api().post<BackendLogin>("/v1/auth/login", { email, password })).data;
 
+// The Lakat Iloilo team's own sign-in (POST /v1/admin/login, ticket
+// 107). Answers like logInThroughBackend for an admin; anyone else is
+// refused with 403 and is not logged in.
+export const adminLogInThroughBackend = async (email: string, password: string) =>
+  (await api().post<BackendLogin>("/v1/admin/login", { email, password })).data;
+
 // Why the backend refused, as Supabase's own code (for example
 // "invalid_credentials"), and the HTTP status (429 = too many tries).
 export const backendRefusal = (error: unknown) => {
@@ -496,4 +526,176 @@ export const markNotificationsRead = async (accessToken: string, id?: string) =>
       id ? { id } : {},
       { headers: { Authorization: `Bearer ${accessToken}` } },
     )
+  ).data;
+
+// One report on a review, on the team's Reports screen (ticket 108). It
+// never says who sent it: the database does not let admins read that.
+export interface AdminReport {
+  id: string;
+  reason: ReportReason;
+  note: string | null;
+  created_at: string;
+}
+
+// A reported review with all its reports (GET /v1/admin/reports).
+export interface ReportedReview {
+  id: string;
+  place_type: "destination" | "accommodation";
+  place_id: string;
+  place_name: string;
+  reviewer_id: string;
+  reviewer_name: string;
+  rating: number;
+  comment: string;
+  // Up to 4 photos, in order (ticket 113).
+  photos: ReviewPhoto[];
+  // Hidden by the team (ticket 109), or by three reports (ticket 110).
+  hidden: boolean;
+  created_at: string;
+  report_count: number;
+  reports: AdminReport[];
+}
+
+// Every reported review, most reports first (GET /v1/admin/reports,
+// admins only: anyone else gets 403).
+export const getAdminReports = async (accessToken: string) =>
+  (
+    await api().get<ReportedReview[]>("/v1/admin/reports", {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    })
+  ).data;
+
+// What the backend answers after Keep it, Hide it or Delete review.
+export interface ModerationResult {
+  id: string;
+  message: string;
+}
+
+// The team's three answers to a reported review (ticket 109), admins only:
+// Keep it removes its reports and shows it again; Hide it hides it from
+// everyone but its writer and the team; Delete review deletes it with its
+// replies, likes, reports, notifications and photo.
+export const adminKeepReview = async (accessToken: string, id: string) =>
+  (
+    await api().post<ModerationResult>(`/v1/admin/reviews/${id}/keep`, null, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    })
+  ).data;
+
+export const adminHideReview = async (accessToken: string, id: string) =>
+  (
+    await api().post<ModerationResult>(`/v1/admin/reviews/${id}/hide`, null, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    })
+  ).data;
+
+export const adminDeleteReview = async (accessToken: string, id: string) =>
+  (
+    await api().delete<ModerationResult>(`/v1/admin/reviews/${id}`, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    })
+  ).data;
+
+// One of the newest reports on the dashboard home (ticket 111). Never who
+// sent it.
+export interface NewestReport {
+  id: string;
+  review_id: string;
+  reason: ReportReason;
+  note: string | null;
+  created_at: string;
+  place_name: string;
+  reviewer_name: string;
+}
+
+// The dashboard home's numbers (GET /v1/admin/overview, admins only).
+export interface AdminOverviewData {
+  reviews_this_week: number;
+  reports_waiting: number;
+  reported_reviews: number;
+  hidden_reviews: number;
+  places: number;
+  newest_reports: NewestReport[];
+}
+
+export const getAdminOverview = async (accessToken: string) =>
+  (
+    await api().get<AdminOverviewData>("/v1/admin/overview", {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    })
+  ).data;
+
+// The team's Places screen (ticket 112, admins only).
+export type AdminPlaceType = "destination" | "accommodation";
+
+// One row of the Places list.
+export interface AdminPlaceRow {
+  id: string;
+  type: AdminPlaceType;
+  name: string;
+  // A destination's category or an accommodation's kind.
+  kind: string;
+  address: string;
+  location_type: string;
+}
+
+// One place as the Edit form needs it. phone and email are null for
+// destinations.
+export interface AdminPlaceDetails {
+  id: string;
+  type: AdminPlaceType;
+  name: string;
+  description: string;
+  address: string;
+  phone: string | null;
+  email: string | null;
+  kind: string;
+  photo_url: string | null;
+  updated_at: string;
+}
+
+// What the Edit form saves. Empty phone or email means none.
+export interface AdminPlaceChanges {
+  name: string;
+  description: string;
+  address: string;
+  phone?: string;
+  email?: string;
+}
+
+// The same limits as the backend and the database (supabase/sql/043).
+export const PLACE_LIMITS = { name: 100, address: 200, description: 1000, phone: 40, email: 120 };
+
+export const getAdminPlaces = async (accessToken: string) =>
+  (
+    await api().get<AdminPlaceRow[]>("/v1/admin/places", {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    })
+  ).data;
+
+// One place for the Edit form; null when there is no such place.
+export const getAdminPlace = async (accessToken: string, type: string, id: string) => {
+  try {
+    return (
+      await api().get<AdminPlaceDetails>(
+        `/v1/admin/places/${encodeURIComponent(type)}/${encodeURIComponent(id)}`,
+        { headers: { Authorization: `Bearer ${accessToken}` } },
+      )
+    ).data;
+  } catch (error) {
+    if (axios.isAxiosError(error) && error.response?.status === 404) return null;
+    throw error;
+  }
+};
+
+export const updateAdminPlace = async (
+  accessToken: string,
+  type: AdminPlaceType,
+  id: string,
+  changes: AdminPlaceChanges,
+) =>
+  (
+    await api().patch<AdminPlaceDetails>(`/v1/admin/places/${type}/${id}`, changes, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    })
   ).data;

@@ -14,14 +14,23 @@ import { Review } from '../../entities/review.entity';
 import { ReviewLike, helpfulCountOf } from '../../entities/review-like.entity';
 import { SupabaseService } from '../../supabase/supabase.service';
 import { TravelerTransactions } from '../traveler-transactions';
-import { ReviewPhotosService, type UploadedPhoto } from './review-photos.service';
+import {
+  MAX_PHOTOS,
+  ReviewPhotosService,
+  TOO_MANY_PHOTOS,
+  type ReviewPhotoDto,
+  type UploadedPhoto,
+} from './review-photos.service';
 
 // What the website gets for each review. Only the display name is ever
 // sent, never the reviewer's email (the reviews table does not hold it).
 export type ReviewDto = Pick<
   Review,
-  'id' | 'user_id' | 'reviewer_name' | 'traveler_type' | 'rating' | 'comment' | 'photo_path' | 'created_at'
->;
+  'id' | 'user_id' | 'reviewer_name' | 'traveler_type' | 'rating' | 'comment' | 'created_at'
+> & {
+  // Up to 4 photos, in order (ticket 113).
+  photos: ReviewPhotoDto[];
+};
 
 export type PlaceType = 'destination' | 'accommodation';
 
@@ -55,7 +64,7 @@ export interface DeletedReview {
   message: string;
 }
 
-const COLUMNS = 'id, user_id, reviewer_name, traveler_type, rating, comment, photo_path, created_at';
+const COLUMNS = 'id, user_id, reviewer_name, traveler_type, rating, comment, created_at';
 
 // A review as GET /v1/reviews sends it: the review, plus its "Helpful"
 // count and whether the traveler asking marked it (profiles & likes round).
@@ -74,6 +83,8 @@ const reviewNotFound = () => new NotFoundException("We couldn't find that review
 // or removed.
 const helpfulCount = (runner: QueryRunner, reviewId: string) =>
   runner.manager.count(ReviewLike, { where: { review_id: reviewId } });
+
+const photoNotFound = () => new NotFoundException("We couldn't find that photo.");
 
 const notYours = () =>
   new NotFoundException("We couldn't find that review among yours. Please log in again and try.");
@@ -107,7 +118,7 @@ export class ReviewsService {
     viewerId: string | null = null,
   ): Promise<ReviewWithLikes[]> {
     try {
-      return await this.reviews
+      const rows = await this.reviews
         .createQueryBuilder('r')
         .select('r.id', 'id')
         .addSelect('r.user_id', 'user_id')
@@ -115,7 +126,6 @@ export class ReviewsService {
         .addSelect('r.traveler_type', 'traveler_type')
         .addSelect('r.rating', 'rating')
         .addSelect('r.comment', 'comment')
-        .addSelect('r.photo_path', 'photo_path')
         .addSelect('r.created_at', 'created_at')
         .addSelect(helpfulCountOf('r'), 'helpful_count')
         .addSelect(
@@ -131,10 +141,60 @@ export class ReviewsService {
         .andWhere('r.place_id = :placeId', { placeId })
         .setParameter('viewerId', viewerId)
         .orderBy('r.created_at', 'DESC')
-        .getRawMany<ReviewWithLikes>();
+        .getRawMany<Omit<ReviewWithLikes, 'photos'>>();
+      // Their photos (ticket 113), read the same way: only photos of
+      // reviews everyone may read.
+      const photos = await this.photos.photosFor(
+        this.reviews.manager,
+        rows.map((r) => r.id),
+      );
+      return rows.map((r) => ({ ...r, photos: photos.get(r.id) ?? [] }));
     } catch (error) {
       this.logger.error(`Could not read reviews: ${String(error)}`);
       throw new ServiceUnavailableException('Could not load reviews right now.');
+    }
+  }
+
+  // The logged-in traveler's own review of this place, if the team has hidden
+  // it (ticket 109). Hidden reviews are left out of findForPlace (the
+  // backend's own login may not read them, supabase/sql/040), so this one
+  // is read AS the traveler: the database only lets writers read their own
+  // hidden review. Shown only to them, with "Hidden while the team reviews
+  // it." If anything goes wrong it is simply left out, so the place page
+  // still loads.
+  async ownHiddenForPlace(
+    accessToken: string,
+    placeType: PlaceType,
+    placeId: string,
+  ): Promise<ReviewWithLikes[]> {
+    try {
+      return await this.travelerTransactions.run(
+        accessToken,
+        async (runner) => {
+          const rows: Omit<ReviewWithLikes, 'photos'>[] = await runner.query(
+            `select r.id, r.user_id, r.reviewer_name, r.traveler_type, r.rating, r.comment,
+                    r.created_at,
+                    (select count(*)::int from public.review_likes l where l.review_id = r.id)
+                      as helpful_count,
+                    false as liked_by_me
+               from public.reviews r
+              where r.place_type = $1 and r.place_id = $2
+                and r.user_id = auth.uid() and r.hidden_at is not null`,
+            [placeType, placeId],
+          );
+          // Its photos, read as the writer (a hidden review's photos are
+          // only for its writer and the team, 044).
+          const photos = await this.photos.photosFor(
+            runner,
+            rows.map((r) => r.id),
+          );
+          return rows.map((r) => ({ ...r, photos: photos.get(r.id) ?? [] }));
+        },
+        (error) => error as Error,
+      );
+    } catch (error) {
+      this.logger.warn(`Could not read the traveler's hidden review: ${String(error)}`);
+      return [];
     }
   }
 
@@ -176,96 +236,124 @@ export class ReviewsService {
 
   // Adds a review. The database fills in user_id, reviewer_name and the
   // dates itself. The values travel separately from the SQL text ($1 to
-  // $4), so what a traveler types can never change the query.
-  //
-  // With a photo (ticket 81): the photo is uploaded first, into the
-  // traveler's own folder, and its place is saved with the review
-  // (photo_path, $5). If saving the review then fails, the photo is deleted
-  // again, so no unused file is left behind.
-  async create(accessToken: string, review: NewReview, photo?: UploadedPhoto): Promise<ReviewDto> {
-    const photoPath = photo ? await this.photos.upload(accessToken, photo) : null;
-    try {
-      return await this.asTraveler(accessToken, async (runner) => {
-        const rows: ReviewDto[] = await runner.query(
-          `insert into public.reviews (place_type, place_id, rating, comment, photo_path)
-              values ($1, $2, $3, $4, $5)
-              returning ${COLUMNS}`,
-          [review.place_type, review.place_id, review.rating, review.comment, photoPath],
-        );
-        return rows[0];
-      });
-    } catch (error) {
-      if (photoPath) await this.photos.remove(accessToken, photoPath);
-      throw error;
-    }
+  // $4), so what a traveler types can never change the query. Photos are
+  // added afterwards, one per request (addPhoto, ticket 113), so a new
+  // review starts with none.
+  create(accessToken: string, review: NewReview): Promise<ReviewDto> {
+    return this.asTraveler(accessToken, async (runner) => {
+      const rows: Omit<ReviewDto, 'photos'>[] = await runner.query(
+        `insert into public.reviews (place_type, place_id, rating, comment)
+            values ($1, $2, $3, $4)
+            returning ${COLUMNS}`,
+        [review.place_type, review.place_id, review.rating, review.comment],
+      );
+      return { ...rows[0], photos: [] };
+    });
   }
 
-  // Changes the stars and comment of the traveler's own review. Row Level
-  // Security hides everyone else's reviews, so for someone else's review
-  // (or one that no longer exists) nothing is changed and the answer is
-  // "not found among yours".
-  //
-  // The photo (ticket 82): with a new photo it is uploaded first and
-  // replaces the old one; with removePhoto the review loses its photo;
-  // with neither, the photo stays as it is. The old file is deleted from
-  // Storage once the review is saved. If saving fails, the new upload is
-  // deleted again, so no unused file is left behind.
-  async update(
-    accessToken: string,
-    id: string,
-    changes: ReviewChanges,
-    photoChange: { photo?: UploadedPhoto; removePhoto?: boolean } = {},
-  ): Promise<ReviewDto> {
-    const changePhoto = !!photoChange.photo || !!photoChange.removePhoto;
-    const newPath = photoChange.photo ? await this.photos.upload(accessToken, photoChange.photo) : null;
-    try {
-      const { saved, oldPath } = await this.asTraveler(accessToken, async (runner) => {
-        // The photo it had before, read in the same transaction (only the
-        // traveler's own review is found).
-        const [before]: { photo_path: string | null }[] = await runner.query(
-          'select photo_path from public.reviews where id = $1 and user_id = auth.uid()',
-          [id],
-        );
-        if (!before) throw notYours();
-        // For UPDATE, TypeORM answers with [changed rows, how many].
-        // $4 says whether the photo changes at all; $5 is the new place
-        // (null to remove it).
-        const [rows]: [ReviewDto[], number] = await runner.query(
-          `update public.reviews
-              set rating = $1,
-                  comment = $2,
-                  photo_path = case when $4 then $5 else photo_path end
-            where id = $3
-            returning ${COLUMNS}`,
-          [changes.rating, changes.comment, id, changePhoto, newPath],
-        );
-        if (rows.length === 0) throw notYours();
-        return { saved: rows[0], oldPath: before.photo_path };
-      });
-      if (changePhoto && oldPath && oldPath !== newPath) await this.photos.remove(accessToken, oldPath);
-      return saved;
-    } catch (error) {
-      if (newPath) await this.photos.remove(accessToken, newPath);
-      throw error;
-    }
+  // Changes the stars and comment of the traveler's own review, and
+  // answers with it and its photos. Row Level Security only lets writers
+  // change their own reviews, so for someone else's review (or one that no
+  // longer exists) nothing is changed and the answer is "not found among
+  // yours". Photos are added and removed on their own (ticket 113).
+  update(accessToken: string, id: string, changes: ReviewChanges): Promise<ReviewDto> {
+    return this.asTraveler(accessToken, async (runner) => {
+      // For UPDATE, TypeORM answers with [changed rows, how many].
+      const [rows]: [Omit<ReviewDto, 'photos'>[], number] = await runner.query(
+        `update public.reviews
+            set rating = $1, comment = $2
+          where id = $3 and user_id = auth.uid()
+          returning ${COLUMNS}`,
+        [changes.rating, changes.comment, id],
+      );
+      if (rows.length === 0) throw notYours();
+      const photos = await this.photos.photosFor(runner, [id]);
+      return { ...rows[0], photos: photos.get(id) ?? [] };
+    });
   }
 
   // Deletes the traveler's own review and says so. As with update,
-  // someone else's review is invisible here, so nothing is deleted.
-  // Its photo, if it had one, is deleted from Storage afterwards (ticket
-  // 81); "returning photo_path" says which file that is.
+  // someone else's review is invisible here, so nothing is deleted. Its
+  // photo rows go with it (on delete cascade); the files are then deleted
+  // from Storage, as the traveler.
   async remove(accessToken: string, id: string): Promise<DeletedReview> {
-    const photoPath = await this.asTraveler(accessToken, async (runner) => {
+    const paths = await this.asTraveler(accessToken, async (runner) => {
+      const filePaths = await this.photos.pathsOf(runner, id);
       // For DELETE, TypeORM answers with [deleted rows, how many].
-      const [rows, count]: [{ photo_path: string | null }[], number] = await runner.query(
-        'delete from public.reviews where id = $1 returning photo_path',
+      const [, count]: [unknown[], number] = await runner.query(
+        'delete from public.reviews where id = $1 and user_id = auth.uid() returning id',
         [id],
       );
       if (count === 0) throw notYours();
-      return rows[0]?.photo_path ?? null;
+      return filePaths;
     });
-    if (photoPath) await this.photos.remove(accessToken, photoPath);
+    for (const path of paths) await this.photos.remove(accessToken, path);
     return { id, message: 'Your review has been deleted.' };
+  }
+
+  // Adds one photo to the traveler's own review (POST
+  // /v1/reviews/:id/photos, ticket 113). One photo per request, because
+  // four 2 MB photos together would go over Vercel's 4.5 MB request limit.
+  //   1. The photo is checked (type from its first bytes, size), and the
+  //      review must be theirs and have fewer than 4 photos.
+  //   2. It is uploaded into their own Storage folder.
+  //   3. The row is added; the database checks again (the writer only, own
+  //      folder, at most 4, supabase/sql/044). If that fails, the file is
+  //      deleted again, so no unused file is left behind.
+  async addPhoto(accessToken: string, reviewId: string, photo: UploadedPhoto): Promise<ReviewPhotoDto> {
+    this.photos.check(photo);
+    await this.asTraveler(accessToken, async (runner) => {
+      const [review]: { photos: number }[] = await runner.query(
+        `select (select count(*)::int from public.review_photos p where p.review_id = r.id) as photos
+           from public.reviews r
+          where r.id = $1 and r.user_id = auth.uid()`,
+        [reviewId],
+      );
+      if (!review) throw notYours();
+      if (review.photos >= MAX_PHOTOS) throw new BadRequestException(TOO_MANY_PHOTOS);
+    });
+    const path = await this.photos.upload(accessToken, photo);
+    try {
+      return await this.asTraveler(accessToken, async (runner) => {
+        const [row]: { id: string; position: number }[] = await runner.query(
+          `insert into public.review_photos (review_id, photo_path)
+              values ($1, $2)
+              returning id, position`,
+          [reviewId, path],
+        );
+        const photos = await this.photos.photosFor(runner, [reviewId]);
+        const saved = photos.get(reviewId)?.find((p) => p.id === row.id);
+        if (!saved) throw photoNotFound();
+        return saved;
+      });
+    } catch (error) {
+      await this.photos.remove(accessToken, path);
+      throw error;
+    }
+  }
+
+  // Removes one photo from the traveler's own review (DELETE
+  // /v1/reviews/:id/photos/:photoId, ticket 113), then deletes the file.
+  // Row Level Security only lets the writer remove it, so someone else's
+  // photo is simply "not found". While the old single-photo column (027)
+  // still exists, it is cleared too when it points at this file, so the
+  // later clean-up file cannot bring the photo back.
+  async removePhoto(accessToken: string, reviewId: string, photoId: string): Promise<{ id: string }> {
+    const path = await this.asTraveler(accessToken, async (runner) => {
+      const [rows]: [{ photo_path: string }[], number] = await runner.query(
+        'delete from public.review_photos where id = $1 and review_id = $2 returning photo_path',
+        [photoId, reviewId],
+      );
+      if (rows.length === 0) throw photoNotFound();
+      await runner.query(
+        `update public.reviews set photo_path = null
+          where id = $1 and user_id = auth.uid() and photo_path = $2`,
+        [reviewId, rows[0].photo_path],
+      );
+      return rows[0].photo_path;
+    });
+    await this.photos.remove(accessToken, path);
+    return { id: photoId };
   }
 
   // Who is asking, for "liked by me" on GET /v1/reviews. Reading reviews
@@ -349,9 +437,13 @@ export class ReviewsService {
       // The one-review-per-place rule (the "unique" line in supabase/sql/020).
       case '23505':
         return new ConflictException("You've already reviewed this place.");
-      // A rating or comment outside the limits.
+      // A rating or comment outside the limits, or a 5th photo (044).
       case '23514':
-        return new BadRequestException('Please pick 1 to 5 stars and write 1 to 500 characters.');
+        return new BadRequestException(
+          String((error as QueryFailedError).message).includes('up to 4 photos')
+            ? TOO_MANY_PHOTOS
+            : 'Please pick 1 to 5 stars and write 1 to 500 characters.',
+        );
       // The review was deleted while it was being liked.
       case '23503':
         return reviewNotFound();

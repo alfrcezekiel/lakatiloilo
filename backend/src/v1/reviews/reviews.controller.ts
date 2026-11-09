@@ -19,7 +19,7 @@ import { loginToken } from '../login-token';
 import { NewReview, PlaceType, ReviewChanges, ReviewsService } from './reviews.service';
 import { RepliesService } from './replies.service';
 import { PhotoTooLargeFilter } from './photo-too-large.filter';
-import { ReviewPhotosService, type UploadedPhoto } from './review-photos.service';
+import { PHOTO_MESSAGE, type UploadedPhoto } from './review-photos.service';
 import { idOf, placeIdQuery } from '../id-param';
 
 const PLACE_TYPES: PlaceType[] = ['destination', 'accommodation'];
@@ -51,21 +51,15 @@ export class ReviewsController {
   constructor(
     private readonly reviewsService: ReviewsService,
     private readonly repliesService: RepliesService,
-    private readonly photos: ReviewPhotosService,
   ) {}
-
-  // What the website gets for a review: the photo's public address
-  // (photo_url) instead of where it is kept in Storage (photo_path).
-  private withPhotoUrl<T extends { photo_path?: string | null }>(review: T) {
-    const { photo_path: photoPath, ...rest } = review;
-    return { ...rest, photo_url: this.photos.urlFor(photoPath) };
-  }
 
   // GET /v1/reviews?place_type=destination&place_id=<uuid>
   // A place's reviews, newest first, each with its "Helpful" count. Anyone
   // may call it. With a login (Authorization: Bearer <token>) each review
   // also says whether this traveler marked it (liked_by_me); without one,
-  // or with an expired one, liked_by_me is false.
+  // or with an expired one, liked_by_me is false. Reviews the team hid are
+  // left out, except the traveler's own, which comes back with
+  // hidden: true (ticket 109).
   @Get()
   @HttpCode(200)
   async findForPlace(
@@ -77,7 +71,19 @@ export class ReviewsController {
       throw new BadRequestException('place_type must be "destination" or "accommodation".');
     }
     const viewerId = await this.reviewsService.viewerIdFor(authorization);
-    const reviews = await this.reviewsService.findForPlace(placeType as PlaceType, placeId, viewerId);
+    const visible = await this.reviewsService.findForPlace(placeType as PlaceType, placeId, viewerId);
+    // The traveler's own review, if the team hid it (ticket 109): only they
+    // get it back, marked hidden, so the page can say "Hidden while the team
+    // reviews it." Everyone else never receives hidden reviews.
+    const token = authorization?.match(/^Bearer (.+)$/)?.[1];
+    const ownHidden =
+      viewerId && token
+        ? await this.reviewsService.ownHiddenForPlace(token, placeType as PlaceType, placeId)
+        : [];
+    const reviews = [
+      ...visible.map((review) => ({ ...review, hidden: false })),
+      ...ownHidden.map((review) => ({ ...review, hidden: true })),
+    ].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
     // Each review's replies, oldest first (review extras round, ticket 79),
     // with their Helpful counts (ticket 96).
     const replies = await this.repliesService.forReviews(
@@ -85,7 +91,7 @@ export class ReviewsController {
       viewerId,
     );
     return reviews.map((review) => ({
-      ...this.withPhotoUrl(review),
+      ...review,
       replies: replies.get(review.id) ?? [],
     }));
   }
@@ -116,21 +122,15 @@ export class ReviewsController {
   }
 
   // POST /v1/reviews   (header: Authorization: Bearer <login token>)
-  // body: { place_type, place_id, rating, comment } as JSON, or the same as
-  // form fields plus one optional file field "photo" (JPG, PNG or WebP, up
-  // to 2 MB; ticket 81). Adds the logged-in traveler's review and answers
-  // with it, including photo_url. A wrong photo: 400 "Please choose a JPG,
-  // PNG or WebP photo up to 2 MB." The upload handling keeps the file in
-  // memory and stops reading past 4 MB (Vercel refuses requests over
-  // 4.5 MB anyway).
+  // body: { place_type, place_id, rating, comment } as JSON. Adds the
+  // logged-in traveler's review and answers with it (photos: []). Photos
+  // are sent afterwards, one per request, to POST /v1/reviews/:id/photos
+  // (ticket 113).
   @Post()
   @HttpCode(201)
-  @UseInterceptors(FileInterceptor('photo', { limits: { fileSize: 4 * 1024 * 1024, files: 1 } }))
-  @UseFilters(PhotoTooLargeFilter)
-  async create(
+  create(
     @Headers('authorization') authorization: string | undefined,
     @Body() body: Partial<Record<keyof NewReview, unknown>> | undefined,
-    @UploadedFile() photo: UploadedPhoto | undefined,
   ) {
     const token = loginToken(authorization);
     const placeType = body?.place_type;
@@ -139,43 +139,61 @@ export class ReviewsController {
       throw new BadRequestException('Please choose a destination or accommodation to review.');
     }
     const fields = starsAndComment(body);
-    // Check the photo before anything is saved, so a wrong file changes
-    // nothing.
-    if (photo) this.photos.check(photo);
     // Only these fields are sent on: who wrote it, their name and the dates
     // are filled in by the database.
-    const saved = await this.reviewsService.create(
-      token,
-      { place_type: placeType as PlaceType, place_id: placeId, ...fields },
-      photo,
-    );
-    return this.withPhotoUrl(saved);
+    return this.reviewsService.create(token, {
+      place_type: placeType as PlaceType,
+      place_id: placeId,
+      ...fields,
+    });
   }
 
   // PATCH /v1/reviews/<id>   (header: Authorization: Bearer <login token>)
-  // body: { rating, comment, remove_photo? } as JSON, or the same as form
-  // fields plus one optional file field "photo" (ticket 82). Changes the
-  // stars and comment of the traveler's own review; a new photo replaces
-  // the old one, remove_photo: true removes it, and with neither the photo
-  // stays. Same photo limits and message as POST.
+  // body: { rating, comment } as JSON. Changes the stars and comment of the
+  // traveler's own review and answers with it and its photos. Photos are
+  // added and removed with the two endpoints below (ticket 113).
   @Patch(':id')
   @HttpCode(200)
-  @UseInterceptors(FileInterceptor('photo', { limits: { fileSize: 4 * 1024 * 1024, files: 1 } }))
-  @UseFilters(PhotoTooLargeFilter)
-  async update(
+  update(
     @Headers('authorization') authorization: string | undefined,
     @Param('id', idOf('review')) id: string,
-    @Body() body: (Partial<Record<keyof ReviewChanges, unknown>> & { remove_photo?: unknown }) | undefined,
+    @Body() body: Partial<Record<keyof ReviewChanges, unknown>> | undefined,
+  ) {
+    return this.reviewsService.update(loginToken(authorization), id, starsAndComment(body));
+  }
+
+  // POST /v1/reviews/<id>/photos   (header: Authorization: Bearer <login token>)
+  // One file field "photo" (JPG, PNG or WebP, up to 2 MB; ticket 113).
+  // Adds it to the traveler's own review and answers { id, url, position }.
+  // Refusals: 400 "Please choose a JPG, PNG or WebP photo up to 2 MB.",
+  // 400 "A review can have up to 4 photos.", 404 not their review. The
+  // upload handling keeps the file in memory and stops reading past 4 MB
+  // (Vercel refuses requests over 4.5 MB anyway).
+  @Post(':id/photos')
+  @HttpCode(201)
+  @UseInterceptors(FileInterceptor('photo', { limits: { fileSize: 4 * 1024 * 1024, files: 1 } }))
+  @UseFilters(PhotoTooLargeFilter)
+  addPhoto(
+    @Headers('authorization') authorization: string | undefined,
+    @Param('id', idOf('review')) id: string,
     @UploadedFile() photo: UploadedPhoto | undefined,
   ) {
     const token = loginToken(authorization);
-    const fields = starsAndComment(body);
-    // Check the photo before anything is saved, so a wrong file changes
-    // nothing. A form field arrives as text, so "true" counts too.
-    if (photo) this.photos.check(photo);
-    const removePhoto = body?.remove_photo === true || body?.remove_photo === 'true';
-    const saved = await this.reviewsService.update(token, id, fields, { photo, removePhoto });
-    return this.withPhotoUrl(saved);
+    if (!photo) throw new BadRequestException(PHOTO_MESSAGE);
+    return this.reviewsService.addPhoto(token, id, photo);
+  }
+
+  // DELETE /v1/reviews/<id>/photos/<photo id>   (header: Authorization: Bearer <login token>)
+  // Removes one photo from the traveler's own review and deletes the file.
+  // Answers 200 { id }; 404 "We couldn't find that photo." otherwise.
+  @Delete(':id/photos/:photoId')
+  @HttpCode(200)
+  removePhoto(
+    @Headers('authorization') authorization: string | undefined,
+    @Param('id', idOf('review')) id: string,
+    @Param('photoId', idOf('photo')) photoId: string,
+  ) {
+    return this.reviewsService.removePhoto(loginToken(authorization), id, photoId);
   }
 
   // DELETE /v1/reviews/<id>   (header: Authorization: Bearer <login token>)

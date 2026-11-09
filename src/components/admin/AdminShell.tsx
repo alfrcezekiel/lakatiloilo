@@ -1,0 +1,195 @@
+"use client";
+
+import { ArrowLeft, Flag, LayoutDashboard, LogOut, MapPin, Menu, X, type LucideIcon } from "lucide-react";
+import { useState } from "react";
+import Link from "next/link";
+import { notFound, usePathname, useRouter } from "next/navigation";
+import { Logo } from "@/components/Logo";
+import { Skeleton } from "@/components/ui/skeleton";
+import { AdminFrame, adminGlass } from "@/components/admin/AdminFrame";
+import { displayNameOf, logOut, useCurrentUser } from "@/lib/login";
+import { cn } from "@/lib/utils";
+
+// The dashboard's sections (Reports since ticket 108, Places since 112).
+// "ready: false" shows a section as "Soon", not a link.
+const sections: { href: string; label: string; icon: LucideIcon; ready: boolean }[] = [
+  { href: "/admin", label: "Overview", icon: LayoutDashboard, ready: true },
+  { href: "/admin/reports", label: "Reports", icon: Flag, ready: true },
+  { href: "/admin/places", label: "Places", icon: MapPin, ready: true },
+];
+
+// One item in the sidebar or phone menu. The current section is marked
+// with amber text and an amber line (never a white box, see
+// .claude/rules/no-white-hover-backdrop.md) and aria-current for screen
+// readers.
+const itemClass =
+  "flex min-h-11 w-full items-center gap-3 rounded-xl border-l-2 px-3 text-[0.95rem] font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-white";
+
+function SectionLinks({ onPick }: { onPick: () => void }) {
+  const pathname = usePathname();
+  return (
+    <ul className="space-y-1">
+      {sections.map(({ href, label, icon: Icon, ready }) => {
+        // A section's own pages count too (an Edit page is under Places).
+        const current = pathname === href || (href !== "/admin" && pathname.startsWith(`${href}/`));
+        if (!ready) {
+          return (
+            <li key={href}>
+              <span
+                aria-disabled="true"
+                className={cn(itemClass, "border-transparent text-white/55")}
+              >
+                <Icon aria-hidden="true" className="size-5 shrink-0" />
+                {label}
+                <span className="ml-auto rounded-full border border-white/25 px-2 py-0.5 text-[0.7rem] text-white/70">
+                  Soon
+                </span>
+              </span>
+            </li>
+          );
+        }
+        return (
+          <li key={href}>
+            <Link
+              href={href}
+              onClick={onPick}
+              aria-current={current ? "page" : undefined}
+              className={cn(
+                itemClass,
+                current
+                  ? "border-amber-300 text-amber-300"
+                  : "border-transparent text-white/90 hover:text-amber-300",
+              )}
+            >
+              <Icon aria-hidden="true" className="size-5 shrink-0" />
+              {label}
+            </Link>
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
+
+// The admin dashboard's frame (admin dashboard & moderation round, ticket
+// 107). Only the Lakat Iloilo team gets past it:
+//   - while "who is logged in" is being checked: a quiet loading state,
+//   - an admin: the glass sidebar (on phones a top bar with a menu) and
+//     the page,
+//   - anyone else, logged in or not: the site's "not found" page.
+// This only decides what the screen shows; the backend refuses every
+// admin request from a non-admin, and the database checks the admins
+// table on every change.
+export function AdminShell({ title, children }: { title: string; children: React.ReactNode }) {
+  const { user, ready } = useCurrentUser();
+  const router = useRouter();
+  const [menuOpen, setMenuOpen] = useState(false);
+  // True while logging out, so the page shows the loading state instead
+  // of flashing "not found" before it moves to the sign-in.
+  const [leaving, setLeaving] = useState(false);
+
+  if (ready && !user?.is_admin && !leaving) notFound();
+
+  const signOut = async () => {
+    setMenuOpen(false);
+    setLeaving(true);
+    await logOut();
+    router.replace("/admin/login");
+  };
+
+  const footerLinks = (
+    <div className="space-y-1 border-t border-white/15 pt-3">
+      <Link
+        href="/"
+        className={cn(itemClass, "border-transparent text-white/90 hover:text-amber-300")}
+      >
+        <ArrowLeft aria-hidden="true" className="size-5 shrink-0" />
+        Back to the site
+      </Link>
+      <button
+        type="button"
+        onClick={signOut}
+        className={cn(itemClass, "cursor-pointer border-transparent text-left text-white/90 hover:text-amber-300")}
+      >
+        <LogOut aria-hidden="true" className="size-5 shrink-0" />
+        Log out
+      </button>
+    </div>
+  );
+
+  if (!ready || !user || leaving) {
+    return (
+      <AdminFrame>
+        <div className="w-full space-y-4 px-4 py-10 lg:px-6">
+          <p role="status" className="sr-only">
+            Checking your access
+          </p>
+          <Skeleton className="h-10 w-56" />
+          <Skeleton className="h-40 w-full rounded-2xl" />
+        </div>
+      </AdminFrame>
+    );
+  }
+
+  return (
+    <AdminFrame>
+      <a
+        href="#admin-main"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-50 focus:rounded-lg focus:bg-amber-300 focus:px-3 focus:py-2 focus:font-semibold focus:text-teal-950"
+      >
+        Skip to content
+      </a>
+
+      {/* Phones and tablets: a glass top bar with a menu button. */}
+      <header className={cn(adminGlass, "sticky top-3 z-40 mx-3 mt-3 rounded-2xl lg:hidden")}>
+        <div className="flex items-center justify-between px-4 py-3">
+          <Logo width={130} height={27} />
+          <button
+            type="button"
+            onClick={() => setMenuOpen((open) => !open)}
+            aria-expanded={menuOpen}
+            aria-controls="admin-menu"
+            aria-label={menuOpen ? "Close menu" : "Open menu"}
+            className="flex size-11 cursor-pointer items-center justify-center rounded-xl text-white hover:text-amber-300 focus-visible:outline-2 focus-visible:outline-white"
+          >
+            {menuOpen ? <X aria-hidden="true" className="size-6" /> : <Menu aria-hidden="true" className="size-6" />}
+          </button>
+        </div>
+        {menuOpen && (
+          <nav id="admin-menu" aria-label="Dashboard" className="space-y-3 border-t border-white/15 px-3 py-3">
+            <SectionLinks onPick={() => setMenuOpen(false)} />
+            {footerLinks}
+          </nav>
+        )}
+      </header>
+
+      {/* Full width (team request, 2026-11-08): the sidebar on the left,
+          the page filling the rest of the browser. */}
+      <div className="flex w-full gap-6 px-3 py-6 lg:px-6">
+        {/* Laptops: the glass sidebar. */}
+        <aside className={cn(adminGlass, "sticky top-6 hidden h-[calc(100vh-3rem)] w-64 shrink-0 flex-col p-4 lg:flex")}>
+          <div className="px-2 pb-5">
+            <Logo width={140} height={29} />
+            <p className="mt-2 text-[11px] font-semibold uppercase tracking-[0.25em] text-amber-200">
+              Team dashboard
+            </p>
+          </div>
+          <nav aria-label="Dashboard" className="flex flex-1 flex-col justify-between">
+            <SectionLinks onPick={() => undefined} />
+            {footerLinks}
+          </nav>
+        </aside>
+
+        <main id="admin-main" className="min-w-0 flex-1">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.25em] text-white/80">
+            Signed in as {displayNameOf(user)}
+          </p>
+          <h1 className="font-fraunces mt-1 mb-6 text-4xl leading-tight font-medium tracking-tight sm:text-5xl">
+            {title}
+          </h1>
+          {children}
+        </main>
+      </div>
+    </AdminFrame>
+  );
+}

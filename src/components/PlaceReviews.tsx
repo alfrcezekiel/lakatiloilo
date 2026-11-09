@@ -24,8 +24,16 @@ const PlaceContext = createContext<Place | null>(null);
 // reload. Listened to once per page, here, not in every component that
 // reads the reviews. (Realtime cannot tell which place a deleted row
 // belonged to, so it listens to all of them; a refetch is one small
-// request.) Helpful marks on replies too (reply_likes, ticket 96).
-const REVIEW_TABLES = ["reviews", "review_likes", "review_replies", "reply_likes"] as const;
+// request.) Helpful marks on replies too (reply_likes, ticket 96), and a
+// review being hidden or shown again (review_visibility_signals, ticket 109).
+const REVIEW_TABLES = [
+  "reviews",
+  "review_likes",
+  "review_replies",
+  "reply_likes",
+  "review_visibility_signals",
+  "review_photos",
+] as const;
 
 export function PlaceReviewsProvider({
   placeType,
@@ -127,9 +135,14 @@ export function usePlaceReviews() {
 
 // Worked out from the reviews themselves, so the database needs no extra
 // columns to keep in step. null when there are no reviews yet.
+// The reviews that count toward the rating: everything except the
+// traveler's own review while the team has it hidden (ticket 109).
+export const countedReviews = (reviews: Review[]) => reviews.filter((r) => !r.hidden);
+
 export function averageRating(reviews: Review[]) {
-  return reviews.length > 0
-    ? reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length
+  const counted = countedReviews(reviews);
+  return counted.length > 0
+    ? counted.reduce((sum, r) => sum + r.rating, 0) / counted.length
     : null;
 }
 
@@ -153,7 +166,8 @@ export function RatingTile() {
           </span>
           <span>{average.toFixed(1)}</span>
           <span className="text-xs font-normal text-white/65">
-            {reviews.length} review{reviews.length === 1 ? "" : "s"}
+            {countedReviews(reviews).length} review
+            {countedReviews(reviews).length === 1 ? "" : "s"}
           </span>
         </span>
       )}

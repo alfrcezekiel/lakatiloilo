@@ -5,12 +5,12 @@ import { Accommodation } from '../../entities/accommodation.entity';
 import { Destination } from '../../entities/destination.entity';
 import { Review } from '../../entities/review.entity';
 import { helpfulCountOf } from '../../entities/review-like.entity';
-import { ReviewPhotosService } from '../reviews/review-photos.service';
+import { ReviewPhotosService, type ReviewPhotoDto } from '../reviews/review-photos.service';
 
 // One review as it shows on a traveler's profile: the review, the place it
 // is about (with its name, so the page can link to it), its "Helpful"
-// count, and its photo's public address, or null when it has none
-// (ticket 99).
+// count, and its photos (up to 4, in order; ticket 99, a list since
+// ticket 113).
 export interface ProfileReview {
   id: string;
   rating: number;
@@ -20,7 +20,7 @@ export interface ProfileReview {
   place_id: string;
   place_name: string | null;
   helpful_count: number;
-  photo_url: string | null;
+  photos: ReviewPhotoDto[];
 }
 
 // A traveler's public profile (profiles & likes round, ticket 73). Only
@@ -52,11 +52,11 @@ export class TravelersService {
   ) {}
 
   async profile(id: string): Promise<TravelerProfile> {
-    let rows: (Omit<ProfileReview, 'photo_url'> & {
+    let rows: (Omit<ProfileReview, 'photos'> & {
       reviewer_name: string;
       traveler_type: string | null;
-      photo_path: string | null;
     })[];
+    let photos: Map<string, ReviewPhotoDto[]>;
     try {
       // Built with TypeORM's query builder on the entities (likes on
       // TypeORM round, ticket 77), still one database request. The id
@@ -76,12 +76,16 @@ export class TravelersService {
         .addSelect('r.place_id', 'place_id')
         .addSelect('r.reviewer_name', 'reviewer_name')
         .addSelect('r.traveler_type', 'traveler_type')
-        .addSelect('r.photo_path', 'photo_path')
         .addSelect('COALESCE(d.name, a.name)', 'place_name')
         .addSelect(helpfulCountOf('r'), 'helpful_count')
         .where('r.user_id = :id', { id })
         .orderBy('r.created_at', 'DESC')
         .getRawMany();
+      // Their photos, read the same way (only photos of visible reviews).
+      photos = await this.photos.photosFor(
+        this.dataSource,
+        rows.map((r) => r.id),
+      );
     } catch (error) {
       this.logger.error(`Could not read traveler profile: ${String(error)}`);
       throw new ServiceUnavailableException('Could not load this traveler right now.');
@@ -105,9 +109,9 @@ export class TravelersService {
         place_id: r.place_id,
         place_name: r.place_name,
         helpful_count: r.helpful_count,
-        // The public address, never where it is kept in Storage, the same
-        // as GET /v1/reviews.
-        photo_url: this.photos.urlFor(r.photo_path),
+        // Public addresses, never where they are kept in Storage, the
+        // same as GET /v1/reviews.
+        photos: photos.get(r.id) ?? [],
       })),
     };
   }

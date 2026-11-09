@@ -6,7 +6,8 @@ const TRAVELER_TYPES = ['local', 'domestic', 'foreign'];
 const MIN_PASSWORD_LENGTH = 8;
 
 // Quick checks with friendly messages; Supabase checks everything again.
-const emailAndPassword = (body: Record<string, unknown> | undefined) => {
+// Shared with POST /v1/admin/login (ticket 107).
+export const emailAndPassword = (body: Record<string, unknown> | undefined) => {
   const email = typeof body?.email === 'string' ? body.email.trim() : '';
   const password = typeof body?.password === 'string' ? body.password : '';
   if (!email.includes('@')) {

@@ -6,16 +6,20 @@ import { cn } from "@/lib/utils";
 import { pillButton } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { Textarea } from "@/components/ui/textarea";
-import { backendMessage, reportReview, type ReportReason, type Traveler } from "@/lib/api";
+import {
+  backendMessage,
+  REPORT_REASON_LABELS,
+  reportReview,
+  type ReportReason,
+  type Traveler,
+} from "@/lib/api";
 import { loginToken } from "@/lib/login";
 
 const MAX_NOTE = 300;
-const REASONS: { id: ReportReason; label: string }[] = [
-  { id: "spam", label: "Spam" },
-  { id: "offensive", label: "Offensive" },
-  { id: "not_about_place", label: "Not about this place" },
-  { id: "other", label: "Other" },
-];
+const REASONS = (Object.keys(REPORT_REASON_LABELS) as ReportReason[]).map((id) => ({
+  id,
+  label: REPORT_REASON_LABELS[id],
+}));
 
 // "Report" on someone else's review (review extras round, ticket 80).
 // Shown only to logged-in travelers, never on their own review. It opens a
