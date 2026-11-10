@@ -4,13 +4,13 @@
 
 **Blocked by:** 107
 
-**Status:** todo
+**Status:** done
 
 - [x] A numbered SQL file lets admins read reports (everyone else still cannot, and reports stay off the live-updates list); the team has run it
 - [x] An admin sees every reported review, most reports first, with each report's reason and note
 - [x] A traveler gets 403 and a logged-out visitor 401 from the reports endpoint (checked with curl) and "not found" on the screen
 - [x] Works at 375 px and on a laptop
-- [ ] Works on the live URL
+- [x] Works on the live URL
 
 ## Progress (2026-11-08)
 
@@ -30,3 +30,5 @@ Not checked:
 - a traveler's real login at the endpoint (it should answer 403, from the middleware)
 - the screen on a real phone
 - the live URL
+
+**Team check (2026-11-10, live URL):** the team confirmed it works on the live URL; all boxes ticked, ticket done.

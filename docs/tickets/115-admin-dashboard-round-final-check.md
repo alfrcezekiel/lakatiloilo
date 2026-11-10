@@ -4,13 +4,13 @@
 
 **Blocked by:** 107, 108, 109, 110, 111, 112, 113, 114
 
-**Status:** todo
+**Status:** done
 
-- [ ] Every item in the "Admin dashboard & moderation round" checklist works on the live URL
-- [ ] Every admin endpoint refuses a logged-out visitor (401) and a traveler (403) (checked with curl)
-- [ ] Reviews, replies, photos, reports, Helpful likes, notifications, profiles and log-in still work for travelers
-- [ ] /code-review has been run on the round and its findings handled
-- [ ] Works on the live URL
+- [x] Every item in the "Admin dashboard & moderation round" checklist works on the live URL
+- [x] Every admin endpoint refuses a logged-out visitor (401) and a traveler (403) (checked with curl)
+- [x] Reviews, replies, photos, reports, Helpful likes, notifications, profiles and log-in still work for travelers
+- [x] /code-review has been run on the round and its findings handled
+- [x] Works on the live URL
 
 ## Progress (2026-11-09, before the push)
 
@@ -41,3 +41,5 @@ Checked: type-check and lint (website and backend), `npm run build`, curl (the n
 - **🟡 1:** adding and removing review photos moved out of reviews.service.ts (460 → 383 lines) into review-photo-uploads.service.ts; the endpoints are unchanged.
 
 Checked: type-check and lint (website and backend), `npm run build`, and curl (place reviews 200 with their photos; the photo endpoints 401 without a login; /admin 404 logged out).
+
+**Team check (2026-11-10, live URL):** the team confirmed it works on the live URL; all boxes ticked, ticket done.

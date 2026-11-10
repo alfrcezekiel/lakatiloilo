@@ -4,13 +4,13 @@
 
 **Blocked by:** 109
 
-**Status:** todo
+**Status:** done
 
 - [x] The four tiles show the right numbers (checked against the database)
 - [x] The 5 newest reports show and each opens the Reports screen
 - [x] A traveler gets 403 and a logged-out visitor 401 from the overview endpoint (checked with curl)
 - [x] Works with the keyboard alone, at 375 px and on a laptop
-- [ ] Works on the live URL
+- [x] Works on the live URL
 
 ## Progress (2026-11-08)
 
@@ -34,3 +34,5 @@ Not checked: the screen in the browser (the test browser is no longer signed in 
 **Change (2026-11-09, team request):** the Overview updates live, without a reload. It listens with Supabase Realtime to reviews, review_visibility_signals (041) and a new report_signals table (supabase/sql/045: one row holding only a time whenever reports are added or removed), then asks GET /v1/admin/overview again. review_reports itself stays off the Realtime list.
 
 **Team check (2026-11-09, localhost):** the team ran 045; the Overview updates live without a reload.
+
+**Team check (2026-11-10, live URL):** the team confirmed it works on the live URL; all boxes ticked, ticket done.

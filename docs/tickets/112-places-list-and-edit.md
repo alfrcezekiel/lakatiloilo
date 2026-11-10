@@ -4,14 +4,14 @@
 
 **Blocked by:** 107
 
-**Status:** todo
+**Status:** done
 
 - [x] A numbered SQL file lets admins change only those columns of destinations and accommodations; everyone may still read; the team has run it
 - [x] An admin finds a place by searching, edits a destination's and an accommodation's description and address, and the change shows on the place page
 - [x] Empty or too long fields show a plain message; Cancel changes nothing
 - [x] A traveler cannot change a place (refused by the database, and 403 from the endpoint, checked with curl)
 - [x] Works with the keyboard alone, at 375 px and on a laptop
-- [ ] Works on the live URL
+- [x] Works on the live URL
 
 ## Progress (2026-11-08)
 
@@ -43,3 +43,5 @@ Not checked: the screens in the browser (the test browser is not signed in as ad
 **Change (2026-11-08, team request):** the place search box showed two clear "x" buttons (the browser's own and ours). The browser's is hidden, so one remains; the team confirmed it.
 
 **Team check (2026-11-09, localhost):** the admin searched, then edited a destination and an accommodation (name, description, address, phone, email), and the changes showed on the site; it works at phone size; a traveler gets "not found" at /admin/places. Still open: the live URL.
+
+**Team check (2026-11-10, live URL):** the team confirmed it works on the live URL; all boxes ticked, ticket done.

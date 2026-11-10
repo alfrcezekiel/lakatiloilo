@@ -4,13 +4,13 @@
 
 **Blocked by:** 108
 
-**Status:** todo
+**Status:** done
 
 - [x] A numbered SQL file adds hidden_at to reviews, changes who may read hidden reviews (the writer and admins only), lets only admins hide, unhide and delete any review, and lets admins delete reports; the team has run it
 - [x] Keep it, Hide it and Delete review all work, and the list updates at once
 - [x] A hidden review is gone from the place page, the rating and the profile for everyone else; its writer sees "Hidden while the team reviews it."
 - [x] A traveler cannot hide or unhide a review, not even their own (refused by the database)
-- [ ] Works on the live URL
+- [x] Works on the live URL
 
 ## Progress (2026-11-08)
 
@@ -50,3 +50,5 @@ Not checked (the test browser was no longer signed in as admin, and these change
 **Change (2026-11-08, team request):** hiding a review must show on open pages without a reload. The cause: Supabase Realtime only announces a change to people who may still read the row, and after hiding nobody but the writer and the team may, so open pages were never told. Fix: supabase/sql/041 adds review_visibility_signals, a read-only table that gets a row (only the place, never the review) whenever a review is hidden or shown again. It is on the Realtime list, and the place page and the home page listen to it as a doorbell, then ask the backend again.
 
 **Team check (2026-11-08, localhost):** the team ran 041. Keep it, Hide it and Delete review all work from the Reports screen, and the change shows in real time, without a reload, in an incognito (logged-out) window and in a normal tab. Still to confirm: the writer's grey note "Hidden while the team reviews it.", and the live URL.
+
+**Team check (2026-11-10, live URL):** the team confirmed it works on the live URL; all boxes ticked, ticket done.

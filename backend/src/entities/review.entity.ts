@@ -31,10 +31,8 @@ export class Review {
   @Column()
   comment: string;
 
-  // Where the review's photo is in the review-photos Storage bucket
-  // ("<user id>/<file name>"), or null when it has none (027, ticket 81).
-  @Column({ type: 'text', nullable: true })
-  photo_path: string | null;
+  // Its photos are in the review_photos table (up to 4, supabase/sql/044);
+  // the old single photo_path column is gone (046).
 
   @Column('timestamptz')
   created_at: Date;

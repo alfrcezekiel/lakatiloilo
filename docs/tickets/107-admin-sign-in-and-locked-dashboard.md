@@ -4,14 +4,14 @@
 
 **Blocked by:** None
 
-**Status:** todo
+**Status:** done
 
 - [x] A numbered SQL file adds the admins table with Row Level Security on and its policies (a person may read only their own row; nobody may write through the app); the team has run it and added the manager's account by hand
 - [x] The manager signs in at the admin sign-in page and sees the dashboard shell with its sidebar
 - [x] A traveler account is refused at the admin sign-in with "This sign-in is for the Lakat Iloilo team." and stays logged out
 - [x] Logged out or as a traveler, the dashboard shows "not found", and the admin endpoints answer 403 (checked with curl)
 - [x] The sign-in and the shell work with the keyboard alone, pass WCAG AA contrast, and work at 375 px and on a laptop
-- [ ] Works on the live URL
+- [x] Works on the live URL
 
 **Progress (2026-11-08):** restarted from scratch (the first attempt was rewound by the team; its unfinished code was removed and backed up outside the project). Step 1 written: supabase/sql/038-admins.sql adds the admins table (Row Level Security on; a person may read only their own row; no write permissions at all) and redefines is_admin(), which a rewound attempt had left in the database without a file. Adding the manager is a separate two-line query the team runs with the manager's email typed in, so the email is never saved in the project. Waiting for the team to run 038 and add the manager before the backend and screens are built.
 
@@ -66,3 +66,5 @@ Checked: backend type-check and lint; curl: GET /v1/admin/me 401 without a login
   - the remembered admin answer never outlives the token
   - the login and admin memories share one helper, backend/src/v1/token-memory.ts
   - the spec states the trade-off: each running copy of the backend keeps its own memory, so a logged-out login may still be accepted by another copy for at most 30 seconds
+
+**Team check (2026-11-10, live URL):** the team confirmed it works on the live URL; all boxes ticked, ticket done.

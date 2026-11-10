@@ -4,13 +4,13 @@
 
 **Blocked by:** None
 
-**Status:** todo
+**Status:** done
 
 - [x] A numbered SQL file adds the review_photos table with Row Level Security on and its policies (anyone may read photos of reviews they may read; only the review's writer may add or remove them), moves every existing photo into it, and lets admins delete photo files; the team has run it
 - [x] A traveler adds up to 4 photos to a new review and to an edited one, and removes one
 - [x] A 5th photo, a wrong file type or a file over 2 MB is refused with a plain message
 - [x] Old single photos still show
-- [ ] Works on the live URL
+- [x] Works on the live URL
 
 **Change (2026-11-09):** reviews.photo_path is kept for now instead of being dropped in this round's SQL. The live site keeps using it until the push, and dropping it first would break photos there. supabase/sql/044 copies every photo into review_photos; a later file (after the push) copies any photo added in between, then drops the column.
 
@@ -52,3 +52,9 @@ Not checked (needs a real traveler login, and it changes real data):
 **Fix (2026-11-09, team report):** posting a review with photos showed a console error, "Encountered two children with the same key". Cause: the photos upload after the review is saved, and during that time the live refresh already brought the new review into the list; when the form finished, it added the review again, so it was listed twice. A refresh could also swap the form for the "your review" box mid-upload, hiding the progress and any photo message. Fix: a newly saved review replaces any copy already in the list, and the form stays on screen while it posts and uploads (and after a refused photo, until it is saved again).
 
 **Team check (2026-11-09, localhost):** a new review with 4 photos posts once, with all 4 photos, and the duplicate-key error is gone.
+
+**Team check (2026-11-10, live URL):** the team confirmed it works on the live URL; all boxes ticked, ticket done.
+
+**Last step (2026-11-10): retiring reviews.photo_path.** The backend no longer reads or writes the old column (review entity, deleting a review, removing a photo). supabase/sql/046-retire-single-photo.sql copies any photo added in between (none are waiting today: 32 old photos, all already copied), removes photo rows whose file is gone, rewrites the review guard without photo_path and drops the column. Order: push this code first, then run 046 on the database. Checked: backend type-check and lint; GET /v1/reviews and /v1/ratings still answer 200 with the column still present.
+
+**Team check (2026-11-10):** the team ran 046 (before the push; deleting a review and removing a photo failed on the live site until this code went live). The column is gone and all 134 photo rows are intact.

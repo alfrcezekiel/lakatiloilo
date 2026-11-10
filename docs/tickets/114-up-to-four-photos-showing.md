@@ -4,12 +4,12 @@
 
 **Blocked by:** 113
 
-**Status:** todo
+**Status:** done
 
 - [x] A review with several photos shows them as a row; clicking one opens it larger with next and previous, arrow keys and Escape
 - [x] The row shows on traveler profiles and on the Reports screen
 - [x] Works at 375 px and on a laptop
-- [ ] Works on the live URL
+- [x] Works on the live URL
 
 ## Progress (2026-11-09)
 
@@ -32,3 +32,5 @@ Not checked:
 - the live URL
 
 **Team check (2026-11-09, localhost):** several photos show as a row; a photo opens larger with Previous and Next, the arrow keys and Escape. Still open: the live URL.
+
+**Team check (2026-11-10, live URL):** the team confirmed it works on the live URL; all boxes ticked, ticket done.

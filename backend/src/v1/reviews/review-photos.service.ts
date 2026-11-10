@@ -135,13 +135,10 @@ export class ReviewPhotosService {
   }
 
   // Where a review's files are kept, to delete them after the review is
-  // deleted: its photo rows, plus the old single photo (027) while that
-  // column still exists (it is the same file as its copied row).
+  // deleted: its photo rows.
   async pathsOf(db: Querier, reviewId: string): Promise<string[]> {
     const rows = (await db.query(
-      `select photo_path from public.review_photos where review_id = $1
-       union
-       select photo_path from public.reviews where id = $1 and photo_path is not null`,
+      'select photo_path from public.review_photos where review_id = $1',
       [reviewId],
     )) as { photo_path: string }[];
     return rows.map((row) => row.photo_path);

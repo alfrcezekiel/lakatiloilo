@@ -634,14 +634,14 @@ Admin dashboard & moderation round (changed 2026-11-08): the Lakat Iloilo team s
 - [x] Marking a review or reply Helpful from a second account notifies its writer within a few seconds; removing the mark removes the notification; your own never notify you
 
 **Admin dashboard & moderation round (live URL):**
-- [ ] An admin signs in at /admin/login and sees the dashboard with its four tiles and newest reports; a traveler account is refused there with "This sign-in is for the Lakat Iloilo team." and is not logged in
-- [ ] Logged out or as a traveler, every /admin page except the sign-in shows "not found", and every admin endpoint answers 401 logged out and 403 for a traveler (checked with curl)
-- [ ] After 3 different accounts report a review, it disappears for everyone else and from the rating, and its writer sees "Hidden while the team reviews it."
-- [ ] On Reports, Keep it, Hide it and Delete review all work
-- [ ] On Places, an admin edits a destination's and an accommodation's description and address, and the change shows on the site; a traveler cannot change a place (refused by the database)
-- [ ] The dashboard works with the keyboard alone, its text passes WCAG AA contrast, and it works at 375 px and on a laptop
-- [ ] A traveler can add up to 4 photos to a review, remove one, and open them larger with next and previous; a 5th is refused; old single photos still show
-- [ ] Row Level Security is on for admins, notifications, reply_likes, review_photos, destinations and accommodations, and no service_role or sb_secret_ key appears anywhere
+- [x] An admin signs in at /admin/login and sees the dashboard with its four tiles and newest reports; a traveler account is refused there with "This sign-in is for the Lakat Iloilo team." and is not logged in
+- [x] Logged out or as a traveler, every /admin page except the sign-in shows "not found", and every admin endpoint answers 401 logged out and 403 for a traveler (checked with curl)
+- [x] After 3 different accounts report a review, it disappears for everyone else and from the rating, and its writer sees "Hidden while the team reviews it."
+- [x] On Reports, Keep it, Hide it and Delete review all work
+- [x] On Places, an admin edits a destination's and an accommodation's description and address, and the change shows on the site; a traveler cannot change a place (refused by the database)
+- [x] The dashboard works with the keyboard alone, its text passes WCAG AA contrast, and it works at 375 px and on a laptop
+- [x] A traveler can add up to 4 photos to a review, remove one, and open them larger with next and previous; a 5th is refused; old single photos still show
+- [x] Row Level Security is on for admins, notifications, reply_likes, review_photos, destinations and accommodations, and no service_role or sb_secret_ key appears anywhere
 
 ## Out of scope
 - Admin dashboard & moderation round (was "moderation & photos round"): adding or deleting places and uploading place photos from the dashboard, making someone an admin or removing them from the app, managing travelers, banning travelers, appeals, a live Reports list (change 2026-11-09: the Overview's numbers and newest reports do update live), charts or history beyond the four tiles, a second login step for admins, keeping reports when a review is deleted, reordering photos, and photos over 2 MB

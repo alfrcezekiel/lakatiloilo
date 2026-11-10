@@ -4,12 +4,12 @@
 
 **Blocked by:** 109
 
-**Status:** todo
+**Status:** done
 
 - [x] A numbered SQL file adds the trigger that hides a review at its third report from different travelers; the team has run it
 - [x] After 3 different accounts report a review, it disappears for everyone else and from the rating, and its writer sees "Hidden while the team reviews it."
 - [x] Two reports leave it showing; Keep it on the Reports screen shows it again
-- [ ] Works on the live URL
+- [x] Works on the live URL
 
 ## Progress (2026-11-08)
 
@@ -30,3 +30,5 @@ Not checked: the live URL.
 **Team check (2026-11-08, localhost):** on the place page the writer sees "Hidden while the team reviews it."; other travelers do not see the review at all. On Reports the review shows "3 reports" and "Hidden".
 
 **Team check (2026-11-08):** a review with two reports stays showing; Keep it was confirmed in ticket 109 and in the rolled-back test.
+
+**Team check (2026-11-10, live URL):** the team confirmed it works on the live URL; all boxes ticked, ticket done.

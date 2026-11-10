@@ -83,9 +83,7 @@ export class ReviewPhotoUploadsService {
   // Removes one photo from the traveler's own review (DELETE
   // /v1/reviews/:id/photos/:photoId, ticket 113), then deletes the file.
   // Row Level Security only lets the writer remove it, so someone else's
-  // photo is simply "not found". While the old single-photo column (027)
-  // still exists, it is cleared too when it points at this file, so the
-  // later clean-up file cannot bring the photo back.
+  // photo is simply "not found".
   async remove(accessToken: string, reviewId: string, photoId: string): Promise<{ id: string }> {
     const path = await this.asTraveler(accessToken, async (runner) => {
       const [rows]: [{ photo_path: string }[], number] = await runner.query(
@@ -93,11 +91,6 @@ export class ReviewPhotoUploadsService {
         [photoId, reviewId],
       );
       if (rows.length === 0) throw photoNotFound();
-      await runner.query(
-        `update public.reviews set photo_path = null
-          where id = $1 and user_id = auth.uid() and photo_path = $2`,
-        [reviewId, rows[0].photo_path],
-      );
       return rows[0].photo_path;
     });
     await this.photos.remove(accessToken, path);
