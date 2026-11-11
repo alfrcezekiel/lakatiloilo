@@ -4,13 +4,14 @@ import { PlaceListSkeleton } from "@/components/PlaceListSkeleton";
 import { Reveal } from "@/components/Reveal";
 import { ViewDetails, cardLink } from "@/components/ViewDetails";
 import { CardRating, type RatingsByPlace } from "@/components/CardRating";
+import { PlacePhoto } from "@/components/PlacePhoto";
 
 interface Destination {
   id: string;
   name: string;
   description: string;
   address: string;
-  photo_url: string;
+  photo_url: string | null;
   category: string;
 }
 
@@ -55,7 +56,7 @@ export function CategoryList({ destinations, category, title, id, ratings, loadi
               >
                 <Card className="overflow-hidden bg-white/15 border border-white/25 shadow-none transition duration-300 motion-safe:hover:-translate-y-1 cursor-pointer h-full flex flex-col">
                   <div className="aspect-video w-full overflow-hidden bg-muted">
-                    <img
+                    <PlacePhoto
                       src={destination.photo_url}
                       alt={destination.name}
                       className="h-full w-full object-cover"

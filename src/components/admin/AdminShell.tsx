@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, Flag, LayoutDashboard, LogOut, MapPin, Menu, X, type LucideIcon } from "lucide-react";
+import { ArrowLeft, Flag, LayoutDashboard, LogOut, MapPin, Menu, MessageSquare, Tags, X, type LucideIcon } from "lucide-react";
 import { useState } from "react";
 import Link from "next/link";
 import { notFound, usePathname, useRouter } from "next/navigation";
@@ -8,23 +8,29 @@ import { Logo } from "@/components/Logo";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Spinner } from "@/components/ui/spinner";
 import { AdminFrame, adminGlass } from "@/components/admin/AdminFrame";
+import { PendingDeletesHost, flushDeletes } from "@/components/admin/PendingDeletes";
 import { displayNameOf, logOut, useCurrentUser } from "@/lib/login";
 import { cn } from "@/lib/utils";
 
-// The dashboard's sections (Reports since ticket 108, Places since 112).
+// The dashboard's sections (Reports since ticket 108, Places since 112,
+// Reviews since 122, Categories since 2026-11-11).
 // "ready: false" shows a section as "Soon", not a link.
 const sections: { href: string; label: string; icon: LucideIcon; ready: boolean }[] = [
   { href: "/admin", label: "Overview", icon: LayoutDashboard, ready: true },
+  { href: "/admin/reviews", label: "Reviews", icon: MessageSquare, ready: true },
   { href: "/admin/reports", label: "Reports", icon: Flag, ready: true },
   { href: "/admin/places", label: "Places", icon: MapPin, ready: true },
+  // Its own page since 2026-11-11 (team request): it was at the bottom of
+  // Places.
+  { href: "/admin/categories", label: "Categories", icon: Tags, ready: true },
 ];
 
 // One item in the sidebar or phone menu. The current section is marked
 // with amber text and an amber line (never a white box, see
-// .claude/rules/no-white-hover-backdrop.md) and aria-current for screen
+// .claude/rules/frontend.md) and aria-current for screen
 // readers.
 const itemClass =
-  "flex min-h-11 w-full items-center gap-3 rounded-xl border-l-2 px-3 text-[0.95rem] font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-white";
+  "flex min-h-11 w-full items-center gap-3 rounded-xl border-l-2 px-3 text-[0.95rem] font-medium transition-colors focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-white";
 
 function SectionLinks({ onPick }: { onPick: () => void }) {
   const pathname = usePathname();
@@ -113,6 +119,9 @@ export function AdminShell({
     if (leaving) return;
     setMenuOpen(false);
     setLeavingAs(currentUser);
+    // Deletes still waiting for Undo are sent first, while the login
+    // still works (ticket 127).
+    await flushDeletes();
     await logOut();
     router.replace("/admin/login");
   };
@@ -185,6 +194,8 @@ export function AdminShell({
 
   return (
     <AdminFrame>
+      {/* Undo after a delete (ticket 127). */}
+      <PendingDeletesHost />
       <a
         href="#admin-main"
         className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-50 focus:rounded-lg focus:bg-amber-300 focus:px-3 focus:py-2 focus:font-semibold focus:text-teal-950"
@@ -193,7 +204,8 @@ export function AdminShell({
       </a>
 
       {/* Phones and tablets: a glass top bar with a menu button. */}
-      <header className={cn(adminGlass, "sticky top-3 z-40 mx-3 mt-3 rounded-2xl lg:hidden")}>
+      {/* Solid, not glass: it floats over the page as it scrolls. */}
+      <header className="sticky top-3 z-40 mx-3 mt-3 rounded-2xl border border-white/20 bg-teal-900 lg:hidden">
         <div className="flex items-center justify-between px-4 py-3">
           <Logo width={130} height={27} />
           <button
@@ -232,7 +244,7 @@ export function AdminShell({
           </nav>
         </aside>
 
-        <main id="admin-main" className="min-w-0 flex-1">
+        <main id="admin-main" tabIndex={-1} className="min-w-0 flex-1 focus:outline-none">
           <p className="text-[11px] font-semibold uppercase tracking-[0.25em] text-white/80">
             Signed in as {displayNameOf(user)}
           </p>

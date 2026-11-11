@@ -1,4 +1,4 @@
-import { getAccommodations, getDestinations, getRatings } from "@/lib/api";
+import { getAccommodations, getCategories, getDestinations, getRatings } from "@/lib/api";
 import { HomePage, type HomePlaces } from "@/components/HomePage";
 
 // Ask the backend on every visit, so the page always shows the latest
@@ -9,10 +9,11 @@ export const dynamic = "force-dynamic";
 // the same time. It never fails: if the backend cannot be reached, it
 // answers with empty lists and failed: true, so the page can say so.
 async function loadPlaces(): Promise<HomePlaces> {
-  const [destinations, accommodations, ratings] = await Promise.allSettled([
+  const [destinations, accommodations, ratings, categories] = await Promise.allSettled([
     getDestinations(),
     getAccommodations(),
     getRatings(),
+    getCategories(),
   ]);
   return {
     destinations: destinations.status === "fulfilled" ? destinations.value : [],
@@ -20,6 +21,9 @@ async function loadPlaces(): Promise<HomePlaces> {
     // Ratings are extra: if they fail, the cards still show, just without
     // a rating (null), and the page does not say places failed to load.
     ratings: ratings.status === "fulfilled" ? ratings.value : null,
+    // The team's categories and kinds (ticket 117). Extra too: if they
+    // fail, the page shows the eight built-in ones.
+    categories: categories.status === "fulfilled" ? categories.value : null,
     failed: destinations.status === "rejected" || accommodations.status === "rejected",
   };
 }

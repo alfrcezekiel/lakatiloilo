@@ -40,7 +40,7 @@ const bootstrap = async () => {
   // reviews. The Authorization header carries the traveler's login token.
   app.enableCors({
     origin: origins,
-    methods: ['GET', 'POST', 'PATCH', 'DELETE'],
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
     allowedHeaders: ['Content-Type', 'Authorization'],
   });
   // Vercel (and most hosts) tell the app which port to use through PORT.

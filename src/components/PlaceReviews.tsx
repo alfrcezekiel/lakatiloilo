@@ -49,7 +49,9 @@ export function PlaceReviewsProvider({
   // TanStack Query already fetches the reviews again when the tab comes
   // back or the browser is online again, so only a Realtime reconnect
   // rings here (ticket 92).
-  useTableChanges(REVIEW_TABLES, refetchReviews, { catchUpOnReturn: false });
+  // 0.2 s instead of 0.5 s after the last change, so a Helpful mark (or
+  // the team removing one) shows sooner (team report 2026-11-11).
+  useTableChanges(REVIEW_TABLES, refetchReviews, { catchUpOnReturn: false, quietMs: 200 });
 
   return (
     <PlaceContext.Provider value={{ placeType, placeId }}>{children}</PlaceContext.Provider>

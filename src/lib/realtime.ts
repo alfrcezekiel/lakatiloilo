@@ -31,7 +31,10 @@ export type LiveTable =
   // Reports were added or removed (supabase/sql/045). Holds only a time:
   // the dashboard Overview listens to it instead of review_reports, which
   // stays off the Realtime list.
-  | "report_signals";
+  | "report_signals"
+  // The team added or deleted a category or kind (ticket 117,
+  // supabase/sql/047).
+  | "place_categories";
 
 // What to listen to: a table name means every change in it. The longer
 // form narrows it to one kind of change and/or rows matching a filter that

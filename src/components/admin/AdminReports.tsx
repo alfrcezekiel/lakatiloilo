@@ -2,18 +2,34 @@
 
 import { Check, Flag, RefreshCw } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { AdminShell } from "@/components/admin/AdminShell";
 import { adminGlass } from "@/components/admin/AdminFrame";
-import { AdminLoadError, REPORTS_KEY, adminQuerySettings, plural } from "@/components/admin/admin-ui";
+import {
+  ADMIN_LIVE_QUIET_MS,
+  AdminLoadError,
+  REPORTS_KEY,
+  adminQuerySettings,
+  plural,
+} from "@/components/admin/admin-ui";
 import { ModerationButtons } from "@/components/admin/ModerationButtons";
+import {
+  ListControls,
+  Pagination,
+  pageCount,
+  showingText,
+  type PerPage,
+  type SortChoice,
+} from "@/components/admin/ListControls";
+import { usePendingKeys } from "@/components/admin/PendingDeletes";
 import { ReviewPhotos } from "@/components/ReviewPhoto";
 import { Stars, formatDate } from "@/components/ReviewsSection";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Spinner } from "@/components/ui/spinner";
 import { getAdminReports, REPORT_REASON_LABELS, type ReportedReview } from "@/lib/api";
 import { freshToken } from "@/lib/login";
+import { useTableChanges } from "@/lib/realtime";
 import { cn } from "@/lib/utils";
 
 // The team's Reports screen (/admin/reports, admin dashboard & moderation
@@ -22,12 +38,32 @@ import { cn } from "@/lib/utils";
 // the database does not let admins read that (supabase/sql/039). Each
 // review has Keep it, Hide it and Delete review (ticket 109,
 // ModerationButtons.tsx).
+//
+// Live (ticket 126): a new or removed report (report_signals, never
+// review_reports itself), a review edited, hidden, shown or deleted, or
+// its photos changed rings the doorbell, and the list is asked again.
+const LIVE_TABLES = ["report_signals", "reviews", "review_visibility_signals", "review_photos"] as const;
+
+// Pages and sorting (ticket 131): Recently added = newest report first;
+// Most relevant = most reports; Top-rated = most stars. Ties go to the
+// newest report, then the review id, so the order never jumps between
+// pages. Every reported review is already loaded (up to 100), so the pages
+// are made here in the browser.
+const newestReport = (review: ReportedReview) =>
+  review.reports.reduce((latest, report) => (report.created_at > latest ? report.created_at : latest), "");
+const byNewestReport = (a: ReportedReview, b: ReportedReview) =>
+  newestReport(b).localeCompare(newestReport(a)) || a.id.localeCompare(b.id);
+const REPORT_SORTS: Record<SortChoice, (a: ReportedReview, b: ReportedReview) => number> = {
+  recent: byNewestReport,
+  relevant: (a, b) => b.report_count - a.report_count || byNewestReport(a, b),
+  top: (a, b) => b.rating - a.rating || byNewestReport(a, b),
+};
 
 const placeHref = (review: ReportedReview) =>
   `/${review.place_type === "destination" ? "destinations" : "accommodations"}/${review.place_id}`;
 
 // A small outlined label (never a white box, see
-// .claude/rules/no-white-hover-backdrop.md).
+// .claude/rules/frontend.md).
 const chip = "inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold";
 
 function ReportedReviewCard({
@@ -44,14 +80,14 @@ function ReportedReviewCard({
     <article
       aria-labelledby={headingId}
       tabIndex={-1}
-      className={cn(adminGlass, "scroll-mt-24 p-5 sm:p-6 focus:outline-2 focus:outline-amber-300")}
+      className={cn(adminGlass, "scroll-mt-24 p-5 sm:p-6 focus-visible:outline-2 focus-visible:outline-amber-300 focus:outline-none")}
     >
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/75">
             {review.place_type === "destination" ? "Destination" : "Accommodation"}
           </p>
-          <h2 id={headingId} className="font-fraunces mt-1 text-xl leading-snug font-medium break-words">
+          <h2 id={headingId} className="font-fraunces mt-1 text-xl leading-snug font-medium wrap-break-word">
             <Link
               href={placeHref(review)}
               className="underline-offset-4 hover:text-amber-300 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
@@ -84,7 +120,7 @@ function ReportedReviewCard({
           <Stars rating={review.rating} />
           <span className="text-sm text-white/75">{formatDate(review.created_at)}</span>
         </div>
-        <p className="mt-2 whitespace-pre-line break-words text-white/90">{review.comment}</p>
+        <p className="mt-2 whitespace-pre-line wrap-break-word text-white/90">{review.comment}</p>
         {review.photos.length > 0 && (
           <div className="mt-3">
             <ReviewPhotos photos={review.photos} reviewerName={review.reviewer_name} />
@@ -102,7 +138,7 @@ function ReportedReviewCard({
             <span className="shrink-0 font-semibold text-amber-200 sm:w-44">
               {REPORT_REASON_LABELS[report.reason] ?? report.reason}
             </span>
-            <span className={cn("min-w-0 flex-1 break-words", report.note ? "text-white/90" : "text-white/70 italic")}>
+            <span className={cn("min-w-0 flex-1 wrap-break-word", report.note ? "text-white/90" : "text-white/70 italic")}>
               {report.note ?? "No note"}
             </span>
             <span className="shrink-0 text-sm text-white/70">{formatDate(report.created_at)}</span>
@@ -154,6 +190,18 @@ function ReportsList() {
   };
 
   const reports = useReports();
+  const pendingKeys = usePendingKeys();
+  // Pages and sorting (ticket 131). Reports open on Most relevant (most
+  // reports first), the order this screen always had.
+  const [sort, setSortOnly] = useState<SortChoice>("relevant");
+  const [perPage, setPerPageOnly] = useState<PerPage>(10);
+  // null: not chosen yet, so a link to one reported review
+  // ("#reported-<id>", from the Overview) opens the page it is on.
+  const [page, setPage] = useState<number | null>(null);
+  const statusLine = useRef<HTMLParagraphElement>(null);
+  const { refetch } = reports;
+  const refresh = useCallback(() => void refetch(), [refetch]);
+  useTableChanges(LIVE_TABLES, refresh, { quietMs: ADMIN_LIVE_QUIET_MS });
 
   // Opened from a newest report on the dashboard home (ticket 111):
   // "#reported-<review id>". The list arrives after the page opens, so the
@@ -179,20 +227,42 @@ function ReportsList() {
     );
   }
 
-  const list = reports.data;
+  // Reviews waiting for Undo (ticket 127) are left out.
+  const list = reports.data
+    .filter((review) => !pendingKeys.has(`review:${review.id}`))
+    .sort(REPORT_SORTS[sort]);
+  const pages = pageCount(list.length, perPage);
+  const linked = typeof window === "undefined" ? "" : window.location.hash.slice("#reported-".length);
+  const linkedIndex = page === null && linked ? list.findIndex((review) => review.id === linked) : -1;
+  const startPage = linkedIndex >= 0 ? Math.floor(linkedIndex / perPage) + 1 : 1;
+  // A delete can empty the last page: show the one before it.
+  const current = Math.min(page ?? startPage, pages);
+  const onPage = list.slice((current - 1) * perPage, current * perPage);
+  const goTo = (next: number) => {
+    setPage(next);
+    requestAnimationFrame(() => {
+      statusLine.current?.focus({ preventScroll: true });
+      statusLine.current?.scrollIntoView({ block: "start", behavior: "smooth" });
+    });
+  };
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <p role="status" className="text-white/85">
+        <p
+          ref={statusLine}
+          tabIndex={-1}
+          role="status"
+          className="scroll-mt-24 text-white/85 focus:outline-none"
+        >
           {list.length === 0
             ? "No reports waiting."
-            : `${plural(list.length, "reported review")}, most reports first.`}
+            : showingText(current, perPage, list.length, list.length === 1 ? "reported review" : "reported reviews")}
         </p>
         <button
           type="button"
           onClick={() => void reports.refetch()}
           disabled={reports.isFetching}
-          className="inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-xl border border-white/40 px-4 text-sm font-semibold hover:border-amber-300 hover:text-amber-300 focus-visible:outline-2 focus-visible:outline-white disabled:cursor-default disabled:opacity-70"
+          className="inline-flex min-h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-white/40 px-4 text-sm font-semibold hover:border-amber-300 hover:text-amber-300 focus-visible:outline-2 focus-visible:outline-white disabled:cursor-default disabled:opacity-70 sm:w-auto"
         >
           {reports.isFetching ? <Spinner /> : <RefreshCw aria-hidden="true" className="size-4" />}
           {reports.isFetching ? "Checking…" : "Check for new reports"}
@@ -211,6 +281,21 @@ function ReportsList() {
         </p>
       )}
 
+      {list.length > 0 && (
+        <ListControls
+          sort={sort}
+          onSort={(next) => {
+            setSortOnly(next);
+            setPage(1);
+          }}
+          perPage={perPage}
+          onPerPage={(next) => {
+            setPerPageOnly(next);
+            setPage(1);
+          }}
+        />
+      )}
+
       {list.length === 0 ? (
         <div className={cn(adminGlass, "p-6 sm:p-8")}>
           <p className="font-fraunces text-2xl font-medium">All clear</p>
@@ -219,8 +304,10 @@ function ReportsList() {
           </p>
         </div>
       ) : (
-        list.map((review) => <ReportedReviewCard key={review.id} review={review} onDone={announce} />)
+        onPage.map((review) => <ReportedReviewCard key={review.id} review={review} onDone={announce} />)
       )}
+
+      <Pagination page={current} pages={pages} onPage={goTo} label="Pages of reported reviews" />
     </div>
   );
 }

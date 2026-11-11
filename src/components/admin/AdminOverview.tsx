@@ -6,7 +6,7 @@ import { useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { AdminShell } from "@/components/admin/AdminShell";
 import { adminGlass } from "@/components/admin/AdminFrame";
-import { AdminLoadError, adminQuerySettings, plural } from "@/components/admin/admin-ui";
+import { ADMIN_LIVE_QUIET_MS, AdminLoadError, adminQuerySettings, plural } from "@/components/admin/admin-ui";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   getAdminOverview,
@@ -125,7 +125,7 @@ function OverviewContent({ data }: { data: AdminOverviewData }) {
                 >
                   <Flag aria-hidden="true" className="size-4 shrink-0 text-amber-300" />
                   <span className="min-w-0 flex-1">
-                    <span className="block font-semibold break-words">
+                    <span className="block font-semibold wrap-break-word">
                       {REPORT_REASON_LABELS[report.reason] ?? report.reason}
                       <span className="font-normal text-white/80">
                         {" "}
@@ -168,7 +168,7 @@ function OverviewData() {
   const overview = useOverview();
   const { refetch } = overview;
   const refresh = useCallback(() => void refetch(), [refetch]);
-  useTableChanges(OVERVIEW_TABLES, refresh);
+  useTableChanges(OVERVIEW_TABLES, refresh, { quietMs: ADMIN_LIVE_QUIET_MS });
 
   if (overview.isPending) return <OverviewSkeleton />;
   if (overview.isError) {

@@ -1,6 +1,12 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { FindOptionsWhere, Repository } from 'typeorm';
+import {
+  photoCreditOf,
+  withAllowedPhotos,
+  type PublicPhotoCredit,
+  type WithAllowedPhoto,
+} from '../public-photo-credit';
 import { NearParams, applyNear, withDistance } from '../near-query';
 import { Accommodation } from '../../entities/accommodation.entity';
 
@@ -14,33 +20,42 @@ export class AccommodationsService {
 
   // The filter is optional. TypeORM sends it as a query parameter,
   // never glued into the SQL text, so user input cannot change the query.
-  findAll(type?: string): Promise<Accommodation[]> {
+  async findAll(type?: string): Promise<WithAllowedPhoto<Accommodation>[]> {
     const where: FindOptionsWhere<Accommodation> = {};
     if (type) where.type = type;
 
-    return this.accommodationsRepository.find({
+    const places = await this.accommodationsRepository.find({
       where,
       order: { name: 'ASC' },
     });
+    // Ticket 138: no photo until its credits are allowed.
+    return withAllowedPhotos(this.accommodationsRepository.manager, 'accommodation', places);
   }
 
   // Rows within near.radiusKm of the point, nearest first, each with
   // distance_km. The optional type filter narrows the results further.
-  findNear(near: NearParams, type?: string) {
+  async findNear(near: NearParams, type?: string) {
     const qb = applyNear(
       this.accommodationsRepository.createQueryBuilder('accommodation'),
       'accommodation',
       near,
     );
     if (type) qb.andWhere('accommodation.type = :type', { type });
-    return withDistance(qb);
+    return withAllowedPhotos(this.accommodationsRepository.manager, 'accommodation', await withDistance(qb));
   }
 
-  async findOne(id: string): Promise<Accommodation> {
+  // One accommodation, with its photo's credit line (ticket 135), or null
+  // when the photo has no allowed credits yet (ticket 138).
+  async findOne(
+    id: string,
+  ): Promise<WithAllowedPhoto<Accommodation> & { photo_credit: PublicPhotoCredit | null }> {
     const accommodation = await this.accommodationsRepository.findOneBy({ id });
     if (!accommodation) {
       throw new NotFoundException("We couldn't find that accommodation.");
     }
-    return accommodation;
+    const photo_credit = await photoCreditOf(this.accommodationsRepository.manager, 'accommodation', id);
+    // Ticket 138: the photo only with allowed credits; otherwise the
+    // website shows the splash art (and no credit line).
+    return { ...accommodation, photo_url: photo_credit ? accommodation.photo_url : null, photo_credit };
   }
 }

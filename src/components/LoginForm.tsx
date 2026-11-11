@@ -339,7 +339,7 @@ export function LoginForm() {
                   {travelerTypes.map((type) => (
                     <label
                       key={type.id}
-                      className={`flex cursor-pointer items-center justify-center rounded-full border px-2 py-2 text-center text-xs leading-tight font-medium sm:text-sm transition-colors has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-white ${
+                      className={`flex cursor-pointer items-center justify-center rounded-full border px-2 py-2 text-center text-xs leading-tight font-medium sm:text-sm transition-colors has-focus-visible:outline-2 has-focus-visible:outline-white ${
                         travelerType === type.id
                           ? "border-white bg-white text-teal-900 shadow"
                           : errors.traveler

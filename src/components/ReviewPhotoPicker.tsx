@@ -139,7 +139,7 @@ export function ReviewPhotoPicker({
           htmlFor={inputId}
           className={cn(
             pillButton({ kind: "glass" }),
-            "h-9 cursor-pointer px-3.5 text-sm has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-white",
+            "h-9 cursor-pointer px-3.5 text-sm has-focus-visible:outline-2 has-focus-visible:outline-white",
             disabled && "pointer-events-none opacity-60",
           )}
         >

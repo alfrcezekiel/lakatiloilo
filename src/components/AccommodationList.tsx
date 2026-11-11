@@ -4,13 +4,14 @@ import { PlaceListSkeleton } from "@/components/PlaceListSkeleton";
 import { Reveal } from "@/components/Reveal";
 import { ViewDetails, cardLink } from "@/components/ViewDetails";
 import { CardRating, type RatingsByPlace } from "@/components/CardRating";
+import { PlacePhoto } from "@/components/PlacePhoto";
 
 interface Accommodation {
   id: string;
   name: string;
   description: string;
   address: string;
-  photo_url: string;
+  photo_url: string | null;
   type: string;
 }
 
@@ -21,12 +22,21 @@ interface AccommodationListProps {
   ratings: RatingsByPlace;
   // True while the home page is still waiting for the backend.
   loading: boolean;
+  // The heading: "Hotels & Condominiums", or "Places to stay" once the
+  // team has added another kind (ticket 117).
+  title?: string;
 }
 
-export function AccommodationList({ accommodations, id, ratings, loading }: AccommodationListProps) {
+export function AccommodationList({
+  accommodations,
+  id,
+  ratings,
+  loading,
+  title = "Hotels & Condominiums",
+}: AccommodationListProps) {
   if (loading) {
     return (
-      <PlaceListSkeleton id={id} title="Hotels & Condominiums" withPill />
+      <PlaceListSkeleton id={id} title={title} withPill />
     );
   }
 
@@ -40,7 +50,7 @@ export function AccommodationList({ accommodations, id, ratings, loading }: Acco
       <div className="mx-auto max-w-6xl px-4 sm:px-6">
         <Reveal>
           <h2 className="mb-8 text-3xl font-semibold text-white">
-            Hotels & Condominiums
+            {title}
           </h2>
         </Reveal>
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
@@ -54,7 +64,7 @@ export function AccommodationList({ accommodations, id, ratings, loading }: Acco
               >
                 <Card className="overflow-hidden bg-white/15 border border-white/25 shadow-none transition duration-300 motion-safe:hover:-translate-y-1 cursor-pointer h-full flex flex-col">
                   <div className="aspect-video w-full overflow-hidden bg-muted">
-                    <img
+                    <PlacePhoto
                       src={accommodation.photo_url}
                       alt={accommodation.name}
                       className="h-full w-full object-cover"

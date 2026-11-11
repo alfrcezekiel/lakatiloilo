@@ -1,14 +1,18 @@
-import { categoryChips } from "@/lib/labels";
+import { categoryChips, type ExtraCategory } from "@/lib/labels";
 
 interface CategoryChipsProps {
   selectedCategory: string;
   onCategoryChange: (category: string) => void;
+  // Categories and kinds the team added (ticket 117), after the built-in
+  // chips.
+  extras?: ExtraCategory[];
 }
 
-export function CategoryChips({ selectedCategory, onCategoryChange }: CategoryChipsProps) {
+export function CategoryChips({ selectedCategory, onCategoryChange, extras = [] }: CategoryChipsProps) {
+  const chips = [...categoryChips, ...extras.map((extra) => ({ id: extra.id, label: extra.name }))];
   return (
     <div className="mb-12 flex flex-wrap gap-2 sm:gap-3">
-      {categoryChips.map((chip) => {
+      {chips.map((chip) => {
         const isSelected = selectedCategory === chip.id;
         return (
           <button

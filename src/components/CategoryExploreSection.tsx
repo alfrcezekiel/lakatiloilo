@@ -1,9 +1,9 @@
 "use client";
 
-import { ArrowRight, Building2, Footprints, Hotel, Landmark, Mountain, PartyPopper, Trees, UtensilsCrossed } from "lucide-react";
+import { ArrowRight, BedDouble, Building2, Footprints, Hotel, Landmark, MapPin, Mountain, PartyPopper, Trees, UtensilsCrossed } from "lucide-react";
 import { useMemo } from "react";
 import type { Accommodation, Destination } from "@/lib/api";
-import { locationFilters, sectionTitles } from "@/lib/labels";
+import { locationFilters, sectionTitles, type ExtraCategory } from "@/lib/labels";
 import { scrollToSection } from "@/lib/utils/scroll";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Reveal } from "@/components/Reveal";
@@ -50,6 +50,9 @@ interface CategoryExploreSectionProps {
   // True while the home page is still waiting for the backend. The counts
   // show a skeleton instead of "0 places" until the real numbers arrive.
   loading: boolean;
+  // Categories and kinds the team added (ticket 117): a card each after
+  // the built-in ones, with a general icon and its first place's photo.
+  extras?: ExtraCategory[];
 }
 
 export function CategoryExploreSection({
@@ -58,7 +61,24 @@ export function CategoryExploreSection({
   selectedLocation,
   onLocationChange,
   loading,
+  extras = [],
 }: CategoryExploreSectionProps) {
+  // The built-in cards, then the team's own: a pin for a destination
+  // category, a bed for an accommodation kind.
+  const cards = [
+    ...categories.map((category) => ({
+      ...category,
+      imageUrl: categoryImages[category.id as keyof typeof categoryImages],
+      sectionId: undefined as string | undefined,
+    })),
+    ...extras.map((extra) => ({
+      id: extra.id,
+      name: extra.name,
+      icon: extra.appliesTo === "destination" ? MapPin : BedDouble,
+      imageUrl: extra.imageUrl,
+      sectionId: extra.appliesTo === "destination" ? `${extra.id}-list` : "accommodation-list",
+    })),
+  ];
 
   const categorySectionIds: Record<string, string> = {
     mountain: "mountain-list",
@@ -119,10 +139,10 @@ export function CategoryExploreSection({
         </Reveal>
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-          {categories.map((category, index) => {
+          {cards.map((category, index) => {
             const count = categoryCounts[category.id] || 0;
-            const imageUrl = categoryImages[category.id as keyof typeof categoryImages];
-            const sectionId = categorySectionIds[category.id];
+            const imageUrl = category.imageUrl;
+            const sectionId = category.sectionId ?? categorySectionIds[category.id];
 
             return (
               // Cards in one row arrive one after another (4 per row on a

@@ -1,6 +1,6 @@
 "use client";
 
-import type { Accommodation, Destination, PlaceRating } from "@/lib/api";
+import type { Accommodation, Destination, PlaceCategory, PlaceRating } from "@/lib/api";
 import { ratingKey, type RatingsByPlace } from "@/components/CardRating";
 import { useState, useEffect, useMemo, useRef } from "react";
 import { useRouter } from "next/navigation";
@@ -18,7 +18,7 @@ import { Footer } from "@/components/Footer";
 import { DockNavbar } from "@/components/DockNavbar";
 import { ScrollToTop } from "@/components/ScrollToTop";
 import { Reveal } from "@/components/Reveal";
-import { sectionTitles } from "@/lib/labels";
+import { extraCategories, sectionTitles } from "@/lib/labels";
 
 // The destination list sections, in the order they appear on the page.
 const destinationSections = [
@@ -37,6 +37,8 @@ export type HomePlaces = {
   accommodations: Accommodation[];
   // Every reviewed place's rating (GET /v1/ratings); null if it failed.
   ratings: PlaceRating[] | null;
+  // The team's categories and kinds (GET /v1/categories); null if it failed.
+  categories: PlaceCategory[] | null;
   failed: boolean;
 };
 
@@ -49,6 +51,8 @@ const HOME_TABLES = [
   "accommodations",
   "reviews",
   "review_visibility_signals",
+  // A category or kind added or deleted from the dashboard (ticket 117).
+  "place_categories",
 ] as const;
 
 // The home page itself. The Next.js server has already started asking the
@@ -74,6 +78,8 @@ export function HomePage({ places }: { places: Promise<HomePlaces> }) {
   const [loading, setLoading] = useState(true);
   // Ratings for the cards, looked up by place (null if they failed).
   const [ratings, setRatings] = useState<RatingsByPlace>(null);
+  // The team's categories and kinds (ticket 117); empty until they arrive.
+  const [categories, setCategories] = useState<PlaceCategory[]>([]);
 
   // Live updates (ticket 90): when a destination, accommodation or review
   // changes anywhere, Supabase Realtime rings and the page asks the Next.js
@@ -106,6 +112,8 @@ export function HomePage({ places }: { places: Promise<HomePlaces> }) {
             ? current
             : null,
       );
+      // Categories that fail on a live refresh keep the ones on screen.
+      if (result.categories) setCategories(result.categories);
       setLoadError(result.failed);
       setLoading(false);
     });
@@ -132,6 +140,19 @@ export function HomePage({ places }: { places: Promise<HomePlaces> }) {
     [accommodations, selectedLocation],
   );
 
+  // Categories and kinds added from the dashboard that have at least one
+  // place (ticket 117): each gets a chip, a card and a list like the eight
+  // built-in ones. Worked out from every place, whatever the location
+  // filter, so a card does not come and go with the filter.
+  const extras = useMemo(
+    () => extraCategories(categories, destinations, accommodations),
+    [categories, destinations, accommodations],
+  );
+  const extraNames = useMemo(
+    () => Object.fromEntries(extras.map((extra) => [extra.id, extra.name])),
+    [extras],
+  );
+
   return (
     <main className="min-h-screen">
       {/* Screen readers hear "Loading places" while the skeletons show. The
@@ -149,6 +170,7 @@ export function HomePage({ places }: { places: Promise<HomePlaces> }) {
                 destinations={destinations}
                 accommodations={accommodations}
                 selectedCategory={selectedCategory}
+                extraNames={extraNames}
                 loading={loading}
               />
             </Reveal>
@@ -156,6 +178,7 @@ export function HomePage({ places }: { places: Promise<HomePlaces> }) {
               <CategoryChips
                 selectedCategory={selectedCategory}
                 onCategoryChange={setSelectedCategory}
+                extras={extras}
               />
             </Reveal>
             <FeaturedCards destinations={destinations} ratings={ratings} loading={loading} />
@@ -175,6 +198,7 @@ export function HomePage({ places }: { places: Promise<HomePlaces> }) {
           accommodations={visibleAccommodations}
           selectedLocation={selectedLocation}
           onLocationChange={setSelectedLocation}
+          extras={extras}
           loading={loading}
         />
       </section>
@@ -214,8 +238,29 @@ export function HomePage({ places }: { places: Promise<HomePlaces> }) {
           />
         ))}
 
+        {/* Destination categories the team added, after the built-in ones. */}
+        {extras
+          .filter((extra) => extra.appliesTo === "destination")
+          .map((extra) => (
+            <CategoryList
+              key={extra.id}
+              destinations={visibleDestinations}
+              category={extra.id}
+              title={extra.name}
+              id={`${extra.id}-list`}
+              ratings={ratings}
+              loading={loading}
+            />
+          ))}
+
         <AccommodationList
           accommodations={visibleAccommodations}
+          // A kind the team added shares this list, so its heading widens.
+          title={
+            extras.some((extra) => extra.appliesTo === "accommodation")
+              ? "Places to stay"
+              : "Hotels & Condominiums"
+          }
           id="accommodation-list"
           ratings={ratings}
           loading={loading}

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { cache } from "react";
 import { Mail, Phone } from "lucide-react";
-import { getAccommodation } from "@/lib/api";
+import { categoryName, getAccommodation } from "@/lib/api";
 import { pillButton } from "@/components/ui/button";
 import type { Accommodation } from "@/lib/api";
 import { accommodationTypeLabels, locationLabels } from "@/lib/labels";
@@ -54,7 +54,9 @@ export default async function AccommodationDetailPage({
     return <PlaceNotFound tone="accommodation" what="Accommodation" failed={failed} />;
   }
 
-  const type = accommodationTypeLabels[accommodation.type] ?? accommodation.type;
+  // A kind the team added from the dashboard (ticket 117) is named in the
+  // categories list, not in the built-in labels.
+  const type = accommodationTypeLabels[accommodation.type] ?? (await categoryName(accommodation.type));
   const area = locationLabels[accommodation.location_type] ?? accommodation.location_type;
   const hasContact = Boolean(accommodation.phone || accommodation.email);
 
@@ -66,6 +68,7 @@ export default async function AccommodationDetailPage({
         name={accommodation.name}
         chips={[type, area]}
         address={accommodation.address}
+        photoCredit={accommodation.photo_credit}
       />
 
       <PlaceReviewsProvider placeType="accommodation" placeId={accommodation.id}>

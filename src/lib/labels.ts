@@ -41,6 +41,24 @@ export const locationLabels: Record<string, string> = {
   iloilo_province: "Iloilo Province",
 };
 
+// A place photo's copyright licence and authorization status (photo
+// credits round, ticket 132), as the place form lists them.
+export const licenceLabels: Record<string, string> = {
+  cc_by_4: "CC BY 4.0",
+  cc_by_sa_4: "CC BY-SA 4.0",
+  cc0: "CC0 / Public domain",
+  all_rights_reserved: "All rights reserved",
+  own_photo: "Our team's own photo",
+  other: "Other",
+};
+
+export const authorizationStatusLabels: Record<string, string> = {
+  licence_allows: "Allowed by its licence",
+  owner_permission: "Permission from the owner",
+  own_photo: "Our team's own photo",
+  not_checked: "Not checked yet",
+};
+
 // The All / Iloilo City / Iloilo Province filter buttons.
 export const locationFilters = [
   { id: "all", label: "All" },
@@ -74,3 +92,45 @@ export type TravelerType = (typeof travelerTypes)[number]["id"];
 export const travelerTypeLabels: Record<string, string> = Object.fromEntries(
   travelerTypes.map((type) => [type.id, type.label]),
 );
+
+// Categories and kinds the team added from the dashboard (ticket 117).
+// The eight above are built into the home page with their own icons and
+// photos; any other one from the list (GET /v1/categories) that has at
+// least one place gets a chip, a card and a list too, with the photo of
+// its first place. One with no places yet is not shown.
+export interface ExtraCategory {
+  id: string;
+  name: string;
+  appliesTo: "destination" | "accommodation";
+  // The photo of its first place, for its card.
+  imageUrl: string;
+}
+
+export function extraCategories(
+  categories: { id: string; name: string; applies_to: "destination" | "accommodation" }[],
+  destinations: { category: string; photo_url: string | null }[],
+  accommodations: { type: string; photo_url: string | null }[],
+): ExtraCategory[] {
+  return categories
+    .filter((category) => !(category.id in categoryLabels))
+    .flatMap((category) => {
+      // Its first place, preferring one whose photo may be shown.
+      const places: { photo_url: string | null }[] =
+        category.applies_to === "destination"
+          ? destinations.filter((d) => d.category === category.id)
+          : accommodations.filter((a) => a.type === category.id);
+      const first = places.find((p) => p.photo_url) ?? places[0];
+      return first
+        ? [
+            {
+              id: category.id,
+              name: category.name,
+              appliesTo: category.applies_to,
+              // Ticket 138: a place photo without allowed credits is not
+              // sent, so the card uses the wide splash art then.
+              imageUrl: first.photo_url ?? "/lakat-iloilo-splash-desktop-fhd.png",
+            },
+          ]
+        : [];
+    });
+}

@@ -9,7 +9,7 @@ import { displayNameOf } from "@/lib/login";
 import { useDismiss } from "@/lib/use-dismiss";
 
 const item =
-  "flex h-10 w-full items-center gap-2.5 rounded-lg px-3 text-left text-[0.9375rem] font-medium tracking-[0.01em] text-white/90 transition-colors hover:text-amber-300 focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-white";
+  "flex h-10 w-full items-center gap-2.5 rounded-lg px-3 text-left text-[0.9375rem] font-medium tracking-[0.01em] text-white/90 transition-colors hover:text-amber-300 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-white";
 
 // The logged-in traveler's menu in the navbar on tablets and laptops
 // (change 2026-11-01, team request): a round profile icon beside Explore.

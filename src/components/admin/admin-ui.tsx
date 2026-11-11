@@ -11,6 +11,16 @@ import { cn } from "@/lib/utils";
 // "1 report", "3 reports".
 export const plural = (count: number, word: string) => `${count} ${word}${count === 1 ? "" : "s"}`;
 
+// The live dashboard screens (Reviews, Reports, Overview; ticket 126):
+// several changes close together (a review and its photos) ring once,
+// this long after the last one. Sped up from 500 ms (team report
+// 2026-11-11).
+export const ADMIN_LIVE_QUIET_MS = 200;
+
+// The cache label for the review lists on the Reviews screen (every
+// search and filter is under it).
+export const ADMIN_REVIEWS_KEY = ["admin", "reviews"] as const;
+
 // The cache label for the Reports list, shared by the screen and its
 // Keep it / Hide it / Delete review buttons.
 export const REPORTS_KEY = ["admin", "reports"] as const;

@@ -17,6 +17,16 @@ export interface Destination {
   description: string;
   category: string;
   location_type: string;
+  // On GET /v1/destinations/:id only (ticket 135).
+  photo_credit?: PublicPhotoCredit | null;
+}
+
+// The credit line under a place's photo (photo credits round, ticket 135).
+// source_url is empty for none.
+export interface PublicPhotoCredit {
+  credit_line: string;
+  licence: string;
+  source_url: string;
 }
 
 export interface Accommodation {
@@ -31,6 +41,8 @@ export interface Accommodation {
   description: string;
   type: string;
   location_type: string;
+  // On GET /v1/accommodations/:id only (ticket 135).
+  photo_credit?: PublicPhotoCredit | null;
 }
 
 // One axios client for the whole app, created on first use. Every request
@@ -565,6 +577,124 @@ export const getAdminReports = async (accessToken: string) =>
     })
   ).data;
 
+// One review on the Reviews screen (ticket 122): hidden ones too.
+export interface AdminReview {
+  id: string;
+  place_type: "destination" | "accommodation";
+  place_id: string;
+  place_name: string;
+  reviewer_id: string;
+  reviewer_name: string;
+  rating: number;
+  comment: string;
+  photos: ReviewPhoto[];
+  hidden: boolean;
+  created_at: string;
+  helpful_count: number;
+  report_count: number;
+  reply_count: number;
+}
+
+export type AdminReviewFilter = "all" | "hidden" | "reported";
+
+// One page of 50: `next` goes back as `before` for "Show more" (null when
+// there is no more); `total` is how many match in all.
+export interface AdminReviewPage {
+  reviews: AdminReview[];
+  total: number;
+  page: number;
+  per_page: number;
+}
+
+export type AdminReviewSort = "recent" | "relevant" | "top";
+
+// One numbered page of reviews (GET /v1/admin/reviews, admins only; pages
+// and sorting since ticket 130). `q` searches the review text, the
+// reviewer's name and the place's name.
+export const getAdminReviews = async (
+  accessToken: string,
+  {
+    q,
+    show,
+    sort,
+    perPage,
+    page,
+  }: { q: string; show: AdminReviewFilter; sort: AdminReviewSort; perPage: number; page: number },
+) =>
+  (
+    await api().get<AdminReviewPage>("/v1/admin/reviews", {
+      headers: { Authorization: `Bearer ${accessToken}` },
+      params: { ...(q ? { q } : {}), show, sort, per_page: perPage, page },
+    })
+  ).data;
+
+// One reply under a review on the Reviews screen (ticket 124), oldest
+// first. A deleted one ("This reply was deleted") has no writer, name or
+// text; it stays because it holds answers.
+export interface AdminReply {
+  id: string;
+  parent_reply_id: string | null;
+  replier_id: string | null;
+  replier_name: string;
+  comment: string;
+  created_at: string;
+  updated_at: string | null;
+  deleted: boolean;
+  helpful_count: number;
+}
+
+export const getAdminReplies = async (accessToken: string, reviewId: string) =>
+  (
+    await api().get<AdminReply[]>(`/v1/admin/reviews/${reviewId}/replies`, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    })
+  ).data;
+
+// Who marked a review or reply Helpful (ticket 125), newest first.
+// Display names only, never an email.
+export interface AdminLiker {
+  user_id: string;
+  display_name: string;
+  created_at: string;
+}
+export type AdminLikeKind = "review" | "reply";
+
+const likesPath = (kind: AdminLikeKind, id: string) =>
+  `/v1/admin/${kind === "review" ? "reviews" : "replies"}/${id}/likes`;
+
+export const getAdminLikers = async (accessToken: string, kind: AdminLikeKind, id: string) =>
+  (
+    await api().get<AdminLiker[]>(likesPath(kind, id), {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    })
+  ).data;
+
+// The deletes that wait 8 seconds for Undo (ticket 127). Each is one
+// DELETE to the backend, described by its path, so it can also be sent
+// while the tab closes (keepalive: the browser finishes it after the page
+// is gone).
+export const adminDeletePaths = {
+  review: (id: string) => `/v1/admin/reviews/${id}`,
+  reply: (id: string) => `/v1/admin/replies/${id}`,
+  place: (type: AdminPlaceType, id: string) => `/v1/admin/places/${type}/${id}`,
+  like: (kind: AdminLikeKind, id: string, userId: string) => `${likesPath(kind, id)}/${userId}`,
+};
+
+// Sends one of those deletes. Throws with the backend's own sentence when
+// it refuses; a 404 (already gone) counts as done.
+export const adminSendDelete = async (accessToken: string, path: string, keepalive = false) => {
+  const baseURL = process.env.NEXT_PUBLIC_API_URL;
+  if (!baseURL) throw new Error("NEXT_PUBLIC_API_URL is not set. Add it to .env.local (see .env.example).");
+  const response = await fetch(`${baseURL}${path}`, {
+    method: "DELETE",
+    headers: { Authorization: `Bearer ${accessToken}` },
+    keepalive,
+  });
+  if (response.ok || response.status === 404) return;
+  const body = (await response.json().catch(() => null)) as { message?: unknown } | null;
+  throw new Error(typeof body?.message === "string" ? body.message : "Something went wrong. Please try again.");
+};
+
 // What the backend answers after Keep it, Hide it or Delete review.
 export interface ModerationResult {
   id: string;
@@ -589,9 +719,11 @@ export const adminHideReview = async (accessToken: string, id: string) =>
     })
   ).data;
 
-export const adminDeleteReview = async (accessToken: string, id: string) =>
+// Show it (Reviews screen, ticket 123): shows a hidden review again and
+// keeps its reports.
+export const adminShowReview = async (accessToken: string, id: string) =>
   (
-    await api().delete<ModerationResult>(`/v1/admin/reviews/${id}`, {
+    await api().post<ModerationResult>(`/v1/admin/reviews/${id}/show`, null, {
       headers: { Authorization: `Bearer ${accessToken}` },
     })
   ).data;
@@ -637,6 +769,14 @@ export interface AdminPlaceRow {
   kind: string;
   address: string;
   location_type: string;
+  // How many reviews go with it if it is deleted (ticket 121).
+  review_count: number;
+  // For sorting (ticket 129): when it was added, and its average stars
+  // from the reviews travelers see (null without any).
+  created_at: string;
+  average_rating: number | null;
+  // No photo credits yet, or marked "Not checked yet" (ticket 134).
+  credit_missing: boolean;
 }
 
 // One place as the Edit form needs it. phone and email are null for
@@ -650,18 +790,66 @@ export interface AdminPlaceDetails {
   phone: string | null;
   email: string | null;
   kind: string;
+  // "iloilo_city" or "iloilo_province".
+  location_type: string;
+  latitude: number;
+  longitude: number;
   photo_url: string | null;
   updated_at: string;
+  // The photo's credits and copyright, or null before any are saved
+  // (photo credits round, ticket 132).
+  credits: SavedPhotoCredits | null;
 }
+
+// A place photo's credits and copyright (ticket 132, supabase/sql/054).
+// publisher and source_url are empty for none.
+export type Licence = "cc_by_4" | "cc_by_sa_4" | "cc0" | "all_rights_reserved" | "own_photo" | "other";
+export type AuthorizationStatus = "licence_allows" | "owner_permission" | "own_photo" | "not_checked";
+export interface PhotoCredits {
+  photographer: string;
+  publisher: string;
+  source_url: string;
+  licence: Licence;
+  authorization_status: AuthorizationStatus;
+  credit_line: string;
+}
+export interface SavedPhotoCredits extends PhotoCredits {
+  // The photo was replaced after these were saved: they need a check.
+  photo_changed: boolean;
+  updated_at: string;
+}
+export const CREDIT_LIMITS = { photographer: 100, publisher: 100, source_url: 500, credit_line: 200 };
+
+// Adds or changes a place photo's credits; answers the saved place.
+export const saveAdminPlaceCredits = async (
+  accessToken: string,
+  type: AdminPlaceType,
+  id: string,
+  credits: PhotoCredits,
+) =>
+  (
+    await api().put<AdminPlaceDetails>(`/v1/admin/places/${type}/${id}/credits`, credits, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    })
+  ).data;
 
 // What the Edit form saves. Empty phone or email means none.
 export interface AdminPlaceChanges {
   name: string;
   description: string;
   address: string;
+  // The category (destination) or kind (accommodation), an id from the
+  // categories list; the location; and the map position (ticket 118).
+  kind: string;
+  location_type: string;
+  latitude: number;
+  longitude: number;
   phone?: string;
   email?: string;
 }
+
+// Inside Iloilo: the same box as the backend and the database (048).
+export const ILOILO = { latitude: [10.4, 11.7], longitude: [121.8, 123.3] } as const;
 
 // The same limits as the backend and the database (supabase/sql/043).
 export const PLACE_LIMITS = { name: 100, address: 200, description: 1000, phone: 40, email: 120 };
@@ -699,3 +887,111 @@ export const updateAdminPlace = async (
       headers: { Authorization: `Bearer ${accessToken}` },
     })
   ).data;
+
+// A destination category or an accommodation kind (full admin management
+// round, ticket 116). `id` is what a place's category or type holds.
+export interface PlaceCategory {
+  id: string;
+  name: string;
+  applies_to: AdminPlaceType;
+}
+export type PlaceCategoryWithCount = PlaceCategory & { place_count: number };
+
+export const CATEGORY_NAME = { min: 2, max: 30 };
+
+// Every category and kind, A to Z (GET /v1/categories, anyone).
+// One place photo credit saved on the dashboard, for the Photo credits
+// page (photo credits round, ticket 136). source_url is empty for none.
+export interface PhotoCreditEntry {
+  place_type: "destination" | "accommodation";
+  place_id: string;
+  place_name: string;
+  credit_line: string;
+  licence: string;
+  source_url: string;
+}
+
+export const getPhotoCredits = async () => (await get<PhotoCreditEntry[]>("/v1/photo-credits")) ?? [];
+
+export const getCategories = async () => (await get<PlaceCategory[]>("/v1/categories")) ?? [];
+
+// The name of one category or kind, for a place page: "beach" -> "Beaches".
+// Falls back to the id itself if the list cannot be read.
+export const categoryName = async (id: string) => {
+  try {
+    return (await getCategories()).find((category) => category.id === id)?.name ?? id;
+  } catch {
+    return id;
+  }
+};
+
+// The same with how many places use each (admins only).
+export const getAdminCategories = async (accessToken: string) =>
+  (
+    await api().get<PlaceCategoryWithCount[]>("/v1/admin/categories", {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    })
+  ).data;
+
+// Adds a category or kind (admins only). Refusals carry a plain message,
+// for example "That name is already used."
+export const addAdminCategory = async (accessToken: string, name: string, appliesTo: AdminPlaceType) =>
+  (
+    await api().post<PlaceCategoryWithCount>(
+      "/v1/admin/categories",
+      { name, applies_to: appliesTo },
+      { headers: { Authorization: `Bearer ${accessToken}` } },
+    )
+  ).data;
+
+// Deletes a category or kind that no place uses (admins only).
+export const deleteAdminCategory = async (accessToken: string, id: string) =>
+  (
+    await api().delete<{ id: string; message: string }>(
+      `/v1/admin/categories/${encodeURIComponent(id)}`,
+      { headers: { Authorization: `Bearer ${accessToken}` } },
+    )
+  ).data;
+
+// Adds a new place with its photo (POST /v1/admin/places/:type, ticket
+// 120), sent as form data: the same fields as the Edit form plus the
+// required photo (JPG, PNG or WebP up to 2 MB). Answers with the new place.
+export const createAdminPlace = async (
+  accessToken: string,
+  type: AdminPlaceType,
+  place: AdminPlaceChanges,
+  photo: File,
+  // Required for a new place (ticket 133); sent as fields of the same form.
+  credits: PhotoCredits,
+) => {
+  const form = new FormData();
+  for (const [key, value] of Object.entries({ ...place, ...credits })) {
+    if (value !== undefined) form.append(key, String(value));
+  }
+  form.append("photo", photo);
+  return (
+    await api().post<AdminPlaceDetails>(`/v1/admin/places/${type}`, form, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+      timeout: 60_000,
+    })
+  ).data;
+};
+
+// Replaces a place's photo with a file from the admin's computer (POST
+// /v1/admin/places/:type/:id/photo, ticket 119): one JPG, PNG or WebP up to
+// 2 MB, sent as form data. Answers with the saved place.
+export const replaceAdminPlacePhoto = async (
+  accessToken: string,
+  type: AdminPlaceType,
+  id: string,
+  photo: File,
+) => {
+  const form = new FormData();
+  form.append("photo", photo);
+  return (
+    await api().post<AdminPlaceDetails>(`/v1/admin/places/${type}/${id}/photo`, form, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+      timeout: 60_000,
+    })
+  ).data;
+};

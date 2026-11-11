@@ -58,3 +58,5 @@ Not checked (needs a real traveler login, and it changes real data):
 **Last step (2026-11-10): retiring reviews.photo_path.** The backend no longer reads or writes the old column (review entity, deleting a review, removing a photo). supabase/sql/046-retire-single-photo.sql copies any photo added in between (none are waiting today: 32 old photos, all already copied), removes photo rows whose file is gone, rewrites the review guard without photo_path and drops the column. Order: push this code first, then run 046 on the database. Checked: backend type-check and lint; GET /v1/reviews and /v1/ratings still answer 200 with the column still present.
 
 **Team check (2026-11-10):** the team ran 046 (before the push; deleting a review and removing a photo failed on the live site until this code went live). The column is gone and all 134 photo rows are intact.
+
+**Team check (2026-11-10, live URL):** after commit 2210877 went live, the team confirmed the site works: removing a photo and deleting a review work again, and photos still show. The move to review_photos is finished.

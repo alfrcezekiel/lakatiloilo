@@ -34,6 +34,8 @@ interface SearchBarProps {
   accommodations: Accommodation[];
   // Set by the chips under the bar; only shown here, not changed.
   selectedCategory: string;
+  // Names of the categories and kinds the team added (ticket 117), by id.
+  extraNames?: Record<string, string>;
   // True while the home page is still waiting for the backend. Until then
   // the bar says "Loading places…" instead of "No matches", because no
   // places have arrived yet to match against.
@@ -44,6 +46,7 @@ export function SearchBar({
   destinations,
   accommodations,
   selectedCategory,
+  extraNames = {},
   loading,
 }: SearchBarProps) {
   const router = useRouter();
@@ -275,7 +278,7 @@ export function SearchBar({
                       {suggestion.name}
                     </span>
                     <span className="shrink-0 text-xs text-white/60">
-                      {categoryLabels[suggestion.category] ?? suggestion.category}
+                      {categoryLabels[suggestion.category] ?? extraNames[suggestion.category] ?? suggestion.category}
                       {" · "}
                       {locationLabels[suggestion.area] ?? suggestion.area}
                     </span>
@@ -298,7 +301,7 @@ export function SearchBar({
         <p aria-live="polite" className="truncate text-base text-white">
           {selectedCategory === "all"
             ? "All categories"
-            : categoryLabels[selectedCategory]}
+            : (categoryLabels[selectedCategory] ?? extraNames[selectedCategory] ?? "All categories")}
         </p>
       </div>
 

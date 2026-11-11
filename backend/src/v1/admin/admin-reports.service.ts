@@ -1,13 +1,12 @@
 import {
-  HttpException,
   Injectable,
   Logger,
   NotFoundException,
-  ServiceUnavailableException,
 } from '@nestjs/common';
 import type { QueryRunner } from 'typeorm';
 import { ReviewPhotosService, type ReviewPhotoDto } from '../reviews/review-photos.service';
 import { TravelerTransactions } from '../traveler-transactions';
+import { httpErrorFrom } from '../database-errors';
 
 // One report on a review, as the Reports screen shows it. Never who sent
 // it: the database does not let admins read that (supabase/sql/039).
@@ -68,11 +67,9 @@ export class AdminReportsService {
   // trigger (supabase/sql/040) decide; database errors become a plain
   // "try again".
   private asAdmin<T>(accessToken: string, work: (runner: QueryRunner) => Promise<T>): Promise<T> {
-    return this.travelerTransactions.run(accessToken, work, (error) => {
-      if (error instanceof HttpException) return error;
-      this.logger.error(`Could not moderate a review: ${String(error)}`);
-      return new ServiceUnavailableException('Something went wrong. Please try again.');
-    });
+    return this.travelerTransactions.run(accessToken, work, (error) =>
+      httpErrorFrom(error, this.logger, 'moderate a review'),
+    );
   }
 
   // Every review with at least one report, most reports first (then the
@@ -110,11 +107,7 @@ export class AdminReportsService {
         );
         return rows.map((review) => ({ ...review, photos: photos.get(review.id) ?? [] }));
       },
-      (error) => {
-        if (error instanceof HttpException) return error;
-        this.logger.error(`Could not list reports: ${String(error)}`);
-        return new ServiceUnavailableException('Something went wrong. Please try again.');
-      },
+      (error) => httpErrorFrom(error, this.logger, 'list reports'),
     );
   }
 
@@ -145,6 +138,20 @@ export class AdminReportsService {
       );
       if (rows.length === 0) throw reviewGone();
       return { id: reviewId, message: 'Hidden. Only its writer and the team can see it now.' };
+    });
+  }
+
+  // Show it (Reviews screen, ticket 123): a hidden review shows on the
+  // site again. Unlike Keep it, its reports stay, so it stays on the
+  // Reports screen. Showing a visible review changes nothing.
+  show(accessToken: string, reviewId: string): Promise<ModerationResult> {
+    return this.asAdmin(accessToken, async (runner) => {
+      const [rows]: [unknown[], number] = await runner.query(
+        'update public.reviews set hidden_at = null where id = $1 returning id',
+        [reviewId],
+      );
+      if (rows.length === 0) throw reviewGone();
+      return { id: reviewId, message: 'Shown. It is on the site again; its reports stay.' };
     });
   }
 

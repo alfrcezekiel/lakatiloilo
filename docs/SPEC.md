@@ -42,6 +42,10 @@ Thread care round: deleting a reply that has answers leaves "This reply was dele
 
 Admin dashboard & moderation round (changed 2026-11-08, team request; it replaces the "moderation & photos round" and keeps all of it): the Lakat Iloilo team gets its own sign-in page and a glass admin dashboard — an overview, a Reports screen to keep, hide or delete reported reviews, and a Places screen to correct destination and accommodation details. A review reported by three different travelers hides itself until the team looks at it. A review can have up to four photos.
 
+Full admin management round (2026-11-10): the Lakat Iloilo team can run the whole site from the dashboard. They add, edit and delete destinations and accommodations (every field, with the place's photo uploaded from their computer), search every review and reply and hide, show or delete them, and see who marked a review or reply Helpful and remove a like. Added 2026-11-10 (team request): the team can add new categories and kinds, the Reviews screen updates by itself, and every delete on the dashboard can be undone for a few seconds.
+
+Photo credits round (2026-11-11, team request): every place photo the team adds or replaces on the dashboard carries its credits — the photographer, where it was published, a link to the original, its copyright licence and whether we are allowed to use it — so the owner of each photo is credited on the site and the team can see which photos still need their copyright checked.
+
 ## The user
 Travelers planning weekend trips around Iloilo Province. No login required for browsing; an account is needed only to write a review.
 
@@ -87,6 +91,13 @@ Travelers planning weekend trips around Iloilo Province. No login required for b
 37. As a logged-in traveler, I want to add up to four photos to my review, so that others see more of the place.
 38. As any visitor, I want to see a traveler's review photos on their profile, so that I can judge their taste from what they saw, not only what they wrote.
 39. As a member of the Lakat Iloilo team, I want my own sign-in and a clear, accessible dashboard with reports and place details, so that I can keep the site accurate and safe without using the Supabase dashboard.
+40. As a member of the Lakat Iloilo team, I want to add, edit and delete destinations and accommodations, with a photo uploaded from my computer, so that the site stays complete without SQL.
+41. As a member of the Lakat Iloilo team, I want to search every review and reply and hide, show or delete any of them, so that I can act before anyone reports it.
+42. As a member of the Lakat Iloilo team, I want to see who marked a review or reply Helpful and remove a like, so that fake likes do not mislead travelers.
+43. As a member of the Lakat Iloilo team, I want to add a new category or kind, so that a new sort of place does not need a code change.
+44. As a member of the Lakat Iloilo team, I want the Reviews screen to update by itself and an Undo right after a delete, so that I work from what is true now and a wrong click is not final.
+45. As a member of the Lakat Iloilo team, I want to record who took a place's photo, where it came from, its licence and whether we may use it, when I add or edit a place, so that every photographer is credited and no photo is used without permission.
+46. As a traveler, I want to see who took a place's photo, so that the photographer gets the credit and I can find the original.
 
 ## Screens
 1. Home page hero — redesigned to match the team's mockup:
@@ -217,6 +228,29 @@ Travelers planning weekend trips around Iloilo Province. No login required for b
    - **Not an admin:** logged in or not, every /admin page except the sign-in shows the site's "not found" page, and every admin endpoint answers 401 without a login (or with an expired or fake one) and 403 "This page is for the Lakat Iloilo team." for a traveler's login Travelers see no admin links anywhere. **Change (2026-11-08, team request): a real 404.** The server checks before serving an admin page (a Next.js proxy, until Next.js 16 called middleware): the admin sign-in also keeps the admin's login in a cookie sent only to /admin pages, the proxy asks the backend whether it belongs to an admin, and anyone else gets the "not found" page with status 404, not 200. Change (2026-11-09, team report: slow admin pages): only full page loads are checked by the proxy (moving between dashboard pages and preloading fetch only page code, no data; the dashboard and every endpoint still check), and the backend remembers a genuine login check and the admin check for 30 seconds (never past the token's expiry). Trade-off, accepted: each running copy of the backend keeps its own memory, so after logging out another copy may accept that login for at most 30 seconds; the database's Row Level Security still checks every read and change. The proxy's shortcut for in-app navigation only applies with the admin cookie; without it, the answer is 404 as before.
    - **Design:** glassmorphism, built to be easy to use and accessible. Every admin page sits over a full-screen, darkened Iloilo photo, so the frosted-glass blur follows the no-white-hover rule (blur only over photos); panels are glass with clear borders, no white boxes on hover. Fraunces for headings and the site's body font for text, with generous spacing; amber accents like the rest of the site; text meets WCAG AA contrast; every control is a real button, link or labelled field with a visible keyboard focus; works at 375 px and on a laptop.
    - **Up to four photos:** the review form's "Add photos" takes up to 4 photos (each JPG, PNG or WebP, up to 2 MB), each with a preview and its own Remove button. Editing a review can add and remove photos. Under the review, the photos show as a row of small pictures; clicking one opens it larger, with next and previous buttons, arrow keys and Escape. Existing single photos show as before. A traveler's profile shows a review's photos as the same row of small pictures.
+28. Full admin management round — the team runs places, reviews, replies and likes from the dashboard (2026-11-10; one round, tickets from 116). Travelers see nothing new:
+   - **Places: add a place.** On /admin/places, **Add a place** opens the same glass form as Edit, empty: Destination or Accommodation, name, description, address, category (destination) or kind (accommodation), Iloilo City or Iloilo Province, latitude and longitude, a photo, and phone and email for accommodations. Saving shows the place on the site at once.
+   - **Places: the photo is a file upload (team request 2026-11-10).** "Choose a photo" opens the computer's file chooser: one JPG, PNG or WebP up to 2 MB, with a preview before saving and a plain message for a wrong file. No photo web address is typed anywhere. A new place needs a photo; editing can replace it. Places that already have a photo keep it until it is replaced.
+   - **Places: edit every field.** The Edit form gains the category or kind, the location, the latitude and longitude, and the photo.
+   - **Places: delete a place.** **Delete** on each row of the Places list, next to Edit, opens a confirmation pop-up that says how many reviews go with it ("Its 5 reviews will be deleted too."), with **Cancel** and **Yes, delete**. **Change (2026-11-10, team request):** it was a step at the bottom of the Edit form, which needed scrolling; the Edit form now has no Delete.
+   - **Reviews (/admin/reviews, new in the sidebar):** every review, newest first, 50 at a time with "Show more". A search box (review text, reviewer's name or place) and All / Hidden / Reported buttons. Each review shows the place, the reviewer, stars, text, photos, its Helpful count and Visible or Hidden. Buttons: **Hide it** or **Show it**, and **Delete review** (with "Yes, delete").
+   - **Replies:** "Replies (N)" under a review on that screen (next to "N Helpful"; **change 2026-11-11, team request:** was "Show replies (N)" on its own row) opens its replies, each with **Delete reply** (with "Yes, delete"). A reply that has answers leaves "This reply was deleted", exactly as when its writer deletes it.
+   - **Helpful likes:** a review's or reply's "N Helpful" on that screen opens the list of travelers who marked it (display names only, never emails), each with **Remove**. Removing a like lowers the count on the site at once and removes its notification.
+   - **Categories and kinds (added 2026-11-10, team request):** on /admin/categories ("Categories" in the sidebar; **change 2026-11-11, team request:** it was a panel at the bottom of /admin/places), a "Categories and kinds" screen lists the destination categories and the accommodation kinds, each with how many places use it. **Add** takes a name (2 to 30 characters, not already used). **Delete** works only while no place uses it. The place form's Category or Kind list is filled from these. On the home page, a new category or kind gets its chip, its card and its list like the existing ones, with a general icon and the photo of its first place; one with no places yet is not shown. The eight existing ones keep their icons and photos.
+   - **The Reviews screen is live (added 2026-11-10, team request):** when a traveler posts, edits or deletes a review, a review is hidden or shown, reports arrive, or replies, likes or photos change, the list, counts and badges update by themselves within a few seconds (Supabase Realtime as the doorbell, then the backend is asked again). What the admin is doing is kept: the search text, the chosen filter, open replies, an open likes list and a "Yes, delete" step. The Reports screen is live in the same way.
+   - **Undo after a delete (added 2026-11-10, team request):** after "Yes, delete" on a review, a reply or a place, and after Remove on a like, the item leaves the list at once and a line says, for example, "Review deleted. **Undo**" for 8 seconds. Undo puts it back and nothing was deleted. When the time runs out, or the admin leaves the page, the delete is really made, and then it cannot be brought back. Travelers keep seeing the item until the delete is really made. Leaving the page includes opening another dashboard page, logging out, reloading and closing the tab (sent so the browser finishes it). Applies to Delete review on the Reports screen too (ticket 127).
+   - **Pages and sorting (added 2026-11-11, team request; tickets 129–131):** Places, Reviews and Reports show their list in numbered pages. At the top: **Sort** with three choices, each with its icon — ⏱ **Recently added**, ✦ **Most relevant**, ★ **Top-rated** — and **Show 10 / 25 / 50** per page (10 at first). At the bottom: "Showing 11–20 of 168" and ‹ Previous · 1 2 3 … 17 · Next ›. Changing the sort, the number per page, the search or a filter goes back to page 1. What the choices mean:
+     - Places: Recently added = newest place first; Most relevant = most reviews first; Top-rated = highest average stars first (places with no reviews last).
+     - Reviews: Recently added = newest first; Most relevant = most Helpful marks plus replies first; Top-rated = most stars first, then newest. (Replaces "Show more".)
+     - Reports: Recently added = newest report first; Most relevant = most reports first; Top-rated = most stars first.
+     Ties are broken by newest first, then by name, so the order never jumps between pages. The live updates (Reviews, Reports) keep the page, sort and number per page.
+   - The new screens follow the dashboard's rules (**change 2026-11-11, team request:** no blur, big shadow or dark tint on cards, because they showed black patches on hover and click; a card's outline only for the keyboard): glass panels, keyboard use, WCAG AA contrast, 375 px to laptop, one skeleton then the content, and "not found" (404) for anyone who is not an admin.
+29. Photo credits round — every place photo carries its credits (2026-11-11, team request; one round, tickets from 132):
+   - **Place form, Add and Edit (/admin/places/new and Edit):** a "Photo credits and copyright" box right below the photo upload, for destinations and accommodations alike. Fields: **Photographer** (required; a name or username), **Publisher / website** (optional, e.g. "Wikimedia Commons"), **Original photo URL** (optional, must start with https://), **Copyright licence** (required; CC BY 4.0, CC BY-SA 4.0, CC0 / Public domain, All rights reserved, Our team's own photo, Other), **Authorization status** (required; Allowed by its licence, Permission from the owner, Our team's own photo, Not checked yet) and **Attribution / photo credits** (required; the line shown on the site; it fills itself in from the fields, e.g. "Photo: Riyan0721 / Wikimedia Commons, CC BY-SA 4.0", and the admin can change it). Copyright check: a photo marked "All rights reserved" is saved only with "Permission from the owner", and a new place needs the three required fields before "Add place" works. When a new photo is chosen or was uploaded, the credits stay and the box says "Check these credits: the photo was changed." until they are saved again.
+   - **Places list (/admin/places):** a place with no credits yet, or marked "Not checked yet", shows an amber "Credit missing" label under its name; typing "credit" in Find a place lists just those.
+   - **Place pages (traveler side):** a small credit line under the photo, e.g. "Photo: Riyan0721 / Wikimedia Commons, CC BY-SA 4.0", linking to the original photo when there is a URL. The authorization status is never shown to travelers.
+   - **Splash art until the photo is allowed (added 2026-11-11, team request; ticket 138):** travelers see a place's own photo only once its credits are saved with a status other than "Not checked yet". Until then — places with no credits too — the home page cards, Featured / Trending and the place page show the Lakat Iloilo splash art (the team's FHD file, lakat-iloilo-splash-desktop-fhd.png, 1920 × 1080, on every screen; **change 2026-11-11, team request:** the place pages briefly used phone and tablet sizes and are back to the wide one; **change 2026-11-11, team request: "restore it to the original similar to the credited photo":** on a place page the splash art fills exactly the photo area a credited photo uses, at every width, with the chips, name and address on it; it is kept to its top edge so the art's own title is not cut), and no credit line. The photo stays uploaded and the dashboard still shows it; saving allowed credits shows it on the site.
+   - **Photo credits page (/credits):** also lists the credits saved on the dashboard (place name, credit line, licence, link), next to the existing Wikimedia list.
 
 ## Data
 
@@ -361,6 +395,20 @@ The traveler type is saved on the Supabase Auth account, next to the display nam
 
 PostGIS extension: Enabled on Supabase database. The `location` column stores geography points for spatial queries (e.g., find destinations within X km of a point).
 
+**Full admin management round (2026-11-10):** one new table (place_categories, added 2026-11-10) and a new Storage bucket. Every new permission asks is_admin(), and Row Level Security stays on everywhere.
+- **destinations and accommodations:** admins may now also add and delete places (a new place must have a photo and a description, 050), and change the category or kind, location (Iloilo City or Province), latitude, longitude and photo. Everyone may still read; travelers still cannot write. The database checks: the category or kind is one from the place_categories table (below); the latitude and longitude are inside Iloilo; a trigger keeps the map position (location) in step with them. Deleting a place deletes its reviews, with their replies, likes, reports, photos and notifications.
+- **place-photos Storage bucket (new):** anyone may view the photos. Only admins may add, replace or delete files; JPG, PNG or WebP, up to 2 MB (the bucket refuses anything else). A place's photo_url holds the uploaded photo's public address; older places keep their existing address until the photo is replaced. Replacing a photo or deleting the place deletes the old uploaded file.
+- **reviews:** no rule changes: admins may already hide, show and delete any review (040). "Show it" clears hidden_at and keeps the reports.
+- **review_replies:** admins may delete any reply, through a database function that follows the same "This reply was deleted" rule as the writer's own delete (034).
+- **review_likes and reply_likes:** admins may delete any like; everyone else still only their own.
+- **Who marked it Helpful:** a database function, for admins only, answers the display names (and account ids) of the travelers who liked one review or reply. Never emails.
+- **place_categories table (new, added 2026-11-10):** id (a short word made from the name, for example "beach"), name (as shown, 2 to 30 characters), applies_to ("destination" for categories, "accommodation" for kinds), created_at. It starts with the eight in use today: festival, food, heritage, mountain, nature, walking (destinations) and hotel, condominium (accommodations). Row Level Security: anyone may read; only admins may add and delete; nobody may edit one. A trigger refuses deleting one that a place still uses, and refuses a place whose category or kind is not in the table (or is of the other sort). Added to the Realtime list, so the home page notices a new one.
+- **Undo:** no database change. The dashboard waits 8 seconds before asking the backend to delete, so until then nothing has changed in the database.
+- **Live Reviews screen:** no database change. It listens to tables already on the Realtime list (reviews, review_replies, review_likes, reply_likes, review_photos, review_visibility_signals and report_signals); review_reports itself stays off the list.
+
+**Photo credits round (2026-11-11):** one new table. Row Level Security on, every write asks is_admin().
+- **place_photo_credits table (new):** place_type ("destination" or "accommodation") and place_id (which place; one row per place), photographer (1 to 100 characters), publisher (up to 100, empty for none), source_url (the original photo, https only, empty for none), licence (one of: cc_by_4, cc_by_sa_4, cc0, all_rights_reserved, own_photo, other), authorization_status (one of: licence_allows, owner_permission, own_photo, not_checked), credit_line (1 to 200 characters), updated_at, updated_by (the admin who saved it). The database refuses all_rights_reserved unless the status is owner_permission. Row Level Security: only admins and the backend's own login may read (**change 2026-11-11, code review:** 054 let anyone read every column, including the status and the saving admin's account id; 055 limits it); travelers get the credit line, licence and link through the backend; only admins may add, change or delete. Deleting a place deletes its credits (a trigger, like its reviews). The traveler-facing endpoints send only the credit line, licence and link, never the status.
+
 ## API Endpoints (NestJS Backend)
 
 **Version 1 (/v1):**
@@ -454,6 +502,34 @@ All writes in these rounds run as the logged-in traveler (the asTraveler step), 
 
 **CORS:** Configured to allow requests from the Next.js frontend domain. From the backend round it also accepts adding, editing and deleting (not only reading), still only from the site's own addresses.
 
+**Full admin management round (2026-11-10), admins only (401 logged out, 403 for a traveler):**
+- POST /v1/admin/places/:type — adds a destination or accommodation: the fields as form data plus one file "photo" (JPG, PNG or WebP, up to 2 MB); answers 201 with the saved place (400 with a plain sentence for a missing or wrong field or photo; nothing is saved then). The backend chooses the id, uploads the photo, then adds the place; if adding fails, the photo is deleted again (ticket 120, supabase/sql/050). The form is at /admin/places/new. After adding, the page shows the new place as a showcase card: the photo large with the name, its kind and location on it and a "Live on the site" badge, then the address, the start of the description and three "What's next" tiles (View the place page, Edit it, Add another place) (team request 2026-11-11).
+- PATCH /v1/admin/places/:type/:id — now changes every field (category or kind, location, latitude and longitude too; ticket 118)
+- POST /v1/admin/places/:type/:id/photo — one file "photo" (JPG, PNG or WebP, up to 2 MB) that replaces the place's photo; answers the saved place (400 "Please choose a JPG, PNG or WebP photo up to 2 MB.", 404 no such place). Its own request, so a photo never rides along with the other fields (ticket 119)
+- DELETE /v1/admin/places/:type/:id — deletes the place, its reviews and its uploaded photo; answers { id, message } (404 no such place). Its reviews go with it by a database trigger (supabase/sql/051); the place's uploaded photo and its reviews' photo files are then deleted from Storage (ticket 121)
+- GET /v1/admin/places — also answers each place's review_count (hidden reviews too), for the Delete pop-up on the list (ticket 121; Delete is on the list since 2026-11-10, team request)
+- GET /v1/admin/reviews?q=&show=all|hidden|reported&before= — every review, newest first, 50 at a time, each with its place, photos, Helpful count, hidden, report count and reply count; answers { reviews, total, next } — `next` goes back as `before` for "Show more" (null at the end); 400 with a plain sentence for a wrong filter or a search over 100 characters (ticket 122)
+- **Change (2026-11-11, ticket 130):** GET /v1/admin/reviews?q=&show=all|hidden|reported&sort=recent|relevant|top&per_page=10|25|50&page=1 — numbered pages instead of `before`: answers { reviews, total, page, per_page } (400 with a plain sentence for a wrong sort, number per page or page)
+- **Change (2026-11-11, ticket 129):** GET /v1/admin/places also answers each place's created_at and average_rating (visible reviews; null without reviews), for sorting
+- POST /v1/admin/reviews/:id/show — shows a hidden review again and keeps its reports; 200 { id, message }, 404 when the review is gone (ticket 123). Delete review on the Reviews screen asks in the same pop-up as Delete place
+- GET /v1/admin/reviews/:id/replies — the review's replies, oldest first (deleted ones included, with no writer, name or text; 404 unknown review; ticket 124)
+- DELETE /v1/admin/replies/:id — deletes a reply (it stays as "This reply was deleted" when it has answers); answers { id, outcome: "kept" | "removed", message }, 404 when it is gone; through the database function admin_delete_reply (supabase/sql/052), the same rule as the writer's own delete
+- GET /v1/admin/reviews/:id/likes and GET /v1/admin/replies/:id/likes — who marked it Helpful: { user_id, display_name, created_at }
+- DELETE /v1/admin/reviews/:id/likes/:userId and DELETE /v1/admin/replies/:id/likes/:userId — removes that traveler's like; answers { helpful_count } (and a message; 404 when it is already gone). Who liked: through the admin-only database function admin_likers (supabase/sql/053), display names only (ticket 125)
+- GET /v1/categories — anyone; every category and kind (id, name, applies_to), for the home page and the place form
+- GET /v1/admin/categories — each with how many places use it
+- POST /v1/admin/categories — { name, applies_to }; adds one (400 for a wrong length, 409 "That name is already used.")
+- DELETE /v1/admin/categories/:id — deletes an unused one (409 "Some places still use it." otherwise)
+
+**Photo credits round (2026-11-11), admins only for writes (401 logged out, 403 for a traveler):**
+- GET /v1/admin/places/:type/:id — also answers the place's credits (or none yet)
+- PUT /v1/admin/places/:type/:id/credits — saves the credits; 400 with a plain sentence for a missing or too long field, a URL that is not https, or "All rights reserved" without "Permission from the owner"
+- POST /v1/admin/places/:type — also takes the credits with the new place; nothing is saved if they are wrong
+- GET /v1/admin/places — each place also says whether its credit is missing
+- GET /v1/destinations/:id and GET /v1/accommodations/:id — anyone; also the credit line, licence and link (no status)
+- GET /v1/photo-credits — anyone; every saved credit with its place's name, for the Photo credits page (only allowed ones, ticket 138)
+- Every public destination and accommodation answer (lists, nearby, one place) — photo_url is null until the place's credits are saved with an allowed status; then the website shows the splash art (ticket 138)
+
 ## Architecture
 
 **Frontend (Next.js):**
@@ -496,6 +572,10 @@ Navigation round: no change for travelers. "Who is logged in" is shared through 
 Profiles & likes, review extras and threaded replies rounds: browsing, profiles, likes counts, replies and photos are visible to everyone. Marking a review helpful, replying, reporting and adding a photo need an account, like writing a review.
 
 Profile & replies, thread care, and moderation & photos rounds: changing your name, editing replies, marking replies helpful and the notifications bell need an account. The Reports screen needs an account that the team has added to the admins table by hand; there is no way to become an admin from the app.
+
+Full admin management round: nothing changes for travelers. Adding, editing and deleting places, the Reviews screen and removing likes need an admin account, like the rest of the dashboard.
+
+Photo credits round: travelers need no login to see credits. Saving them needs an admin account.
 
 Admin dashboard & moderation round (changed 2026-11-08): the Lakat Iloilo team signs in on its own page, /admin/login, with the same kind of Supabase Auth account (email and password). Only accounts in the admins table get in; the app keeps the admin's login the same way as a traveler's, so an admin is also logged in on the traveler site. Nobody can become an admin through the app.
 
@@ -643,7 +723,31 @@ Admin dashboard & moderation round (changed 2026-11-08): the Lakat Iloilo team s
 - [x] A traveler can add up to 4 photos to a review, remove one, and open them larger with next and previous; a 5th is refused; old single photos still show
 - [x] Row Level Security is on for admins, notifications, reply_likes, review_photos, destinations and accommodations, and no service_role or sb_secret_ key appears anywhere
 
+**Full admin management round (live URL):**
+- [ ] An admin adds a destination and an accommodation with a photo chosen from their computer; each shows on the home page and has its own page
+- [ ] An admin changes a place's category or kind, location, latitude and longitude, and replaces its photo; a PDF or a photo over 2 MB is refused with a plain message
+- [ ] An admin deletes a place after "Yes, delete"; it and its reviews are gone from the site
+- [ ] On Reviews, an admin finds a review by searching, hides it, shows it again and deletes one; All / Hidden / Reported narrow the list
+- [ ] An admin deletes a reply; one with answers stays as "This reply was deleted"
+- [ ] An admin sees who marked a review and a reply Helpful and removes a like; the count drops on the site
+- [ ] An admin adds a new category, gives a place that category, and it shows on the home page with its chip and list; deleting a category that is in use is refused, and an unused one is deleted
+- [ ] With the Reviews screen open, a review posted, hidden or reported from another window shows there within a few seconds, without a reload, and the search text and open replies are kept
+- [ ] After deleting a review, a reply, a place and a like, Undo within 8 seconds puts each back; without Undo it is really deleted
+- [ ] Logged out or as a traveler, the new pages show "not found" and the new endpoints answer 401 or 403 (checked with curl); a traveler cannot add, change or delete a place, delete someone else's reply or like, or upload a place photo (refused by the database)
+- [ ] On Places, Reviews and Reports, Sort (Recently added / Most relevant / Top-rated) and Show 10 / 25 / 50 change the list, and Previous, Next and the page numbers move through it; "Showing 11–20 of N" is right
+- [ ] Row Level Security is on for every table, the place-photos bucket has its policies, and no service_role or sb_secret_ key appears anywhere
+
+**Photo credits round (live URL):**
+- [ ] An admin adds a place with its photo credits; the credit line shows under the photo on its page and on the Photo credits page
+- [ ] An admin edits a place's credits; "All rights reserved" without "Permission from the owner", a missing photographer or a URL that is not https is refused with a plain message
+- [ ] Places with no credits, or "Not checked yet", show "Credit missing" on /admin/places
+- [ ] A traveler or a logged-out visitor cannot change credits (401 or 403 by curl, refused by the database); travelers never see the authorization status
+- [ ] A place without allowed credits shows the splash art (the wide 1920 × 1080 art) and no credit line; saving allowed credits shows its real photo
+- [ ] Row Level Security is on for place_photo_credits, and no service_role or sb_secret_ key appears anywhere
+
 ## Out of scope
+- Photo credits round: removing a place's credits once saved (they can be changed, not cleared), moving the 30 hard-coded Wikimedia credits into the table (they keep working as they are), credits for travelers' review photos, and checking automatically whether a URL or licence is real (the team checks by hand; the status records it)
+- Full admin management round: picking a place's position on a map (the map library is still parked), more than one photo per place, hiding a reply (replies can only be deleted), renaming a category or choosing its icon or photo, bringing something back after the 8-second Undo has passed, a live Places list, managing or banning travelers' accounts, and making or removing admins from the app
 - Admin dashboard & moderation round (was "moderation & photos round"): adding or deleting places and uploading place photos from the dashboard, making someone an admin or removing them from the app, managing travelers, banning travelers, appeals, a live Reports list (change 2026-11-09: the Overview's numbers and newest reports do update live), charts or history beyond the four tiles, a second login step for admins, keeping reports when a review is deleted, reordering photos, and photos over 2 MB
 - Thread care round: email or phone notifications (a custom email sender is still parked), notifications for new reviews, and a limit on thread depth or reply rate (Helpful-mark notifications moved into the round on 2026-11-07, ticket 106)
 - Profile & replies round: changing the email or password from the profile, profile pictures, and a public profile for travelers with no reviews
@@ -661,7 +765,6 @@ Admin dashboard & moderation round (changed 2026-11-08): the Lakat Iloilo team s
 - Booking/payments for any services
 - Map integration (PostGIS added for future use, but no map UI in MVP). A Mapbox map is parked in docs/LATER.md until the team decides on it
 - A full search results page, advanced filters, or searching inside descriptions (live suggestions match names and addresses only)
-- Admin UI for managing destinations and accommodations (only the Reports screen is in scope, in the moderation & photos round)
 - Social features (sharing, favorites)
 - Advanced spatial queries beyond radius search
 - Password reset through the backend, "Nearby places" using the /near endpoints, and keeping the backend address private (all parked in docs/LATER.md)

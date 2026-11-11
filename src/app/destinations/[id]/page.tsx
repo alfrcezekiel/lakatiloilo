@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { cache } from "react";
-import { getDestination } from "@/lib/api";
+import { categoryName, getDestination } from "@/lib/api";
 import type { Destination } from "@/lib/api";
 import { locationLabels } from "@/lib/labels";
 import { cn } from "@/lib/utils";
@@ -63,7 +63,10 @@ export default async function DestinationDetailPage({
     return <PlaceNotFound tone="destination" what="Destination" failed={failed} />;
   }
 
-  const category = categoryLabels[destination.category] ?? destination.category;
+  // A category the team added from the dashboard (ticket 117) is named in
+  // the categories list, not in the built-in labels above.
+  const category =
+    categoryLabels[destination.category] ?? (await categoryName(destination.category));
   const area = locationLabels[destination.location_type] ?? destination.location_type;
 
   // Only real data from the database is shown here. Maps are out of scope
@@ -76,6 +79,7 @@ export default async function DestinationDetailPage({
         name={destination.name}
         chips={[category, area]}
         address={destination.address}
+        photoCredit={destination.photo_credit}
       />
 
       <PlaceReviewsProvider placeType="destination" placeId={destination.id}>

@@ -97,7 +97,7 @@ export function EditProfileForm({
           {travelerTypes.map((type) => (
             <label
               key={type.id}
-              className={`flex cursor-pointer items-center justify-center rounded-full border px-2 py-2 text-center text-xs leading-tight font-medium transition-colors has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-white sm:text-sm ${
+              className={`flex cursor-pointer items-center justify-center rounded-full border px-2 py-2 text-center text-xs leading-tight font-medium transition-colors has-focus-visible:outline-2 has-focus-visible:outline-white sm:text-sm ${
                 travelerType === type.id
                   ? "border-white bg-white text-teal-900 shadow"
                   : "border-white/25 bg-white/10 text-white hover:bg-white/20"

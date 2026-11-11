@@ -189,24 +189,39 @@ connection when we tried it; see ticket 104), or narrow the doorbell to
 the traveler's own reviews and replies. The same would make "marked read
 on another device" show at once instead of on returning to the tab.
 
-### Round 28 — Full admin management (next spec, team decision 2026-11-08)
-The team chose to build round 27 first and spec this next (/to-spec).
-The first admin is the team's manager; the team wants admins to manage
-the whole app. Proposed contents:
-- Places: add a destination or accommodation, delete one, and change
-  every field, including the category, type and location on the map
-- Reviews and replies: a searchable list of all reviews and replies,
-  with Hide and Delete on any of them (not only reported ones)
-- Helpful likes on reviews and replies: see who marked one Helpful, and
-  remove a like (for example a fake one)
-- Travelers' accounts stay parked below (banning and managing accounts
-  touches Supabase Auth and is the riskiest part)
+### From the photo credits spec (2026-11-11)
+Round 29 (photo credits and copyright on place photos). Parked to keep it
+to one round:
+- Moving the 30 hard-coded Wikimedia credits (src/lib/photo-credits.ts)
+  into the place_photo_credits table
+- Credits for photos in travelers' reviews
+- Checking automatically that an original URL or a licence is real
+- A "Remove credits" button on the place form: once saved, credits can be
+  changed but not cleared (code review 2026-11-11)
+
+### From the full admin management spec (2026-11-10)
+Round 28 moved into the spec on 2026-11-10 as the full admin management
+round (places add, edit every field and delete, with the photo uploaded
+from the computer; a Reviews screen with replies; removing Helpful
+likes). Parked to keep it to one round:
+- Picking a place's position on a map (needs the map library, still
+  parked); the form uses latitude and longitude fields
+- More than one photo per place
+- Hiding a reply (replies can only be deleted; hiding would change how
+  every thread is read)
+- Renaming a category or kind, and choosing its icon or photo (a new one
+  gets a general icon and the photo of its first place)
+- Bringing something back after the 8-second Undo has passed (a real
+  "trash" needs deleted items kept in the database)
+- A live Places list on the dashboard
+
+On 2026-11-10 the team moved three parked items into the round: new
+categories and kinds from the dashboard, a live Reviews screen, and Undo
+after a delete.
 
 ### From the admin dashboard spec (2026-11-08)
 Parked when the team asked for a full admin dashboard, to keep round 27
 to one session:
-- Adding and deleting destinations and accommodations, and uploading
-  their photos, from the dashboard (round 27 only edits text details)
 - Making someone an admin, or removing them, from the app (today: the
   SQL Editor only)
 - Managing travelers' accounts, banning travelers, and appeals
@@ -215,13 +230,13 @@ to one session:
 - A second login step (a code) for admins
 
 ### Additional destination categories
-- Cultural sites and museums
+- Cultural sites and museums (from the full admin management round the
+  team can add these as categories from the dashboard)
 
 ### Other features
 - Booking/payments for accommodations
 - Directions on the map (after the map itself)
 - Full search results page and searching inside descriptions
-- Admin UI for managing destinations and accommodations
 - Price range display for accommodations
 - Room type information for accommodations
 - Business hours for destinations

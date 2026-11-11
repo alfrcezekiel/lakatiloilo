@@ -1,9 +1,11 @@
-import { ArrowLeft, MapPin } from "lucide-react";
+import { ArrowLeft, Camera, MapPin } from "lucide-react";
 import type { ReactNode } from "react";
 import Link from "next/link";
+import type { PublicPhotoCredit } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { Reveal } from "@/components/Reveal";
 import { pillButton } from "@/components/ui/button";
+import { PlacePhoto } from "@/components/PlacePhoto";
 
 // The building blocks of the destination and accommodation detail pages
 // ("Option 1A" from the Detail Pages Glass design): a tall photo with a big
@@ -62,19 +64,30 @@ export function PlaceHero({
   name,
   chips,
   address,
+  photoCredit,
 }: {
   tone: Tone;
-  photoUrl: string;
+  // null: the splash art (ticket 138).
+  photoUrl: string | null;
   name: string;
   chips: string[];
   address: string;
+  // Who took the photo (ticket 135); nothing shows without one.
+  photoCredit?: PublicPhotoCredit | null;
 }) {
   return (
+    // The splash art (ticket 138) uses exactly the frame a credited photo
+    // uses (team request 2026-11-11: "restore it to the original similar
+    // to the credited photo"): the same tall photo area, filled and
+    // cropped the same way, with the chips, name and address on it.
     <header className="relative min-h-105 h-[62vh] w-full overflow-hidden">
-      <img
+      <PlacePhoto
         src={photoUrl}
         alt={name}
-        className="absolute inset-0 h-full w-full object-cover"
+        // The art has its own title at the top; cropping it from the
+        // centre like a photo cut that title in half on a laptop, so the
+        // splash art is kept to its top edge (same frame and size).
+        className={cn("absolute inset-0 h-full w-full object-cover", !photoUrl && "object-top")}
       />
       <div
         className={cn("absolute inset-0 bg-linear-to-t to-transparent", tones[tone].fade)}
@@ -107,9 +120,39 @@ export function PlaceHero({
             <MapPin aria-hidden="true" className="mt-0.5 size-4 shrink-0 sm:mt-1" />
             {address}
           </p>
+          {photoCredit && <PhotoCreditLine credit={photoCredit} />}
         </div>
       </div>
     </header>
+  );
+}
+
+// The photo's credit line at the foot of the photo (photo credits round,
+// ticket 135): "Photo: Riyan0721 / Wikimedia Commons, CC BY-SA 4.0",
+// linking to the original photo when the team saved its address. A
+// pasted address in the line is one long word, so it may break anywhere
+// (wrap-anywhere) instead of running off a phone's screen.
+function PhotoCreditLine({ credit }: { credit: PublicPhotoCredit }) {
+  return (
+    <p
+      className="mt-2 flex items-start gap-1.5 text-xs text-white/80 motion-safe:animate-fade-up"
+      style={{ animationDelay: "240ms" }}
+    >
+      <Camera aria-hidden="true" className="mt-px size-3.5 shrink-0" />
+      {credit.source_url ? (
+        <a
+          href={credit.source_url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="min-w-0 wrap-anywhere underline decoration-white/40 underline-offset-2 hover:text-amber-300 hover:decoration-amber-300 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+        >
+          {credit.credit_line}
+          <span className="sr-only"> (opens the original photo in a new tab)</span>
+        </a>
+      ) : (
+        <span className="min-w-0 wrap-anywhere">{credit.credit_line}</span>
+      )}
+    </p>
   );
 }
 
@@ -163,7 +206,7 @@ export function SectionHeading({ id, children }: { id?: string; children: ReactN
 
 // The glass side panel: a small label, a serif title, then its contents.
 // On a laptop it rises into the photo, so it keeps its blur: without it the
-// photo shows sharply behind the white text (.claude/rules/no-white-hover-backdrop.md).
+// photo shows sharply behind the white text (.claude/rules/frontend.md).
 export function SidePanel({
   eyebrow,
   title,

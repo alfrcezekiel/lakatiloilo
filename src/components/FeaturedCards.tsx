@@ -4,6 +4,7 @@ import { CardRating, type RatingsByPlace } from "@/components/CardRating";
 import { Reveal } from "@/components/Reveal";
 import type { Destination } from "@/lib/api";
 import { Skeleton } from "@/components/ui/skeleton";
+import { PlacePhoto } from "@/components/PlacePhoto";
 
 interface FeaturedCardsProps {
   destinations: Destination[];
@@ -80,7 +81,7 @@ export function FeaturedCards({ destinations, ratings, loading }: FeaturedCardsP
             className={`group ${cardClass} transition duration-300 motion-safe:hover:-translate-y-1 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white`}
           >
             <div className={photoClass}>
-              <img
+              <PlacePhoto
                 src={place.photo_url}
                 alt={place.name}
                 className="h-full w-full object-cover transition-transform duration-300 motion-safe:group-hover:scale-105"
