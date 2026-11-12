@@ -26,12 +26,8 @@ import { emailAndPassword } from '../auth/auth.controller';
 import { AdminOverviewService } from './admin-overview.service';
 import { AdminPhotoCreditsService } from './admin-photo-credits.service';
 import { photoCreditsFrom } from './photo-credits';
-import {
-  ADMIN_PLACE_TYPES,
-  AdminPlacesService,
-  placeChangesFrom,
-  type AdminPlaceType,
-} from './admin-places.service';
+import { AdminPlacesService } from './admin-places.service';
+import { ADMIN_PLACE_TYPES, placeChangesFrom, type AdminPlaceType } from './place-changes';
 import { AdminReportsService } from './admin-reports.service';
 import { AdminReviewsService, reviewQueryFrom } from './admin-reviews.service';
 import { AdminService } from './admin.service';

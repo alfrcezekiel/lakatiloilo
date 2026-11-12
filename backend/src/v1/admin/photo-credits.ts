@@ -1,6 +1,6 @@
 import { BadRequestException } from '@nestjs/common';
 import type { QueryRunner } from 'typeorm';
-import type { AdminPlaceType } from './admin-places.service';
+import type { AdminPlaceType } from './place-changes';
 
 // Photo credits and copyright for a place's photo (photo credits round,
 // ticket 132; table place_photo_credits, supabase/sql/054). Saved from the

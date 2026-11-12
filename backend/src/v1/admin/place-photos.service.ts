@@ -2,7 +2,7 @@ import { randomUUID } from 'crypto';
 import { Injectable, Logger, ServiceUnavailableException } from '@nestjs/common';
 import { SupabaseService } from '../../supabase/supabase.service';
 import { ReviewPhotosService, type UploadedPhoto } from '../reviews/review-photos.service';
-import type { AdminPlaceType } from './admin-places.service';
+import type { AdminPlaceType } from './place-changes';
 
 const BUCKET = 'place-photos';
 

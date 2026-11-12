@@ -1,6 +1,7 @@
 import { Injectable, Logger, ServiceUnavailableException } from '@nestjs/common';
 import { InjectDataSource } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
+import { photoAllowedSql } from '../public-photo-credit';
 
 // One credit on the Photo credits page (photo credits round, ticket 136):
 // the place, and what the site shows under its photo. Never the
@@ -34,7 +35,7 @@ export class PhotoCreditsService {
            left join public.destinations d on pc.place_type = 'destination' and d.id = pc.place_id
            left join public.accommodations a on pc.place_type = 'accommodation' and a.id = pc.place_id
           where coalesce(d.name, a.name) is not null
-            and pc.authorization_status <> 'not_checked'
+            and ${photoAllowedSql('pc')}
           order by place_name`,
       );
     } catch (error) {

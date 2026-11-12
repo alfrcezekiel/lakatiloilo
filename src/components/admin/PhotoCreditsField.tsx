@@ -155,6 +155,8 @@ export function PhotoCreditsField({
       </legend>
       <p className="-mt-1 text-sm text-white/80">
         Who took this photo, and may we use it? The credit line shows with the photo on the site.
+        Until the status is something other than &ldquo;Not checked yet&rdquo;, travelers see the
+        Lakat Iloilo splash art instead of this photo.
       </p>
       {photoChanged && (
         <p

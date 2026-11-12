@@ -1,3 +1,5 @@
+import { SPLASH_ART } from "@/lib/splash";
+
 // Display names for the values stored in the database, kept in one place so
 // every screen spells them the same way. Rename a category here and the
 // chips, the search bar and the suggestions all follow.
@@ -128,7 +130,7 @@ export function extraCategories(
               appliesTo: category.applies_to,
               // Ticket 138: a place photo without allowed credits is not
               // sent, so the card uses the wide splash art then.
-              imageUrl: first.photo_url ?? "/lakat-iloilo-splash-desktop-fhd.png",
+              imageUrl: first.photo_url ?? SPLASH_ART,
             },
           ]
         : [];

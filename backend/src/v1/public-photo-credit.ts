@@ -21,7 +21,17 @@ export interface PublicPhotoCredit {
   source_url: string;
 }
 
-const ALLOWED = "authorization_status <> 'not_checked'";
+// THE rule for "may travelers see this photo?", in one place (code review
+// 2026-11-12): its credits are saved with any status but "Not checked
+// yet". Used for the public photo and credit line here, the Photo credits
+// page (photo-credits/) and the dashboard's "Credit missing" label
+// (admin/admin-places.service.ts), so the three always agree. `table` is
+// the alias of place_photo_credits in the query, if it has one. Fixed
+// text only, never anything from a request.
+export const photoAllowedSql = (table?: 'pc') =>
+  `${table ? `${table}.` : ''}authorization_status <> 'not_checked'`;
+
+const ALLOWED = photoAllowedSql();
 
 // A place's credit line, or null when its photo has no allowed credits
 // (then the photo is not shown either).

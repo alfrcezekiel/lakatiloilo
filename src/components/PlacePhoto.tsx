@@ -5,18 +5,18 @@
 // then photo_url is null, and the Lakat Iloilo splash art shows in the
 // same frame, filled and cropped the same way as a photo.
 //
-// The splash art is the team's own file in public/: the FHD art,
-// 1920 × 1080 (team decision 2026-11-11, "option a": this one file
-// everywhere, so it is loaded once). It is decoration (alt=""), because
-// the place's name is always written next to it or on it.
+// The splash art is the team's own art, 1920 × 1080 (SPLASH_ART in
+// src/lib/splash.ts: one file everywhere, so it is loaded once). It is
+// decoration (alt=""), because the place's name is always written next to
+// it or on it.
 
-export const SPLASH_FHD = "/lakat-iloilo-splash-desktop-fhd.png";
+import { SPLASH_ART } from "@/lib/splash";
 
 export function PlacePhoto({
   src,
   alt,
   className,
-  splash = SPLASH_FHD,
+  splash = SPLASH_ART,
 }: {
   // The place's photo, or null while it may not be shown.
   src: string | null | undefined;

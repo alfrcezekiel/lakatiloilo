@@ -1,7 +1,8 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { httpErrorFrom } from '../database-errors';
 import { TravelerTransactions } from '../traveler-transactions';
-import { AdminPlacesService, type AdminPlaceDetails, type AdminPlaceType } from './admin-places.service';
+import { AdminPlacesService } from './admin-places.service';
+import type { AdminPlaceDetails, AdminPlaceType } from './place-changes';
 import { bad, saveCredits, type PhotoCredits } from './photo-credits';
 
 // Saving a place's photo credits from the dashboard (photo credits round,
