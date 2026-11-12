@@ -4,14 +4,14 @@
 
 **Blocked by:** 132
 
-**Status:** in progress
+**Status:** done
 
 - [x] The Add form shows the credits box below the photo, with the same fields, self-filling credit line and checks as Edit
 - [x] "Add place" is refused with a plain message while Photographer, Copyright licence or Authorization status is missing, or "All rights reserved" lacks "Permission from the owner"
 - [x] If the credits are refused, nothing is saved: no place, no photo
 - [x] The "place added" card shows the credit line
 - [x] Works with the keyboard alone, at 320, 375 and 425 px and on a laptop
-- [ ] Works on the live URL
+- [x] Works on the live URL
 
 ## Progress (2026-11-11)
 

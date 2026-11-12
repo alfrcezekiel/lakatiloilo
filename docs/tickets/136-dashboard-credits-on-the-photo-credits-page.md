@@ -4,14 +4,14 @@
 
 **Blocked by:** 132
 
-**Status:** in progress
+**Status:** done
 
 - [x] The page lists each dashboard credit with its place name, credit line, licence and, when there is one, a link to the original
 - [x] The existing Wikimedia credits still show as before
 - [x] A credit saved on the dashboard appears on the page after a reload; a deleted place's credit is gone
 - [x] Never shows the authorization status
 - [x] Works at 320 px and on a laptop
-- [ ] Works on the live URL
+- [x] Works on the live URL
 
 ## Progress (2026-11-11)
 

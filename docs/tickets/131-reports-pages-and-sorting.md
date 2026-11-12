@@ -4,12 +4,12 @@
 
 **Blocked by:** 129
 
-**Status:** in progress
+**Status:** done
 
 - [x] Sort and Show change the Reports list; Previous, Next and the page numbers move through it, and "Showing … of N" is right
 - [x] Keep it, Hide it, Delete review with Undo, and the live updates still work on any page
 - [x] Works with the keyboard alone, at 375 px and on a laptop
-- [ ] Works on the live URL
+- [x] Works on the live URL
 
 ## Progress (2026-11-11)
 

@@ -4,14 +4,14 @@
 
 **Blocked by:** 132
 
-**Status:** in progress
+**Status:** done
 
 - [x] The credit line shows under the photo on a destination page and an accommodation page that have credits
 - [x] It links to the original photo (opens in a new tab) only when there is an original URL
 - [x] A place without credits shows no line and no empty space
 - [x] The public answer for a place carries the credit line, licence and link, never the authorization status (checked with curl)
 - [x] Readable (WCAG AA contrast) on the photo page at 320 px and on a laptop
-- [ ] Works on the live URL
+- [x] Works on the live URL
 
 ## Progress (2026-11-11)
 

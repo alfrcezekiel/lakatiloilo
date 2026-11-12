@@ -4,14 +4,14 @@
 
 **Blocked by:** 118
 
-**Status:** todo
+**Status:** done
 
 - [x] A numbered SQL file adds the place-photos Storage bucket (anyone may view; only admins may add, replace or delete; JPG, PNG or WebP up to 2 MB); the team has run it
 - [x] An admin replaces a place's photo from a file on their computer; the new photo shows on the home page card and the place page, and the old uploaded file is deleted
 - [x] A PDF, a renamed file of another kind or a photo over 2 MB is refused with a plain message
 - [x] A traveler cannot upload a place photo (refused by Storage, and 401 or 403 from the endpoint, checked with curl)
 - [x] Works at 375 px and on a laptop
-- [ ] Works on the live URL
+- [x] Works on the live URL
 
 ## Progress (2026-11-11)
 

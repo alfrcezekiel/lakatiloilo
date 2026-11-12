@@ -4,13 +4,13 @@
 
 **Blocked by:** 123
 
-**Status:** in progress
+**Status:** done
 
 - [x] With Reviews open, a review posted, hidden or reported from another window shows within a few seconds
 - [x] With Reports open, a new report shows within a few seconds
 - [x] The search text, the chosen filter and open panels are kept when an update arrives
 - [x] review_reports is still not on the Realtime list
-- [ ] Works on the live URL
+- [x] Works on the live URL
 
 ## Progress (2026-11-11)
 

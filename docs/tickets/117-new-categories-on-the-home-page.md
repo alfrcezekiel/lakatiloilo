@@ -4,13 +4,13 @@
 
 **Blocked by:** 116
 
-**Status:** todo
+**Status:** done
 
 - [x] A new category with one place shows on the home page with its chip, card and list; one with no places is not shown
 - [x] The eight existing categories and kinds look and work as before
 - [x] Adding a category from the dashboard shows on an open home page without a reload
 - [x] Works at 375 px and on a laptop
-- [ ] Works on the live URL
+- [x] Works on the live URL
 
 ## Progress (2026-11-10)
 

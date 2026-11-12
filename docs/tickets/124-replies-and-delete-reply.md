@@ -4,12 +4,12 @@
 
 **Blocked by:** 122
 
-**Status:** in progress
+**Status:** done
 
 - [x] A numbered SQL file lets admins delete any reply through a database function that follows the same rule as the writer's own delete; the team has run it
 - [x] An admin opens a review's replies and deletes one with answers (it stays as "This reply was deleted") and one without (it is removed); the place page shows the same
 - [x] A traveler cannot delete someone else's reply (refused by the database)
-- [ ] Works on the live URL
+- [x] Works on the live URL
 
 ## Progress (2026-11-10)
 

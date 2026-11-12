@@ -4,13 +4,13 @@
 
 **Blocked by:** 129
 
-**Status:** in progress
+**Status:** done
 
 - [x] Sort and Show change the Reviews list; Previous, Next and the page numbers move through it, and "Showing … of N" is right
 - [x] Search, All / Hidden / Reported, replies, Helpful lists, Hide / Show / Delete and Undo still work on any page; a change from another window updates the page without moving it
 - [x] A wrong sort, number per page or page answers 400 with a plain sentence (checked with curl)
 - [x] Works with the keyboard alone, at 375 px and on a laptop
-- [ ] Works on the live URL
+- [x] Works on the live URL
 
 ## Progress (2026-11-11)
 

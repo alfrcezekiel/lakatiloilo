@@ -4,13 +4,13 @@
 
 **Blocked by:** None
 
-**Status:** in progress
+**Status:** done
 
 - [x] An admin sees every review, hidden ones included, finds one by searching, and narrows the list with All / Hidden / Reported
 - [x] "Show more" loads the next 50
 - [x] A traveler or a logged-out visitor gets 403 or 401 from the endpoint (checked with curl) and "not found" on the screen
 - [x] Works with the keyboard alone, at 375 px and on a laptop
-- [ ] Works on the live URL
+- [x] Works on the live URL
 
 ## Progress (2026-11-10)
 

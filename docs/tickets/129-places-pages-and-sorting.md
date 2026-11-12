@@ -4,12 +4,12 @@
 
 **Blocked by:** None
 
-**Status:** in progress
+**Status:** done
 
 - [x] Sort and Show change the Places list; Previous, Next and the page numbers move through it, and "Showing … of N" is right
 - [x] Searching or changing a filter goes back to page 1, and Delete with Undo still works on any page
 - [x] Works with the keyboard alone, at 375 px and on a laptop
-- [ ] Works on the live URL
+- [x] Works on the live URL
 
 ## Progress (2026-11-11)
 

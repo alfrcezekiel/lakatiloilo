@@ -4,13 +4,13 @@
 
 **Blocked by:** 132
 
-**Status:** in progress
+**Status:** done
 
 - [x] A place with no credits shows "Credit missing"; so does one marked "Not checked yet"
 - [x] After its credits are saved with another status, the label is gone when the admin goes back to the list
 - [x] Screen readers hear the label as part of the place's row
 - [x] The label fits the row at 320, 375 and 425 px without pushing the buttons into uneven rows
-- [ ] Works on the live URL
+- [x] Works on the live URL
 
 ## Progress (2026-11-11)
 

@@ -4,12 +4,12 @@
 
 **Blocked by:** 121, 123, 124, 125
 
-**Status:** in progress
+**Status:** done
 
 - [x] Undo within 8 seconds puts a review, a reply, a place and a like back, and nothing changed for travelers
 - [x] Without Undo each is really deleted after 8 seconds, and also when the admin leaves the page
 - [x] The Undo line can be reached and used with the keyboard and is read out by screen readers
-- [ ] Works on the live URL
+- [x] Works on the live URL
 
 ## Progress (2026-11-11)
 

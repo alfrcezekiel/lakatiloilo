@@ -4,14 +4,14 @@
 
 **Blocked by:** None
 
-**Status:** todo
+**Status:** done
 
 - [x] A numbered SQL file adds the place_categories table with Row Level Security on and its policies (anyone may read; only admins may add and delete), starts it with the eight in use today, refuses deleting one that a place uses and refuses a place whose category or kind is not in it; the team has run it
 - [x] An admin sees the categories and kinds with their place counts, adds a new category and a new kind, and deletes an unused one
 - [x] A too short, too long or already used name, and deleting one in use, each show a plain message
 - [x] A traveler cannot add or delete a category (refused by the database, and 401 or 403 from the endpoints, checked with curl)
 - [x] Works with the keyboard alone, at 375 px and on a laptop
-- [ ] Works on the live URL
+- [x] Works on the live URL
 
 ## Progress (2026-11-10)
 

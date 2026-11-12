@@ -4,13 +4,13 @@
 
 **Blocked by:** 118
 
-**Status:** in progress
+**Status:** done
 
 - [x] A numbered SQL file lets admins delete places and deletes a place's reviews with it; the team has run it
 - [x] The step says how many reviews will be deleted; after "Yes, delete" the place and its reviews are gone from the site, and Cancel changes nothing
 - [x] The place's uploaded photo and its reviews' photo files are deleted from Storage
 - [x] A traveler cannot delete a place (refused by the database)
-- [ ] Works on the live URL
+- [x] Works on the live URL
 
 ## Progress (2026-11-10)
 

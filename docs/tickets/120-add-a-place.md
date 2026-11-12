@@ -4,14 +4,14 @@
 
 **Blocked by:** 119
 
-**Status:** in progress
+**Status:** done
 
 - [x] A numbered SQL file lets admins add places (everyone else still cannot); the team has run it
 - [x] An admin adds a destination and an accommodation, each with a photo; each shows on the home page and has its own page
 - [x] A missing field or a missing photo shows a plain message, and nothing is saved
 - [x] A traveler cannot add a place (refused by the database)
 - [x] Works with the keyboard alone, at 375 px and on a laptop
-- [ ] Works on the live URL
+- [x] Works on the live URL
 
 ## Progress (2026-11-10)
 

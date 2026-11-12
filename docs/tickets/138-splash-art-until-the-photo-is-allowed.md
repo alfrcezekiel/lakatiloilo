@@ -4,14 +4,14 @@
 
 **Blocked by:** 132
 
-**Status:** in progress
+**Status:** done
 
 - [x] A place without credits, or with "Not checked yet", shows the splash art on the home page, on the Featured / Trending cards and on its own page, with no credit line
 - [x] Saving its credits with an allowed status shows the real photo and its credit line after a reload
 - [x] The public answers never carry the photo address of a place whose photo is not allowed (checked with curl); the Photo credits page lists only allowed credits
 - [x] On a place page the splash art is the wide 1920 × 1080 art at every width (320 px to a laptop), with its title in view at the top
 - [x] The dashboard still shows the real photo on Edit, and the credits box says travelers see the splash art until the status is allowed
-- [ ] Works on the live URL
+- [x] Works on the live URL
 
 ## Progress (2026-11-11)
 

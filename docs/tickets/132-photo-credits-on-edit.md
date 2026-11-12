@@ -4,7 +4,7 @@
 
 **Blocked by:** None (best started after round 28 is pushed, ticket 128)
 
-**Status:** in progress
+**Status:** done
 
 - [x] The new place_photo_credits table exists with Row Level Security on: anyone may read, only admins may add, change or delete; deleting a place deletes its credits (proved with a rolled-back test)
 - [x] The Edit form shows the box below the photo with the six fields; Photographer, Copyright licence, Authorization status and Attribution / photo credits are required
@@ -14,7 +14,7 @@
 - [x] After a new photo is uploaded, the box says "Check these credits: the photo was changed." until the credits are saved again
 - [x] A logged-out visitor gets 401 and a traveler 403 when saving credits (checked with curl)
 - [x] Works with the keyboard alone, at 320, 375 and 425 px and on a laptop
-- [ ] Works on the live URL
+- [x] Works on the live URL
 
 ## Progress (2026-11-11)
 

@@ -4,12 +4,12 @@
 
 **Blocked by:** 122
 
-**Status:** in progress
+**Status:** done
 
 - [x] Hide it, Show it and Delete review all work, and the list updates at once
 - [x] Showing a reported review keeps its reports on the Reports screen
 - [x] A traveler cannot use these endpoints (401 or 403, checked with curl)
-- [ ] Works on the live URL
+- [x] Works on the live URL
 
 ## Progress (2026-11-10)
 

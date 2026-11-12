@@ -724,26 +724,26 @@ Admin dashboard & moderation round (changed 2026-11-08): the Lakat Iloilo team s
 - [x] Row Level Security is on for admins, notifications, reply_likes, review_photos, destinations and accommodations, and no service_role or sb_secret_ key appears anywhere
 
 **Full admin management round (live URL):**
-- [ ] An admin adds a destination and an accommodation with a photo chosen from their computer; each shows on the home page and has its own page
-- [ ] An admin changes a place's category or kind, location, latitude and longitude, and replaces its photo; a PDF or a photo over 2 MB is refused with a plain message
-- [ ] An admin deletes a place after "Yes, delete"; it and its reviews are gone from the site
-- [ ] On Reviews, an admin finds a review by searching, hides it, shows it again and deletes one; All / Hidden / Reported narrow the list
-- [ ] An admin deletes a reply; one with answers stays as "This reply was deleted"
-- [ ] An admin sees who marked a review and a reply Helpful and removes a like; the count drops on the site
-- [ ] An admin adds a new category, gives a place that category, and it shows on the home page with its chip and list; deleting a category that is in use is refused, and an unused one is deleted
-- [ ] With the Reviews screen open, a review posted, hidden or reported from another window shows there within a few seconds, without a reload, and the search text and open replies are kept
-- [ ] After deleting a review, a reply, a place and a like, Undo within 8 seconds puts each back; without Undo it is really deleted
-- [ ] Logged out or as a traveler, the new pages show "not found" and the new endpoints answer 401 or 403 (checked with curl); a traveler cannot add, change or delete a place, delete someone else's reply or like, or upload a place photo (refused by the database)
-- [ ] On Places, Reviews and Reports, Sort (Recently added / Most relevant / Top-rated) and Show 10 / 25 / 50 change the list, and Previous, Next and the page numbers move through it; "Showing 11–20 of N" is right
-- [ ] Row Level Security is on for every table, the place-photos bucket has its policies, and no service_role or sb_secret_ key appears anywhere
+- [x] An admin adds a destination and an accommodation with a photo chosen from their computer; each shows on the home page and has its own page
+- [x] An admin changes a place's category or kind, location, latitude and longitude, and replaces its photo; a PDF or a photo over 2 MB is refused with a plain message
+- [x] An admin deletes a place after "Yes, delete"; it and its reviews are gone from the site
+- [x] On Reviews, an admin finds a review by searching, hides it, shows it again and deletes one; All / Hidden / Reported narrow the list
+- [x] An admin deletes a reply; one with answers stays as "This reply was deleted"
+- [x] An admin sees who marked a review and a reply Helpful and removes a like; the count drops on the site
+- [x] An admin adds a new category, gives a place that category, and it shows on the home page with its chip and list; deleting a category that is in use is refused, and an unused one is deleted
+- [x] With the Reviews screen open, a review posted, hidden or reported from another window shows there within a few seconds, without a reload, and the search text and open replies are kept
+- [x] After deleting a review, a reply, a place and a like, Undo within 8 seconds puts each back; without Undo it is really deleted
+- [x] Logged out or as a traveler, the new pages show "not found" and the new endpoints answer 401 or 403 (checked with curl); a traveler cannot add, change or delete a place, delete someone else's reply or like, or upload a place photo (refused by the database)
+- [x] On Places, Reviews and Reports, Sort (Recently added / Most relevant / Top-rated) and Show 10 / 25 / 50 change the list, and Previous, Next and the page numbers move through it; "Showing 11–20 of N" is right
+- [x] Row Level Security is on for every table, the place-photos bucket has its policies, and no service_role or sb_secret_ key appears anywhere
 
 **Photo credits round (live URL):**
-- [ ] An admin adds a place with its photo credits; the credit line shows under the photo on its page and on the Photo credits page
-- [ ] An admin edits a place's credits; "All rights reserved" without "Permission from the owner", a missing photographer or a URL that is not https is refused with a plain message
-- [ ] Places with no credits, or "Not checked yet", show "Credit missing" on /admin/places
-- [ ] A traveler or a logged-out visitor cannot change credits (401 or 403 by curl, refused by the database); travelers never see the authorization status
-- [ ] A place without allowed credits shows the splash art (the wide 1920 × 1080 art) and no credit line; saving allowed credits shows its real photo
-- [ ] Row Level Security is on for place_photo_credits, and no service_role or sb_secret_ key appears anywhere
+- [x] An admin adds a place with its photo credits; the credit line shows under the photo on its page and on the Photo credits page
+- [x] An admin edits a place's credits; "All rights reserved" without "Permission from the owner", a missing photographer or a URL that is not https is refused with a plain message
+- [x] Places with no credits, or "Not checked yet", show "Credit missing" on /admin/places
+- [x] A traveler or a logged-out visitor cannot change credits (401 or 403 by curl, refused by the database); travelers never see the authorization status
+- [x] A place without allowed credits shows the splash art (the wide 1920 × 1080 art) and no credit line; saving allowed credits shows its real photo
+- [x] Row Level Security is on for place_photo_credits, and no service_role or sb_secret_ key appears anywhere
 
 ## Out of scope
 - Photo credits round: removing a place's credits once saved (they can be changed, not cleared), moving the 30 hard-coded Wikimedia credits into the table (they keep working as they are), credits for travelers' review photos, and checking automatically whether a URL or licence is real (the team checks by hand; the status records it)

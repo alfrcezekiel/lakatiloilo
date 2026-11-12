@@ -4,13 +4,13 @@
 
 **Blocked by:** 124
 
-**Status:** in progress
+**Status:** done
 
 - [x] A numbered SQL file lets admins delete any like and adds an admin-only function that answers the display names of the travelers who liked one review or reply; the team has run it
 - [x] An admin opens the list for a review and for a reply and removes a like; the count drops on the place page and the notification is gone
 - [x] A traveler cannot read who liked something or remove someone else's like (refused by the database)
 - [x] No email address appears in any answer
-- [ ] Works on the live URL
+- [x] Works on the live URL
 
 ## Progress (2026-11-10)
 

@@ -4,13 +4,13 @@
 
 **Blocked by:** 116, 117, 118, 119, 120, 121, 122, 123, 124, 125, 126, 127, 129, 130, 131 (pages and sorting added to the round on 2026-11-11, team request)
 
-**Status:** in progress
+**Status:** done
 
-- [ ] Every item in the "Full admin management round" checklist works on the live URL
-- [ ] Every new admin endpoint refuses a logged-out visitor (401) and a traveler (403) (checked with curl)
-- [ ] Places, reviews, replies, photos, reports, Helpful likes, notifications and log-in still work for travelers
-- [ ] /code-review has been run on the round and its findings handled
-- [ ] Works on the live URL
+- [x] Every item in the "Full admin management round" checklist works on the live URL
+- [x] Every new admin endpoint refuses a logged-out visitor (401) and a traveler (403) (checked with curl)
+- [x] Places, reviews, replies, photos, reports, Helpful likes, notifications and log-in still work for travelers
+- [x] /code-review has been run on the round and its findings handled
+- [x] Works on the live URL
 
 ## Progress (2026-11-11)
 
@@ -20,3 +20,8 @@
   - Standards: the Add a place page moved to `AdminPlaceNew.tsx`, the form's fields and checks to `place-form-fields.ts` and its photo to `PlacePhotoField.tsx` (AdminPlaceEdit.tsx 761 → 537 lines); the review buttons to `ReviewActions.tsx` (AdminReviews.tsx 535 → 378); the unused "gone" focus branch removed; `ADMIN_LIVE_QUIET_MS` and `ADMIN_REVIEWS_KEY` moved to `admin-ui.tsx`; the waiting-delete keys are one set per change; the four copies of the database-error mapping replaced by `backend/src/v1/database-errors.ts` (checked on real refusals, rolled back: duplicate category 409, category in use 409, traveler 403 — the same sentences as before).
 - Team requests the same day: no black backdrop on dashboard cards (no blur or big shadow on `adminGlass`, solid phone top bar, keyboard-only card outlines); "Categories" in the sidebar (ticket 116); the no-white-hover rule moved into `.claude/rules/frontend.md` with a new "No black backdrop on the admin dashboard" section (the old rule file is removed).
 - **Not yet done:** commit and push, the live checklist, and the travelers' side on the live URL.
+
+- Committed and pushed (2026-11-11): 5085a96, tickets 116–138 with SQL 047–055 (all already run on Supabase). Left out: .claude/launch.json and the five splash files the site does not use. Next: the live checklist.
+- Live check (2026-11-12, team): "it operates efficiently in live URL". The team confirmed on the live site: travelers see the splash art on places until their photo credits are allowed; /admin/login works; adding a place; reviews (view, hide, show, delete); reports (keep, hide, delete); Undo after deleting reviews, places, replies and likes; adding categories; sorting on Reviews, Reports and Places; phone widths; a traveler cannot open the /admin pages.
+- curl on the live backend (2026-11-12), logged out and with a fake login: PUT …/credits, POST places, GET places, GET one place, GET reviews, DELETE a reply, GET categories → all 401. The live site's /admin/places, /admin/reviews and /admin/categories → 404 without an admin login. Public answers: GET /v1/photo-credits 2 items and GET /v1/destinations 31 places (2 with a photo), neither with the authorization status.
+- Also confirmed by the team on the live URL (2026-11-12): editing every field and the photo (PDF refused), live updates from another window, the photo credits refusals, and the credit line on /credits. Round done.

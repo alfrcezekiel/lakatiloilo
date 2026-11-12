@@ -4,14 +4,14 @@
 
 **Blocked by:** 116
 
-**Status:** todo
+**Status:** done
 
 - [x] A numbered SQL file lets admins change those columns too, checks that the latitude and longitude are inside Iloilo, and keeps the map position in step with them; the team has run it
 - [x] An admin changes a destination's category and location and an accommodation's kind, and the place moves to the right list on the home page
 - [x] A latitude or longitude outside Iloilo, or not a number, shows a plain message
 - [x] A traveler cannot change these fields (refused by the database)
 - [x] Works with the keyboard alone, at 375 px and on a laptop
-- [ ] Works on the live URL
+- [x] Works on the live URL
 
 ## Progress (2026-11-10)
 
