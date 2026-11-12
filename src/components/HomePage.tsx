@@ -155,6 +155,18 @@ export function HomePage({ places }: { places: Promise<HomePlaces> }) {
 
   return (
     <main className="min-h-screen">
+      {/* Evaluation 2026-11-12 (WCAG 2.4.1, 2.4.3): "Skip to content" first,
+          then the navbar, so keyboard users meet them in the order they see
+          them. The navbar used to come after the whole page, so the bell
+          and account menu were the 62nd Tab stop; it is fixed at the top,
+          so moving it here changes nothing on screen. */}
+      <a
+        href="#explore"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-60 focus:rounded-lg focus:bg-amber-300 focus:px-3 focus:py-2 focus:font-semibold focus:text-teal-950"
+      >
+        Skip to content
+      </a>
+      <DockNavbar />
       {/* Screen readers hear "Loading places" while the skeletons show. The
           skeletons themselves are hidden from screen readers. */}
       <p role="status" className="sr-only">
@@ -267,7 +279,6 @@ export function HomePage({ places }: { places: Promise<HomePlaces> }) {
         />
       </section>
 
-      <DockNavbar />
       <ScrollToTop />
 
       <Footer />

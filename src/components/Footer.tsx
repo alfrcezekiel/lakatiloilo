@@ -22,36 +22,41 @@ export function Footer() {
 
           {/* Navigation */}
           <div>
+            {/* Links at least 24 px tall (evaluation 2026-11-12, WCAG 2.5.8). */}
             <h4 className="text-lg font-semibold text-white mb-4">Quick Links</h4>
             <ul className="space-y-2">
               <li>
                 <button
+                  type="button"
                   onClick={() => scrollToSection("explore")}
-                  className="text-sm text-white/80 hover:text-white transition-colors"
+                  className="min-h-6 cursor-pointer text-sm text-white/80 hover:text-white transition-colors"
                 >
                   Home
                 </button>
               </li>
               <li>
                 <button
+                  type="button"
                   onClick={() => scrollToSection("about")}
-                  className="text-sm text-white/80 hover:text-white transition-colors"
+                  className="min-h-6 cursor-pointer text-sm text-white/80 hover:text-white transition-colors"
                 >
                   About Iloilo
                 </button>
               </li>
               <li>
                 <button
+                  type="button"
                   onClick={() => scrollToSection("features")}
-                  className="text-sm text-white/80 hover:text-white transition-colors"
+                  className="min-h-6 cursor-pointer text-sm text-white/80 hover:text-white transition-colors"
                 >
                   Features
                 </button>
               </li>
               <li>
                 <button
+                  type="button"
                   onClick={() => scrollToSection("explore-categories")}
-                  className="text-sm text-white/80 hover:text-white transition-colors"
+                  className="min-h-6 cursor-pointer text-sm text-white/80 hover:text-white transition-colors"
                 >
                   Explore
                 </button>
@@ -68,7 +73,7 @@ export function Footer() {
             {/* Our photo licences require crediting the photographers. */}
             <Link
               href="/credits"
-              className="mt-2 inline-block text-sm text-white/80 underline underline-offset-2 transition-colors hover:text-white"
+              className="mt-2 inline-block min-h-6 py-0.5 text-sm text-white/80 underline underline-offset-2 transition-colors hover:text-white"
             >
               Photo credits
             </Link>

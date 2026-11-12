@@ -74,6 +74,10 @@ export function FeaturedCards({ destinations, ratings, loading }: FeaturedCardsP
 
   return (
     <div className="grid gap-5 lg:grid-cols-2">
+      {/* The cards' names are level-3 headings; this hidden level 2 sits
+          between them and the page title (evaluation 2026-11-12, WCAG
+          1.3.1). Hidden on screen, it takes no space. */}
+      <h2 className="sr-only">Featured and trending</h2>
       {cards.map(({ place, badge, badgeClass }, index) => (
         <Reveal key={badge} className="grid" delay={index * 0.12}>
           <Link

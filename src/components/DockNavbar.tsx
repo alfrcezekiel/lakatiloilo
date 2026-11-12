@@ -139,14 +139,17 @@ export function DockNavbar() {
                   </button>
                 </div>
                 <div className="flex flex-col gap-4 text-lg font-medium text-white">
+                  {/* Real buttons (evaluation 2026-11-12, WCAG 2.1.1): as
+                      plain text they could only be clicked with a mouse. */}
                   {navLinks.map((link) => (
-                    <span
+                    <button
+                      type="button"
                       key={link.id}
                       onClick={() => handleScrollToSection(link.id)}
-                      className="cursor-pointer select-none hover:text-white/80 py-3 transition-colors duration-200 border-b border-white/10 last:border-0"
+                      className="cursor-pointer select-none text-left hover:text-white/80 py-3 transition-colors duration-200 border-b border-white/10 last:border-0 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
                     >
                       {link.label}
-                    </span>
+                    </button>
                   ))}
                   {phoneAccount && <div className="py-3">{phoneAccount}</div>}
                 </div>
@@ -167,13 +170,14 @@ export function DockNavbar() {
           </Link>
           <div className="flex items-center gap-2 sm:gap-4 text-xs font-medium text-white/90 sm:text-sm">
             {navLinks.map((link) => (
-              <span
+              <button
+                type="button"
                 key={link.id}
                 onClick={() => scrollToSection(link.id)}
-                className="cursor-pointer select-none hover:text-white hidden sm:inline transition-colors duration-200"
+                className="cursor-pointer select-none rounded-sm hover:text-white hidden sm:inline transition-colors duration-200 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white"
               >
                 {link.label}
-              </span>
+              </button>
             ))}
             {barAccount && (
               <span className="hidden sm:flex items-center border-l border-white/25 pl-4">

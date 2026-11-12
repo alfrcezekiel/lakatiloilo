@@ -144,9 +144,11 @@ function CategoryList({
   const headingId = useId();
   return (
     <div className="min-w-0">
-      <h3 id={headingId} className="text-sm font-semibold text-white/90">
+      {/* Level 2: right under the page title since Categories has its own
+          page (evaluation 2026-11-12, WCAG 1.3.1). */}
+      <h2 id={headingId} className="text-sm font-semibold text-white/90">
         {heading} ({categories.length})
-      </h3>
+      </h2>
       <ul aria-labelledby={headingId} className="mt-2 space-y-2">
         {categories.map((category) => (
           <CategoryRow key={category.id} category={category} onDone={onDone} />

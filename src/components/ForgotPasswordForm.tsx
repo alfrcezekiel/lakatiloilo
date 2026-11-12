@@ -27,6 +27,8 @@ export function ForgotPasswordForm() {
     setFormError(null);
     if (!email.includes("@")) {
       setEmailError("Please enter a valid email address.");
+      // Back to the field to fix it (evaluation 2026-11-12, WCAG 3.3.1).
+      document.getElementById("email")?.focus();
       return;
     }
     setEmailError(null);
@@ -52,6 +54,7 @@ export function ForgotPasswordForm() {
           setFormError("Too many reset emails right now. Please wait a few minutes and try again.");
         } else if (error.code === "email_address_invalid" || error.code === "validation_failed") {
           setEmailError("Please enter a valid email address.");
+          document.getElementById("email")?.focus();
         } else {
           setFormError("Something went wrong. Please try again.");
         }

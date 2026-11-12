@@ -420,7 +420,7 @@ export function LoginForm() {
 
       <p className="mt-6 text-center text-sm text-white/80">
         Just looking?{" "}
-        <Link href="/" className="underline underline-offset-2 hover:text-white">
+        <Link href="/" className="inline-block py-1 underline underline-offset-2 hover:text-white">
           Explore as a guest
         </Link>
       </p>

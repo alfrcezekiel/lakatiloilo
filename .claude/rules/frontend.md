@@ -106,9 +106,11 @@ seams showed as light stripes.
   page's side panel, which rises into the photo on a laptop, the login
   card) and the dim layer behind a modal or the phone menu. Never on the
   admin dashboard (next section).
-- Clickable text that is not a real link or button (the navbar's Home /
-  About / Features / Explore) gets `select-none`, so clicking it does not
-  leave a blue selection box.
+- Anything clickable is a real `<button>` or link, never a `<span>` or
+  `<div>` with `onClick` (evaluation 2026-11-12: the navbar's Home /
+  About / Features / Explore were plain text, so a keyboard could not
+  reach them; WCAG 2.1.1). Buttons styled as text keep `select-none`, so
+  clicking them does not leave a blue selection box.
 
 ## No black backdrop on the admin dashboard
 

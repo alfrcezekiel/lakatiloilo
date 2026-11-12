@@ -2,6 +2,7 @@ import { Logger } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import { AppModule } from './app.module';
+import { UnknownRouteFilter } from './unknown-route.filter';
 
 // Importing AppModule runs ConfigModule.forRoot, which loads backend/.env
 // into process.env, so the variables below are available on your computer.
@@ -36,13 +37,15 @@ const bootstrap = async () => {
     response.setHeader('X-Frame-Options', 'DENY');
     next();
   });
-  // Browsers may read (GET), add (POST), edit (PATCH) and delete (DELETE)
-  // reviews. The Authorization header carries the traveler's login token.
+  // Browsers may read (GET), add (POST), replace (PUT, photo credits,
+  // ticket 132), edit (PATCH) and delete (DELETE). The Authorization header carries the traveler's login token.
   app.enableCors({
     origin: origins,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
     allowedHeaders: ['Content-Type', 'Authorization'],
   });
+  // An unknown address answers a plain sentence (unknown-route.filter.ts).
+  app.useGlobalFilters(new UnknownRouteFilter());
   // Vercel (and most hosts) tell the app which port to use through PORT.
   // On your computer PORT may be unset, so it falls back to 5000.
   const port = process.env.PORT ?? 5000;

@@ -178,8 +178,10 @@ Report as a table: endpoint → expected → got (status + message) → ✅/❌.
 ### 4.4 Middleware evaluation
 
 In this project "middleware" is everything a request passes through
-before the handler runs. There is **no** Next.js `middleware.ts` /
-`proxy.ts`; do not suggest adding one unless a finding needs it.
+before the handler runs. The website has one Next.js proxy,
+`src/proxy.ts` (since ticket 107): admin pages answer "not found" (404)
+unless the request carries an admin's login; the backend decides. Check
+it answers 404 logged out and as a traveler. Do not add another.
 
 - **CORS** (`backend/src/main.ts`): an allowed origin gets
   `Access-Control-Allow-Origin`; another origin does not.
@@ -187,9 +189,12 @@ before the handler runs. There is **no** Next.js `middleware.ts` /
   curl -s -i -X OPTIONS $API/v1/reviews -H "Origin: https://lakat-iloilo.vercel.app" -H "Access-Control-Request-Method: POST" | grep -i access-control
   curl -s -i -X OPTIONS $API/v1/reviews -H "Origin: https://evil.example" -H "Access-Control-Request-Method: POST" | grep -i access-control
   ```
-  Methods should be exactly GET, POST, PATCH, DELETE; headers
-  Content-Type and Authorization. Startup must fail loudly when
-  `CORS_ORIGIN` is unset.
+  Methods should be exactly GET, POST, PUT, PATCH, DELETE (PUT since
+  ticket 132, for photo credits); headers Content-Type and
+  Authorization. Startup must fail loudly when `CORS_ORIGIN` is unset,
+  so never delete that variable on Vercel: change its value. The live
+  backend's value is the live site only, without localhost
+  (evaluation 2026-11-12).
 - **Auth guard** (`loginToken` + Supabase token check): every write
   endpoint calls it; read endpoints that show `liked_by_me` still work
   without a login.

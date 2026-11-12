@@ -1,7 +1,6 @@
 import { ArrowLeft } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
 import { getPhotoCredits, type PhotoCreditEntry } from "@/lib/api";
 import { licenceLabels } from "@/lib/labels";
 import { photoCredits } from "@/lib/photo-credits";
@@ -31,11 +30,14 @@ export default async function CreditsPage() {
   return (
     <main className="min-h-screen bg-linear-to-br from-teal-900 to-emerald-800 text-white">
       <div className="mx-auto max-w-4xl px-4 py-16 sm:px-6">
-        <Link href="/">
-          <Button className="mb-8 border border-white/25 bg-white/20 text-white hover:bg-white/30">
-            <ArrowLeft aria-hidden="true" className="size-4" />
-            Back to Home
-          </Button>
+        {/* One link styled as the button it used to wrap (a button inside
+            a link was two Tab stops; evaluation 2026-11-12). */}
+        <Link
+          href="/"
+          className="mb-8 inline-flex h-10 items-center gap-2 rounded-(--radius) border border-white/25 bg-white/20 px-4 text-sm font-medium text-white transition-colors hover:bg-white/30 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+        >
+          <ArrowLeft aria-hidden="true" className="size-4" />
+          Back to Home
         </Link>
 
         <h1 className="font-fraunces mb-4 text-4xl font-medium sm:text-5xl">
