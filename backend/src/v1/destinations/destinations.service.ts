@@ -2,9 +2,11 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { FindOptionsWhere, Repository } from 'typeorm';
 import {
+  morePhotosOf,
   photoCreditOf,
   withAllowedPhotos,
   type PublicPhotoCredit,
+  type PublicPlacePhoto,
   type WithAllowedPhoto,
 } from '../public-photo-credit';
 import { NearParams, applyNear, withDistance } from '../near-query';
@@ -49,7 +51,9 @@ export class DestinationsService {
   // when the photo has no allowed credits yet (ticket 138).
   async findOne(
     id: string,
-  ): Promise<WithAllowedPhoto<Destination> & { photo_credit: PublicPhotoCredit | null }> {
+  ): Promise<
+    WithAllowedPhoto<Destination> & { photo_credit: PublicPhotoCredit | null; photos: PublicPlacePhoto[] }
+  > {
     const destination = await this.destinationsRepository.findOneBy({ id });
     if (!destination) {
       throw new NotFoundException("We couldn't find that destination.");
@@ -57,6 +61,10 @@ export class DestinationsService {
     const photo_credit = await photoCreditOf(this.destinationsRepository.manager, 'destination', id);
     // Ticket 138: the photo only with allowed credits; otherwise the
     // website shows the splash art (and no credit line).
-    return { ...destination, photo_url: photo_credit ? destination.photo_url : null, photo_credit };
+    return { ...destination, photo_url: photo_credit ? destination.photo_url : null,
+      photo_credit,
+      // Its other allowed photos, for the row under the top photo (ticket 146).
+      photos: await morePhotosOf(this.destinationsRepository.manager, 'destination', id),
+    };
   }
 }

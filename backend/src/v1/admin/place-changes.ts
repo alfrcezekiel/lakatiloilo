@@ -1,5 +1,5 @@
 import { BadRequestException, NotFoundException } from '@nestjs/common';
-import type { SavedPhotoCredits } from './photo-credits';
+import type { PlacePhotoDto, SavedPhotoCredits } from './photo-credits';
 
 // The places on the dashboard: their types, and the checks on what the
 // place form sends (tickets 112, 118, 120). Moved out of
@@ -25,6 +25,8 @@ export interface AdminPlaceRow {
   // stars from the reviews travelers see (null without any).
   created_at: Date;
   average_rating: number | null;
+  // The place's photo, for the category card photo picker (ticket 142).
+  photo_url: string | null;
   // No photo credits yet, or marked "Not checked yet" (ticket 134).
   credit_missing: boolean;
 }
@@ -49,6 +51,9 @@ export interface AdminPlaceDetails {
   // The photo's credits and copyright, or null before any are saved
   // (photo credits round, ticket 132).
   credits: SavedPhotoCredits | null;
+  // Every photo of the place, cover first, each with its credits (admin
+  // extras round, ticket 144).
+  photos: PlacePhotoDto[];
 }
 
 // What the team may change (the columns supabase/sql/043 and 048 allow).
@@ -144,3 +149,11 @@ export function placeChangesFrom(type: AdminPlaceType, body: Record<string, unkn
   }
   return { name, description, address, phone: phone || null, email: email || null, ...where };
 }
+
+// "destination" or "accommodation" in the address; anything else is not a
+// place, so 404 like an unknown id. Shared by AdminController and
+// AdminTrashController.
+export const placeType = (type: string): AdminPlaceType => {
+  if (!ADMIN_PLACE_TYPES.includes(type as AdminPlaceType)) throw placeNotFound();
+  return type as AdminPlaceType;
+};

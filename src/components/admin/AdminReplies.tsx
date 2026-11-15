@@ -1,16 +1,16 @@
 "use client";
 
-import { Trash2 } from "lucide-react";
+import { Eye, EyeOff, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { HelpfulCount } from "@/components/admin/AdminLikes";
 import { scheduleDelete, usePendingKeys } from "@/components/admin/PendingDeletes";
 import { ConfirmDeleteDialog } from "@/components/admin/ConfirmDeleteDialog";
-import { errorMessage } from "@/components/admin/admin-ui";
+import { ADMIN_TRASH_KEY, errorMessage } from "@/components/admin/admin-ui";
 import { formatDate } from "@/components/ReviewsSection";
 import { Skeleton } from "@/components/ui/skeleton";
-import { adminDeletePaths, getAdminReplies, type AdminReply } from "@/lib/api";
+import { adminDeletePaths, adminShowReply, getAdminReplies, type AdminReply } from "@/lib/api";
 import { freshToken } from "@/lib/login";
 import { cn } from "@/lib/utils";
 
@@ -38,21 +38,60 @@ function ReplyItem({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const children = answers.get(reply.id) ?? [];
+  const pendingKeys = usePendingKeys();
   // Waiting for Undo (ticket 127): shown as it will be once deleted.
-  const waiting = usePendingKeys().has(`reply:${reply.id}`);
+  const waiting = pendingKeys.has(`reply:${reply.id}`);
+  // Hide it waiting for its Undo (ticket 140): shown as hidden already.
+  const hiding = pendingKeys.has(`hide:reply:${reply.id}`);
+  const hidden = reply.hidden || hiding;
+  const queryClient = useQueryClient();
+  const [visibilityBusy, setVisibilityBusy] = useState(false);
+  const [visibilityLine, setVisibilityLine] = useState<string | null>(null);
+  const [visibilityError, setVisibilityError] = useState<string | null>(null);
+
+  // Hide it (ticket 140): with the same 8-second Undo as Delete; then the
+  // database moves the text where only the team can read it. Show it puts
+  // it back at once (it is its own undo).
+  const toggleHidden = async () => {
+    setVisibilityBusy(true);
+    setVisibilityError(null);
+    setVisibilityLine(null);
+    try {
+      if (hidden) {
+        const token = await freshToken();
+        if (!token) throw new Error("Please log in again, then try again.");
+        const { message } = await adminShowReply(token, reply.id);
+        await queryClient.invalidateQueries({ queryKey: adminRepliesKey(reviewId) });
+        setVisibilityLine(message);
+      } else {
+        await scheduleDelete({
+          key: `hide:reply:${reply.id}`,
+          label: `${reply.replier_name}'s reply hidden`,
+          path: adminDeletePaths.hideReply(reply.id),
+          method: "POST",
+          refresh: [adminRepliesKey(reviewId)],
+        });
+      }
+    } catch (e) {
+      setVisibilityError(errorMessage(e));
+    } finally {
+      setVisibilityBusy(false);
+    }
+  };
 
   const remove = async () => {
     setBusy(true);
     setError(null);
     try {
-      // Undo for 8 seconds first (ticket 127); then the database's rule
-      // (052) decides: with answers it stays as "This reply was deleted".
+      // Undo for 8 seconds first (ticket 127); then it goes to the Trash
+      // (061, ticket 148): with answers it shows as "This reply was
+      // deleted", without it leaves the thread.
       await scheduleDelete({
         key: `reply:${reply.id}`,
-        label: `${reply.replier_name}'s reply deleted`,
+        label: `${reply.replier_name}'s reply moved to the Trash`,
         path: adminDeletePaths.reply(reply.id),
-        // The reply count on the review card changes too.
-        refresh: [adminRepliesKey(reviewId), ["admin", "reviews"]],
+        // The reply count on the review card, and the Trash, change too.
+        refresh: [adminRepliesKey(reviewId), ["admin", "reviews"], ADMIN_TRASH_KEY],
       });
       setConfirming(false);
     } catch (e) {
@@ -88,20 +127,53 @@ function ReplyItem({
               {formatDate(reply.created_at)}
               {reply.updated_at && " · edited"}
             </span>
+            {hidden && (
+              <span className="inline-flex items-center gap-1 rounded-full border border-amber-300/70 px-2 py-0.5 text-xs font-semibold text-amber-200">
+                <EyeOff aria-hidden="true" className="size-3.5 shrink-0" />
+                Hidden
+              </span>
+            )}
           </div>
-          <p className="mt-1 whitespace-pre-line wrap-break-word text-white/90">{reply.comment}</p>
+          <p className={cn("mt-1 whitespace-pre-line wrap-break-word", hidden ? "text-white/65" : "text-white/90")}>
+            {reply.comment}
+          </p>
+          {hidden && (
+            <p className="mt-1 text-xs text-white/70">
+              Travelers see &ldquo;This reply was hidden by the Lakat Iloilo team.&rdquo; Its writer still sees it.
+            </p>
+          )}
           {/* N Helpful (opens who marked it, each with Remove; ticket 125)
-              and Delete reply. Phones: two equal halves, the Helpful list
-              under them (team report 2026-11-11: in deep answers Delete
-              dropped under Helpful); from 640 px at the two ends. */}
+              Hide it / Show it (ticket 140) and Delete reply. Phones: three
+              equal columns, the Helpful list under them (team report
+              2026-11-11: in deep answers Delete dropped under Helpful);
+              from 640 px Helpful on the left, the two buttons on the right. */}
           <HelpfulCount
             kind="reply"
             id={reply.id}
             count={reply.helpful_count}
             layout={(helpfulButton, likersList) => (
               <>
-                <div className="mt-2 grid grid-cols-2 gap-2 sm:flex sm:items-center sm:justify-between">
+                <div className="mt-2 grid grid-cols-3 gap-2 sm:flex sm:items-center">
                   {helpfulButton}
+                  <button
+                    type="button"
+                    onClick={() => void toggleHidden()}
+                    disabled={visibilityBusy}
+                    aria-label={`${hidden ? "Show" : "Hide"} reply: ${reply.replier_name}'s reply`}
+                    className={cn(
+                      "inline-flex min-h-11 cursor-pointer flex-col items-center justify-center gap-0.5 rounded-xl border px-2 text-center text-sm leading-tight font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white disabled:cursor-default disabled:opacity-60 sm:ml-auto sm:flex-row sm:gap-2 sm:px-4",
+                      hidden
+                        ? "border-emerald-300/70 text-emerald-200 hover:border-emerald-200 hover:text-white"
+                        : "border-white/40 text-white hover:border-amber-300 hover:text-amber-300",
+                    )}
+                  >
+                    {hidden ? (
+                      <Eye aria-hidden="true" className="size-4 shrink-0" />
+                    ) : (
+                      <EyeOff aria-hidden="true" className="size-4 shrink-0" />
+                    )}
+                    {hidden ? "Show it" : "Hide it"}
+                  </button>
                   <button
                     type="button"
                     onClick={() => {
@@ -109,7 +181,7 @@ function ReplyItem({
                       setConfirming(true);
                     }}
                     aria-label={`Delete reply: ${reply.replier_name}'s reply`}
-                    className="inline-flex min-h-11 cursor-pointer items-center justify-center gap-1.5 rounded-xl border border-red-300/70 px-3 text-center text-sm leading-tight font-semibold text-red-200 hover:border-red-200 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white sm:gap-2 sm:px-4"
+                    className="inline-flex min-h-11 cursor-pointer flex-col items-center justify-center gap-0.5 rounded-xl border border-red-300/70 px-2 text-center text-sm leading-tight font-semibold text-red-200 hover:border-red-200 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white sm:flex-row sm:gap-2 sm:px-4"
                   >
                     <Trash2 aria-hidden="true" className="size-4 shrink-0" />
                     {/* "Delete" on phones, where a deep answer is narrow. */}
@@ -117,6 +189,16 @@ function ReplyItem({
                     <span className="hidden sm:inline">Delete reply</span>
                   </button>
                 </div>
+                {visibilityError && (
+                  <p role="alert" className="mt-2 text-sm font-medium text-amber-200">
+                    {visibilityError}
+                  </p>
+                )}
+                {visibilityLine && (
+                  <p role="status" className="mt-2 text-sm text-emerald-100">
+                    {visibilityLine}
+                  </p>
+                )}
                 {likersList}
               </>
             )}
@@ -126,8 +208,8 @@ function ReplyItem({
             title="Delete this reply?"
             message={
               children.length > 0
-                ? `${reply.replier_name}'s reply has answers, so it will stay in its place as "This reply was deleted" and the answers stay. Its Helpful marks are removed. You can Undo for 8 seconds.`
-                : `${reply.replier_name}'s reply will be removed, with its Helpful marks. You can Undo for 8 seconds.`
+                ? `${reply.replier_name}'s reply goes to the Trash for 30 days, where you can restore it. It has answers, so travelers see "This reply was deleted" in its place and the answers stay. You can Undo for 8 seconds.`
+                : `${reply.replier_name}'s reply goes to the Trash for 30 days, where you can restore it with its Helpful marks. You can Undo for 8 seconds.`
             }
             busy={busy}
             error={error}

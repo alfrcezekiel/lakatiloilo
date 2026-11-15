@@ -50,8 +50,13 @@ export class AdminOverviewService {
           `select
                 (select count(*)::int from public.reviews
                   where created_at >= now() - interval '7 days') as reviews_this_week,
-                (select count(*)::int from public.review_reports) as reports_waiting,
-                (select count(distinct review_id)::int from public.review_reports) as reported_reviews,
+                -- Only reports on reviews the admin can see: one in the
+                -- Trash (060, 061) is left out, as on the Reports screen
+                -- (code review 2026-11-15).
+                (select count(*)::int from public.review_reports rr
+                   join public.reviews r on r.id = rr.review_id) as reports_waiting,
+                (select count(distinct rr.review_id)::int from public.review_reports rr
+                   join public.reviews r on r.id = rr.review_id) as reported_reviews,
                 (select count(*)::int from public.reviews where hidden_at is not null) as hidden_reviews,
                 (select count(*)::int from public.destinations)
                   + (select count(*)::int from public.accommodations) as places`,

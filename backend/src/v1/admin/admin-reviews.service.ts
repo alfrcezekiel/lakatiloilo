@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ConflictException,
   Injectable,
   Logger,
   NotFoundException,
@@ -8,6 +9,7 @@ import type { QueryRunner } from 'typeorm';
 import { httpErrorFrom } from '../database-errors';
 import { ReviewPhotosService, type ReviewPhotoDto } from '../reviews/review-photos.service';
 import { TravelerTransactions } from '../traveler-transactions';
+import { withoutEmptyDeleted } from '../reviews/replies.service';
 
 // One review as the Reviews screen shows it (full admin management round,
 // ticket 122).
@@ -52,6 +54,9 @@ export interface AdminReplyDto {
   created_at: Date;
   updated_at: Date;
   deleted: boolean;
+  // Hidden by the team (ticket 140): comment is still its text here, for
+  // the dashboard; travelers see the hidden sentence instead.
+  hidden: boolean;
   helpful_count: number;
 }
 
@@ -84,7 +89,7 @@ export type ReviewSort = 'recent' | 'relevant' | 'top';
 const ORDER_BY: Record<ReviewSort, string> = {
   recent: 'r.created_at desc, r.id desc',
   relevant: `(select count(*) from public.review_likes l where l.review_id = r.id)
-             + (select count(*) from public.review_replies p where p.review_id = r.id) desc,
+             + (select count(*) from public.review_replies p where p.review_id = r.id and p.trashed_at is null) desc,
              r.created_at desc, r.id desc`,
   top: 'r.rating desc, r.created_at desc, r.id desc',
 };
@@ -139,7 +144,11 @@ export class AdminReviewsService {
   // plain sentences.
   private asAdmin<T>(accessToken: string, what: string, work: (runner: QueryRunner) => Promise<T>) {
     return this.travelerTransactions.run(accessToken, work, (error) =>
-      httpErrorFrom(error, this.logger, what),
+      httpErrorFrom(error, this.logger, what, {
+        // Hide it / Show it on a reply in the Trash (061 refuses it; the
+        // dashboard never offers it, code review 2026-11-15).
+        '55000': () => new ConflictException('That reply is in the Trash. Restore it first.'),
+      }),
     );
   }
 
@@ -149,36 +158,67 @@ export class AdminReviewsService {
     return this.asAdmin(accessToken, 'list replies', async (runner) => {
       const [review]: unknown[] = await runner.query('select 1 from public.reviews where id = $1', [reviewId]);
       if (!review) throw reviewNotFound();
-      return runner.query(
-        `select p.id, p.parent_reply_id, p.user_id as replier_id, p.replier_name, p.comment,
-                p.created_at, p.updated_at, p.deleted_at is not null as deleted,
+      const replies: AdminReplyDto[] = await runner.query(
+        `select p.id, p.parent_reply_id, p.user_id as replier_id, p.replier_name,
+                case when p.trashed_at is null then coalesce(h.comment, p.comment) else '' end as comment,
+                p.created_at, p.updated_at,
+                (p.deleted_at is not null or p.trashed_at is not null) as deleted,
+                p.hidden_at is not null as hidden,
                 (select count(*)::int from public.reply_likes l where l.reply_id = p.id) as helpful_count
            from public.review_replies p
+           left join public.reply_hidden_texts h on h.reply_id = p.id
           where p.review_id = $1
           order by p.created_at, p.id`,
         [reviewId],
-      ) as Promise<AdminReplyDto[]>;
+      );
+      // A reply in the Trash with no answers under it leaves the thread,
+      // as a deleted one does (061).
+      return withoutEmptyDeleted(replies);
     });
   }
 
-  // Delete reply (ticket 124), through the database's admin_delete_reply
-  // (supabase/sql/052): the same rule as a writer deleting their own. A
-  // reply with answers stays as "This reply was deleted"; one without is
-  // removed. The function itself refuses anyone who is not an admin.
+  // Hide it / Show it on a reply (ticket 140), through the database's
+  // admin_hide_reply and admin_show_reply (supabase/sql/056), which refuse
+  // anyone who is not an admin. The text waits in an admins-only table
+  // while hidden; answers under the reply stay. 404 for a reply that is
+  // gone or deleted.
+  setReplyHidden(
+    accessToken: string,
+    replyId: string,
+    hidden: boolean,
+  ): Promise<{ id: string; hidden: boolean; message: string }> {
+    return this.asAdmin(accessToken, hidden ? 'hide a reply' : 'show a reply', async (runner) => {
+      const [{ outcome }]: { outcome: 'hidden' | 'shown' | null }[] = await runner.query(
+        hidden ? 'select public.admin_hide_reply($1) as outcome' : 'select public.admin_show_reply($1) as outcome',
+        [replyId],
+      );
+      if (!outcome) throw replyNotFound();
+      return {
+        id: replyId,
+        hidden,
+        message: hidden
+          ? 'The reply is hidden. Travelers see "This reply was hidden by the Lakat Iloilo team."'
+          : 'The reply shows on the site again.',
+      };
+    });
+  }
+
+  // Delete reply (ticket 124; to the Trash since ticket 148), through the
+  // database's admin_trash_reply (supabase/sql/061): travelers see "This
+  // reply was deleted" in its place, so the answers under it stay (one
+  // with no answers leaves the thread), and Restore in the Trash puts it
+  // back. The function itself refuses anyone who is not an admin.
   removeReply(accessToken: string, replyId: string): Promise<{ id: string; outcome: string; message: string }> {
     return this.asAdmin(accessToken, 'delete a reply', async (runner) => {
-      const [{ outcome }]: { outcome: 'kept' | 'removed' | null }[] = await runner.query(
-        'select public.admin_delete_reply($1) as outcome',
+      const [{ outcome }]: { outcome: 'trashed' | null }[] = await runner.query(
+        'select public.admin_trash_reply($1) as outcome',
         [replyId],
       );
       if (!outcome) throw replyNotFound();
       return {
         id: replyId,
         outcome,
-        message:
-          outcome === 'kept'
-            ? 'Deleted. It shows as "This reply was deleted", so the answers under it stay.'
-            : 'Deleted.',
+        message: 'Moved to the Trash. You can restore it there for 30 days.',
       };
     });
   }
@@ -258,7 +298,10 @@ export class AdminReviewsService {
                   r.created_at, r.hidden_at is not null as hidden,
                   (select count(*)::int from public.review_likes l where l.review_id = r.id) as helpful_count,
                   (select count(*)::int from public.review_reports rr where rr.review_id = r.id) as report_count,
-                  (select count(*)::int from public.review_replies p where p.review_id = r.id) as reply_count
+                  -- Not counting replies in the Trash (061; code review
+                  -- 2026-11-15: "Replies (3)" opened 2).
+                  (select count(*)::int from public.review_replies p
+                    where p.review_id = r.id and p.trashed_at is null) as reply_count
              from public.reviews r
              ${where}
             order by ${ORDER_BY[query.sort]}

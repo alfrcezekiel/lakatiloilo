@@ -19,6 +19,33 @@ export const categoryChips = [
   { id: "heritage", label: "Heritage Sites" },
 ];
 
+// The names the eight built-in categories and kinds started with in the
+// database (supabase/sql/047), the same as the chips above.
+const BUILT_IN_NAMES: Record<string, string> = {
+  mountain: "Mountains",
+  food: "Food",
+  festival: "Festivals",
+  walking: "Walking Areas",
+  nature: "Nature & Parks",
+  heritage: "Heritage Sites",
+  hotel: "Hotels",
+  condominium: "Condominiums",
+};
+
+// The built-in ones the team renamed on the dashboard (admin extras round,
+// ticket 141): id -> its new name. A renamed one shows its new name
+// everywhere (chips, search, cards, list headings, place pages); one that
+// still has its first name keeps the wording written for it below (for
+// example "Mountains & Hiking Spots"), so nothing changes until someone
+// renames it.
+export function renamedCategories(categories: { id: string; name: string }[]): Record<string, string> {
+  return Object.fromEntries(
+    categories
+      .filter((category) => category.id in BUILT_IN_NAMES && category.name !== BUILT_IN_NAMES[category.id])
+      .map((category) => [category.id, category.name]),
+  );
+}
+
 // "mountain" -> "Mountains", "hotel" -> "Hotels", ...
 export const categoryLabels: Record<string, string> = Object.fromEntries(
   categoryChips.map((chip) => [chip.id, chip.label]),
@@ -104,20 +131,67 @@ export interface ExtraCategory {
   id: string;
   name: string;
   appliesTo: "destination" | "accommodation";
-  // The photo of its first place, for its card.
+  // The photo for its card: the one the team chose (ticket 142), else its
+  // first place's.
   imageUrl: string;
+  // The icon the team chose for its card (ticket 142), or null.
+  icon?: string | null;
+}
+
+type CategoryRow = {
+  id: string;
+  name: string;
+  applies_to: "destination" | "accommodation";
+  icon?: string | null;
+  photo_place_id?: string | null;
+};
+type PlaceWithPhoto = { id: string; photo_url: string | null };
+
+// The photo the team chose for a category's card (ticket 142): that
+// place's photo, or the splash art while its credits are not allowed (the
+// backend sends no photo then). Undefined when none was chosen, or that
+// place is no longer in the category, so the card keeps its default.
+function chosenPhoto(category: CategoryRow, places: PlaceWithPhoto[]): string | undefined {
+  if (!category.photo_place_id) return undefined;
+  const place = places.find((p) => p.id === category.photo_place_id);
+  return place ? (place.photo_url ?? SPLASH_ART) : undefined;
+}
+
+// The built-in ones' cards (ticket 142): the icon and photo the team chose,
+// if any; the home page keeps their own otherwise.
+export function builtInLooks(
+  categories: CategoryRow[],
+  destinations: (PlaceWithPhoto & { category: string })[],
+  accommodations: (PlaceWithPhoto & { type: string })[],
+): Record<string, { icon: string | null; imageUrl?: string }> {
+  return Object.fromEntries(
+    categories
+      .filter((category) => category.id in categoryLabels)
+      .map((category) => [
+        category.id,
+        {
+          icon: category.icon ?? null,
+          imageUrl: chosenPhoto(
+            category,
+            category.applies_to === "destination"
+              ? destinations.filter((d) => d.category === category.id)
+              : accommodations.filter((a) => a.type === category.id),
+          ),
+        },
+      ]),
+  );
 }
 
 export function extraCategories(
-  categories: { id: string; name: string; applies_to: "destination" | "accommodation" }[],
-  destinations: { category: string; photo_url: string | null }[],
-  accommodations: { type: string; photo_url: string | null }[],
+  categories: CategoryRow[],
+  destinations: (PlaceWithPhoto & { category: string })[],
+  accommodations: (PlaceWithPhoto & { type: string })[],
 ): ExtraCategory[] {
   return categories
     .filter((category) => !(category.id in categoryLabels))
     .flatMap((category) => {
       // Its first place, preferring one whose photo may be shown.
-      const places: { photo_url: string | null }[] =
+      const places: PlaceWithPhoto[] =
         category.applies_to === "destination"
           ? destinations.filter((d) => d.category === category.id)
           : accommodations.filter((a) => a.type === category.id);
@@ -128,9 +202,11 @@ export function extraCategories(
               id: category.id,
               name: category.name,
               appliesTo: category.applies_to,
-              // Ticket 138: a place photo without allowed credits is not
-              // sent, so the card uses the wide splash art then.
-              imageUrl: first.photo_url ?? SPLASH_ART,
+              // The team's chosen photo (ticket 142), else its first
+              // place's. Ticket 138: a place photo without allowed
+              // credits is not sent, so the card uses the splash art then.
+              imageUrl: chosenPhoto(category, places) ?? first.photo_url ?? SPLASH_ART,
+              icon: category.icon ?? null,
             },
           ]
         : [];

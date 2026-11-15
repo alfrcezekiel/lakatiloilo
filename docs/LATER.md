@@ -189,6 +189,17 @@ connection when we tried it; see ticket 104), or narrow the doorbell to
 the traveler's own reviews and replies. The same would make "marked read
 on another device" show at once instead of on returning to the tab.
 
+### From the admin extras spec (2026-11-12)
+Parked to keep the round to five features:
+- Travelers' own deletes going to the Trash (it is for admin deletes)
+- Restoring a single Helpful like, and restoring notifications
+- Uploading a new photo just for a category card (it uses a place's
+  photo, which already has its credits)
+- Reordering place photos by dragging (arrow buttons instead)
+- More than 6 photos per place
+- A scheduled job that empties the Trash (expired items go when an admin
+  opens it)
+
 ### From the photo credits spec (2026-11-11)
 Round 29 (photo credits and copyright on place photos). Parked to keep it
 to one round:
@@ -206,18 +217,15 @@ from the computer; a Reviews screen with replies; removing Helpful
 likes). Parked to keep it to one round:
 - Picking a place's position on a map (needs the map library, still
   parked); the form uses latitude and longitude fields
-- More than one photo per place
-- Hiding a reply (replies can only be deleted; hiding would change how
-  every thread is read)
-- Renaming a category or kind, and choosing its icon or photo (a new one
-  gets a general icon and the photo of its first place)
-- Bringing something back after the 8-second Undo has passed (a real
-  "trash" needs deleted items kept in the database)
-- A live Places list on the dashboard
 
 On 2026-11-10 the team moved three parked items into the round: new
 categories and kinds from the dashboard, a live Reviews screen, and Undo
 after a delete.
+
+On 2026-11-12 the team moved five more into the spec as the admin extras
+round: more than one photo per place, hiding a reply, renaming a category
+or kind with its icon and photo, a live Places list, and a Trash after
+the 8-second Undo.
 
 ### From the admin dashboard spec (2026-11-08)
 Parked when the team asked for a full admin dashboard, to keep round 27

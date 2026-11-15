@@ -31,7 +31,12 @@ export interface PublicPhotoCredit {
 export const photoAllowedSql = (table?: 'pc') =>
   `${table ? `${table}.` : ''}authorization_status <> 'not_checked'`;
 
-const ALLOWED = photoAllowedSql();
+const ALLOWED = photoAllowedSql('pc');
+
+// A place's cover photo (photo 1, supabase/sql/059) and its credits: the
+// photo the cards and the top of the place page show.
+const COVER_CREDITS = `public.place_photo_credits pc
+       join public.place_photos pp on pp.id = pc.photo_id and pp.position = 1`;
 
 // A place's credit line, or null when its photo has no allowed credits
 // (then the photo is not shown either).
@@ -41,18 +46,41 @@ export async function photoCreditOf(
   id: string,
 ): Promise<PublicPhotoCredit | null> {
   const [row]: PublicPhotoCredit[] = await manager.query(
-    `select credit_line, licence, source_url
-       from public.place_photo_credits
-      where place_type = $1 and place_id = $2 and ${ALLOWED}`,
+    `select pc.credit_line, pc.licence, pc.source_url
+       from ${COVER_CREDITS}
+      where pp.place_type = $1 and pp.place_id = $2 and ${ALLOWED}`,
     [type, id],
   );
   return row ?? null;
 }
 
-// The places of one type whose photo may be shown.
+// A place's other photos travelers may see (admin extras round, ticket
+// 146): photos 2 to 6 whose credits are allowed, in order, each with its
+// credit line. The cover stays at the top of the page (photoCreditOf).
+export interface PublicPlacePhoto extends PublicPhotoCredit {
+  id: string;
+  url: string;
+}
+
+export async function morePhotosOf(
+  manager: EntityManager,
+  type: PlaceType,
+  id: string,
+): Promise<PublicPlacePhoto[]> {
+  return manager.query(
+    `select pp.id, pp.photo_url as url, pc.credit_line, pc.licence, pc.source_url
+       from public.place_photos pp
+       join public.place_photo_credits pc on pc.photo_id = pp.id
+      where pp.place_type = $1 and pp.place_id = $2 and pp.position > 1 and ${ALLOWED}
+      order by pp.position`,
+    [type, id],
+  );
+}
+
+// The places of one type whose cover photo may be shown.
 async function allowedPhotoIds(manager: EntityManager, type: PlaceType): Promise<Set<string>> {
   const rows: { place_id: string }[] = await manager.query(
-    `select place_id from public.place_photo_credits where place_type = $1 and ${ALLOWED}`,
+    `select pp.place_id from ${COVER_CREDITS} where pp.place_type = $1 and ${ALLOWED}`,
     [type],
   );
   return new Set(rows.map((row) => row.place_id));

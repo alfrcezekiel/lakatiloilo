@@ -3,7 +3,7 @@
 import { Check, EyeOff, Trash2 } from "lucide-react";
 import { useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { REPORTS_KEY, errorMessage } from "@/components/admin/admin-ui";
+import { ADMIN_TRASH_KEY, REPORTS_KEY, errorMessage } from "@/components/admin/admin-ui";
 import { scheduleDelete } from "@/components/admin/PendingDeletes";
 import { Spinner } from "@/components/ui/spinner";
 import {
@@ -53,7 +53,7 @@ export function ModerationButtons({
           key: `review:${review.id}`,
           label: `${review.reviewer_name}'s review of ${review.place_name} deleted`,
           path: adminDeletePaths.review(review.id),
-          refresh: [REPORTS_KEY, ["admin", "reviews"], ["admin", "overview"]],
+          refresh: [REPORTS_KEY, ["admin", "reviews"], ["admin", "overview"], ADMIN_TRASH_KEY],
         });
         setConfirming(false);
         return;
@@ -82,9 +82,10 @@ export function ModerationButtons({
   if (confirming) {
     return (
       <div role="group" aria-label="Confirm delete" className="mt-5 rounded-xl border border-red-300/60 p-4">
-        <p className="font-semibold">Delete this review for good?</p>
+        <p className="font-semibold">Delete this review?</p>
         <p className="mt-1 text-sm text-white/85">
-          Its replies, Helpful marks, reports and photos are deleted too. You can Undo for 8 seconds.
+          It goes to the Trash with its replies, Helpful marks, reports and photos. You can Undo for 8 seconds,
+          and restore it from the Trash for 30 days.
         </p>
         <div className="mt-3 flex flex-wrap gap-2">
           <button

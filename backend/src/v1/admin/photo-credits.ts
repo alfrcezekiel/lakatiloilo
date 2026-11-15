@@ -87,7 +87,9 @@ export async function creditsOf(
   const [row]: (PhotoCredits & { for_photo_url: string | null; updated_at: Date })[] = await runner.query(
     `select photographer, publisher, source_url, licence, authorization_status, credit_line,
             for_photo_url, updated_at
-       from public.place_photo_credits where place_type = $1 and place_id = $2`,
+       from public.place_photo_credits
+      where photo_id = (select id from public.place_photos
+                         where place_type = $1 and place_id = $2 and position = 1)`,
     [type, id],
   );
   if (!row) return null;
@@ -97,28 +99,31 @@ export async function creditsOf(
 
 // The save itself, inside a transaction that already acts as the admin
 // (also used when a new place is added with its credits, ticket 133).
-// Which table the photo is read from is chosen from the checked type,
-// never taken from the request as text.
+// photoId names one of the place's photos (ticket 144); without it, its
+// cover (photo 1). The credits are saved for that photo's address as it is
+// now ("Check these credits" when it is replaced). Answers false when the
+// place has no such photo. Every value travels as a parameter.
 export async function saveCredits(
   runner: QueryRunner,
   type: AdminPlaceType,
   id: string,
   credits: PhotoCredits,
-): Promise<void> {
-  const photoOf =
-    type === 'destination'
-      ? '(select photo_url from public.destinations where id = $2)'
-      : '(select photo_url from public.accommodations where id = $2)';
-  await runner.query(
+  photoId: string | null = null,
+): Promise<boolean> {
+  const rows: unknown[] = await runner.query(
     `insert into public.place_photo_credits
-       (place_type, place_id, photographer, publisher, source_url, licence,
+       (photo_id, place_type, place_id, photographer, publisher, source_url, licence,
         authorization_status, credit_line, for_photo_url)
-     values ($1, $2, $3, $4, $5, $6, $7, $8, ${photoOf})
-     on conflict (place_type, place_id) do update
+     select p.id, $1, $2, $3, $4, $5, $6, $7, $8, p.photo_url
+       from public.place_photos p
+      where p.place_type = $1 and p.place_id = $2
+        and (case when $9::uuid is null then p.position = 1 else p.id = $9::uuid end)
+     on conflict (photo_id) do update
        set photographer = excluded.photographer, publisher = excluded.publisher,
            source_url = excluded.source_url, licence = excluded.licence,
            authorization_status = excluded.authorization_status,
-           credit_line = excluded.credit_line, for_photo_url = excluded.for_photo_url`,
+           credit_line = excluded.credit_line, for_photo_url = excluded.for_photo_url
+     returning photo_id`,
     [
       type,
       id,
@@ -128,6 +133,50 @@ export async function saveCredits(
       credits.licence,
       credits.authorization_status,
       credits.credit_line,
+      photoId,
     ],
   );
+  return rows.length > 0;
+}
+
+// One photo of a place, as the Edit form shows it (ticket 144): its
+// position (1 is the cover), address and credits.
+export interface PlacePhotoDto {
+  id: string;
+  position: number;
+  photo_url: string;
+  credits: SavedPhotoCredits | null;
+}
+
+// Every photo of a place, cover first, each with its credits.
+export async function photosOf(runner: QueryRunner, type: AdminPlaceType, id: string): Promise<PlacePhotoDto[]> {
+  const rows: (Omit<PlacePhotoDto, 'credits'> &
+    Partial<PhotoCredits> & { has_credits: boolean; for_photo_url: string | null; updated_at: Date | null })[] =
+    await runner.query(
+      `select p.id, p.position, p.photo_url, pc.photo_id is not null as has_credits,
+              pc.photographer, pc.publisher, pc.source_url, pc.licence, pc.authorization_status,
+              pc.credit_line, pc.for_photo_url, pc.updated_at
+         from public.place_photos p
+         left join public.place_photo_credits pc on pc.photo_id = p.id
+        where p.place_type = $1 and p.place_id = $2
+        order by p.position`,
+      [type, id],
+    );
+  return rows.map((row) => ({
+    id: row.id,
+    position: row.position,
+    photo_url: row.photo_url,
+    credits: row.has_credits
+      ? {
+          photographer: row.photographer!,
+          publisher: row.publisher!,
+          source_url: row.source_url!,
+          licence: row.licence!,
+          authorization_status: row.authorization_status!,
+          credit_line: row.credit_line!,
+          updated_at: row.updated_at!,
+          photo_changed: row.for_photo_url !== row.photo_url,
+        }
+      : null,
+  }));
 }

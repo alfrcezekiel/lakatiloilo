@@ -127,6 +127,8 @@ export function PhotoCreditsField({
   errors,
   photoChanged,
   busy,
+  idPrefix = "credit",
+  legend = "Photo credits and copyright",
 }: {
   credits: Credits;
   onChange: (next: Credits, changed: CreditKey) => void;
@@ -134,6 +136,10 @@ export function PhotoCreditsField({
   // The photo was replaced after the credits were saved.
   photoChanged: boolean;
   busy: boolean;
+  // Each box on a page needs its own ids (several photos since ticket 144).
+  idPrefix?: string;
+  // "Photo credits and copyright", or e.g. "Photo 2: credits and copyright".
+  legend?: string;
 }) {
   // Changing photographer, publisher or licence refreshes the suggested
   // line, unless the admin wrote their own.
@@ -144,14 +150,14 @@ export function PhotoCreditsField({
     onChange(next, key);
   };
   const describedBy = (key: CreditKey, hint = false) =>
-    errors[key] ? `credit-${key}-error` : hint ? `credit-${key}-hint` : undefined;
+    errors[key] ? `${idPrefix}-${key}-error` : hint ? `${idPrefix}-${key}-hint` : undefined;
   const suggestion = suggestedLine(credits);
 
   return (
     <fieldset disabled={busy} className="space-y-4 rounded-2xl border border-white/25 p-4 sm:p-5">
       <legend className="flex items-center gap-2 px-1 text-sm font-semibold text-white">
         <Copyright aria-hidden="true" className="size-4 shrink-0 text-amber-300" />
-        Photo credits and copyright
+        {legend}
       </legend>
       <p className="-mt-1 text-sm text-white/80">
         Who took this photo, and may we use it? The credit line shows with the photo on the site.
@@ -169,9 +175,9 @@ export function PhotoCreditsField({
       )}
 
       <div className="grid gap-4 sm:grid-cols-2">
-        <GlassField id="credit-photographer" label="Photographer" error={errors.photographer}>
+        <GlassField id={`${idPrefix}-photographer`} label="Photographer" error={errors.photographer}>
           <Input
-            id="credit-photographer"
+            id={`${idPrefix}-photographer`}
             value={credits.photographer}
             onChange={(e) => set("photographer")(e.target.value)}
             placeholder="Name or username"
@@ -181,9 +187,9 @@ export function PhotoCreditsField({
             className={fieldInputClass}
           />
         </GlassField>
-        <GlassField id="credit-publisher" label="Publisher / website" hint="Optional" error={errors.publisher}>
+        <GlassField id={`${idPrefix}-publisher`} label="Publisher / website" hint="Optional" error={errors.publisher}>
           <Input
-            id="credit-publisher"
+            id={`${idPrefix}-publisher`}
             value={credits.publisher}
             onChange={(e) => set("publisher")(e.target.value)}
             placeholder="e.g. Wikimedia Commons"
@@ -196,13 +202,13 @@ export function PhotoCreditsField({
       </div>
 
       <GlassField
-        id="credit-source_url"
+        id={`${idPrefix}-source_url`}
         label="Original photo URL"
         hint="Optional. Where the photo was found, starting with https://"
         error={errors.source_url}
       >
         <Input
-          id="credit-source_url"
+          id={`${idPrefix}-source_url`}
           type="url"
           inputMode="url"
           value={credits.source_url}
@@ -216,9 +222,9 @@ export function PhotoCreditsField({
       </GlassField>
 
       <div className="grid gap-4 sm:grid-cols-2">
-        <GlassField id="credit-licence" label="Copyright licence" error={errors.licence}>
+        <GlassField id={`${idPrefix}-licence`} label="Copyright licence" error={errors.licence}>
           <select
-            id="credit-licence"
+            id={`${idPrefix}-licence`}
             value={credits.licence}
             onChange={(e) => set("licence")(e.target.value)}
             aria-invalid={!!errors.licence}
@@ -237,9 +243,9 @@ export function PhotoCreditsField({
             ))}
           </select>
         </GlassField>
-        <GlassField id="credit-authorization_status" label="Authorization status" error={errors.authorization_status}>
+        <GlassField id={`${idPrefix}-authorization_status`} label="Authorization status" error={errors.authorization_status}>
           <select
-            id="credit-authorization_status"
+            id={`${idPrefix}-authorization_status`}
             value={credits.authorization_status}
             onChange={(e) => set("authorization_status")(e.target.value)}
             aria-invalid={!!errors.authorization_status}
@@ -261,7 +267,7 @@ export function PhotoCreditsField({
       </div>
 
       <GlassField
-        id="credit-credit_line"
+        id={`${idPrefix}-credit_line`}
         label="Attribution / photo credits"
         hint={
           credits.ownLine
@@ -271,7 +277,7 @@ export function PhotoCreditsField({
         error={errors.credit_line}
       >
         <Input
-          id="credit-credit_line"
+          id={`${idPrefix}-credit_line`}
           value={credits.credit_line}
           onChange={(e) => set("credit_line")(e.target.value)}
           placeholder="Photo: name / website, licence"

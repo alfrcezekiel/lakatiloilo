@@ -2,8 +2,8 @@
 
 import { AlertTriangle, MapPin, Pencil, Plus, Search, Star, X } from "lucide-react";
 import Link from "next/link";
-import { useMemo, useRef, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useCallback, useMemo, useRef, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { AdminShell } from "@/components/admin/AdminShell";
 import { adminGlass } from "@/components/admin/AdminFrame";
 import { DeletePlaceButton } from "@/components/admin/DeletePlaceButton";
@@ -16,10 +16,11 @@ import {
   type SortChoice,
 } from "@/components/admin/ListControls";
 import { usePendingKeys } from "@/components/admin/PendingDeletes";
-import { AdminLoadError, adminQuerySettings } from "@/components/admin/admin-ui";
+import { ADMIN_LIVE_QUIET_MS, AdminLoadError, adminQuerySettings } from "@/components/admin/admin-ui";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getAdminPlaces, type AdminPlaceRow, type AdminPlaceType } from "@/lib/api";
 import { freshToken } from "@/lib/login";
+import { useTableChanges, type LiveTable } from "@/lib/realtime";
 import { cn } from "@/lib/utils";
 
 // The team's Places screen (/admin/places, admin dashboard & moderation
@@ -113,7 +114,7 @@ function PlaceRow({ place }: { place: AdminPlaceRow }) {
 
 // Every place. Called by the page itself too, so the request starts at
 // once (see adminQuerySettings).
-function usePlaces() {
+export function useAdminPlaces() {
   return useQuery({
     queryKey: ADMIN_PLACES_KEY,
     queryFn: async () => {
@@ -138,7 +139,26 @@ function PlacesSkeleton() {
   );
 }
 
+// The Places list updates by itself (admin extras round, ticket 139, team
+// request 2026-11-12): a place added, edited or deleted, or a review that
+// changes a place's count or stars (written, deleted, hidden or shown),
+// rings the doorbell, and the list is asked for again. Realtime's rows are
+// never used (frontend rules). The search, filter, sort, number per page
+// and page are this screen's own state, so they stay as they are.
+const LIVE_TABLES: LiveTable[] = [
+  "destinations",
+  "accommodations",
+  "reviews",
+  // A review hidden or shown (its stars leave or rejoin the average).
+  "review_visibility_signals",
+];
+
 function PlacesList() {
+  const queryClient = useQueryClient();
+  const refresh = useCallback(() => {
+    void queryClient.invalidateQueries({ queryKey: ADMIN_PLACES_KEY });
+  }, [queryClient]);
+  useTableChanges(LIVE_TABLES, refresh, { quietMs: ADMIN_LIVE_QUIET_MS });
   const [query, setQueryOnly] = useState("");
   const [filter, setFilterOnly] = useState<Filter>("all");
   const [sort, setSortOnly] = useState<SortChoice>("recent");
@@ -158,7 +178,7 @@ function PlacesList() {
   // Moving to another page: the line "Showing 11–20 of 37" gets the focus,
   // so keyboard and screen reader users start at the top of the new page.
   const statusLine = useRef<HTMLParagraphElement>(null);
-  const places = usePlaces();
+  const places = useAdminPlaces();
   // Places waiting for Undo (ticket 127) are left out; the Undo line at
   // the bottom says what was deleted.
   const pendingKeys = usePendingKeys();
@@ -286,7 +306,7 @@ function PlacesList() {
 }
 
 export function AdminPlaces() {
-  usePlaces();
+  useAdminPlaces();
   return (
     <AdminShell title="Places" skeleton={<PlacesSkeleton />}>
       {/* Categories and kinds moved to their own page (sidebar), team

@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronDown, ChevronUp, CornerDownRight, MessageCircle } from "lucide-react";
+import { ChevronDown, ChevronUp, CornerDownRight, EyeOff, MessageCircle } from "lucide-react";
 import Link from "next/link";
 import { type ReactNode, useState } from "react";
 import { pillButton } from "@/components/ui/button";
@@ -215,7 +215,10 @@ export function ReviewReplies({
     const curved = depth > 1 && depth <= MAX_INDENT;
     const editing = openForm === EDIT + reply.id;
     // How its answers refer to it.
-    const name = reply.deleted ? "a deleted reply" : reply.replier_name;
+    // Hidden by the team (ticket 140): everyone but its writer sees the
+    // sentence below in its place.
+    const hiddenFromMe = !!reply.hidden && !own;
+    const name = reply.deleted ? "a deleted reply" : hiddenFromMe ? "a hidden reply" : reply.replier_name;
     // Folding (ticket 101): which answers show, and how many are hidden.
     const { closed, shown, more } = answersOf(reply.id, children);
     const moreLink = more > 0 && (
@@ -270,11 +273,15 @@ export function ReviewReplies({
     const notified = focusReplyId === reply.id;
     // A deleted reply keeps its place (and its answers) as a grey line
     // with no name, date, text or buttons (ticket 100).
-    if (reply.deleted) {
+    // A hidden one (ticket 140) does the same with its own sentence, for
+    // everyone but its writer.
+    if (reply.deleted || hiddenFromMe) {
       return [
         <li key={reply.id} id={`reply-${reply.id}`} className={lineClass}>
           {replyingLine}
-          <p className="text-sm text-white/60 italic">This reply was deleted</p>
+          <p className="text-sm text-white/60 italic">
+            {reply.deleted ? "This reply was deleted" : "This reply was hidden by the Lakat Iloilo team."}
+          </p>
           <div>{foldLink}</div>
           {answerList}
         </li>,
@@ -312,6 +319,13 @@ export function ReviewReplies({
             {reply.comment}
           </p>
         )}
+        {reply.hidden && (
+          // Only its writer gets here (ticket 140).
+          <p className="mt-1 flex items-center gap-1.5 text-xs font-semibold text-amber-200">
+            <EyeOff aria-hidden="true" className="size-3.5 shrink-0" />
+            Hidden by the Lakat Iloilo team. Other travelers see only that it was hidden.
+          </p>
+        )}
         {!editing && (
           <div className="mt-1.5">
             <HelpfulButton
@@ -339,6 +353,7 @@ export function ReviewReplies({
           <ReplyActions
             replierName={reply.replier_name}
             own={!!own}
+            canEdit={!reply.hidden}
             showReply={openForm !== reply.id}
             confirming={confirmingId === reply.id}
             deleting={deletingId === reply.id}

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { cache } from "react";
-import { categoryName, getDestination } from "@/lib/api";
+import { categoryName, getCategories, getDestination } from "@/lib/api";
+import { renamedCategories } from "@/lib/labels";
 import type { Destination } from "@/lib/api";
 import { locationLabels } from "@/lib/labels";
 import { cn } from "@/lib/utils";
@@ -12,6 +13,7 @@ import {
   PanelFact,
   PlaceBody,
   PlaceHero,
+  PlacePhotosSection,
   PlaceNotFound,
   SectionHeading,
   SidePanel,
@@ -65,8 +67,12 @@ export default async function DestinationDetailPage({
 
   // A category the team added from the dashboard (ticket 117) is named in
   // the categories list, not in the built-in labels above.
+  // A built-in one the team renamed (ticket 141) shows its new name.
+  const renamed = renamedCategories(await getCategories().catch(() => []));
   const category =
-    categoryLabels[destination.category] ?? (await categoryName(destination.category));
+    renamed[destination.category] ??
+    categoryLabels[destination.category] ??
+    (await categoryName(destination.category));
   const area = locationLabels[destination.location_type] ?? destination.location_type;
 
   // Only real data from the database is shown here. Maps are out of scope
@@ -99,6 +105,8 @@ export default async function DestinationDetailPage({
                   <p className="text-white/90 leading-relaxed">{destination.description}</p>
                 </section>
               </Reveal>
+              {/* Its other allowed photos (ticket 146). */}
+              <PlacePhotosSection name={destination.name} photos={destination.photos} />
             </>
           }
           aside={

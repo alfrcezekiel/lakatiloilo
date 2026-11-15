@@ -7,6 +7,8 @@ import { photoAllowedSql } from '../public-photo-credit';
 // the place, and what the site shows under its photo. Never the
 // authorization status, which is for the team.
 export interface PhotoCreditEntry {
+  // The photo it credits (a place can have several since ticket 143).
+  photo_id: string;
   place_type: 'destination' | 'accommodation';
   place_id: string;
   place_name: string;
@@ -29,7 +31,7 @@ export class PhotoCreditsService {
   async list(): Promise<PhotoCreditEntry[]> {
     try {
       return await this.dataSource.query(
-        `select pc.place_type, pc.place_id, coalesce(d.name, a.name) as place_name,
+        `select pc.photo_id, pc.place_type, pc.place_id, coalesce(d.name, a.name) as place_name,
                 pc.credit_line, pc.licence, pc.source_url
            from public.place_photo_credits pc
            left join public.destinations d on pc.place_type = 'destination' and d.id = pc.place_id

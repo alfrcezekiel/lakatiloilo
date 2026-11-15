@@ -7,7 +7,7 @@ import {
   ServiceUnavailableException,
 } from '@nestjs/common';
 import { InjectDataSource } from '@nestjs/typeorm';
-import { DataSource, type QueryRunner } from 'typeorm';
+import { DataSource, QueryFailedError, type QueryRunner } from 'typeorm';
 import { httpErrorFrom } from '../database-errors';
 import { TravelerTransactions } from '../traveler-transactions';
 
@@ -21,7 +21,27 @@ export interface CategoryDto {
   // As shown on the site, for example "Beaches".
   name: string;
   applies_to: AppliesTo;
+  // Its card's icon and photo on the home page (ticket 142); null for the
+  // default (the built-in one's own, or a pin / a bed and its first
+  // place's photo).
+  icon?: CategoryIcon | null;
+  photo_place_id?: string | null;
 }
+
+// The icons a category's card can have (supabase/sql/058).
+export const CATEGORY_ICONS = [
+  'mountain', 'utensils', 'footprints', 'party', 'trees', 'landmark', 'hotel', 'building',
+  'waves', 'tent', 'coffee', 'church', 'camera', 'ship', 'palm', 'pin',
+] as const;
+export type CategoryIcon = (typeof CATEGORY_ICONS)[number];
+
+// What Edit may change (tickets 141, 142); only what was sent.
+export interface CategoryChanges {
+  name?: string;
+  icon?: CategoryIcon | null;
+  photo_place_id?: string | null;
+}
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 // The same, with how many places use it (the dashboard's panel).
 export type CategoryWithCount = CategoryDto & { place_count: number };
@@ -57,6 +77,36 @@ export function newCategoryFrom(body: Record<string, unknown> | undefined): Cate
   return { id, name, applies_to: appliesTo as AppliesTo };
 }
 
+// What Edit sent (tickets 141, 142): a new name (checked like a new
+// one's), an icon from the list, and a place id for the card photo; null
+// for the icon or photo means "the default". At least one of them.
+export function categoryChangesFrom(body: Record<string, unknown> | undefined): CategoryChanges {
+  const changes: CategoryChanges = {};
+  if (body?.name !== undefined) {
+    const name = typeof body.name === 'string' ? body.name.trim().replace(/\s+/g, ' ') : '';
+    if (name.length < CATEGORY_NAME.min || name.length > CATEGORY_NAME.max) {
+      throw new BadRequestException(
+        `Please write a name of ${CATEGORY_NAME.min} to ${CATEGORY_NAME.max} characters.`,
+      );
+    }
+    changes.name = name;
+  }
+  if (body?.icon !== undefined) {
+    if (body.icon !== null && !(CATEGORY_ICONS as readonly unknown[]).includes(body.icon)) {
+      throw new BadRequestException('Please choose an icon from the list.');
+    }
+    changes.icon = body.icon as CategoryIcon | null;
+  }
+  if (body?.photo_place_id !== undefined) {
+    if (body.photo_place_id !== null && !(typeof body.photo_place_id === 'string' && UUID.test(body.photo_place_id))) {
+      throw new BadRequestException("Please choose a photo of one of this category's own places.");
+    }
+    changes.photo_place_id = body.photo_place_id as string | null;
+  }
+  if (Object.keys(changes).length === 0) throw new BadRequestException('Nothing to change.');
+  return changes;
+}
+
 // Categories and kinds (full admin management round, ticket 116). Reading
 // goes through the backend's own login, which may read the list and the
 // places (016, 047). Adding and deleting run AS the signed-in admin
@@ -76,7 +126,7 @@ export class CategoriesService {
   async list(): Promise<CategoryDto[]> {
     try {
       return await this.dataSource.query(
-        'select id, name, applies_to from public.place_categories order by name',
+        'select id, name, applies_to, icon, photo_place_id from public.place_categories order by name',
       );
     } catch (error) {
       this.logger.error(`Could not read categories: ${String(error)}`);
@@ -88,7 +138,7 @@ export class CategoriesService {
   async listWithCounts(): Promise<CategoryWithCount[]> {
     try {
       return await this.dataSource.query(
-        `select c.id, c.name, c.applies_to,
+        `select c.id, c.name, c.applies_to, c.icon, c.photo_place_id,
                 case when c.applies_to = 'destination'
                      then (select count(*)::int from public.destinations d where d.category = c.id)
                      else (select count(*)::int from public.accommodations a where a.type = c.id)
@@ -117,6 +167,41 @@ export class CategoriesService {
     });
   }
 
+  // Edit (tickets 141, 142): its name, icon and card photo; its id, which
+  // places point at, stays. As the admin, so the database decides (057,
+  // 058): only admins, 2 to 30 characters, not a name already used, an
+  // icon from the list, a photo of one of its own places. Only what was
+  // sent changes ("coalesce" keeps the rest; $5 / $6 say whether the icon
+  // or photo was sent, since null there means "back to the default").
+  // Answers it with how many places use it.
+  update(accessToken: string, id: string, changes: CategoryChanges): Promise<CategoryWithCount> {
+    return this.asAdmin(accessToken, async (runner) => {
+      const [rows]: [CategoryDto[], number] = await runner.query(
+        `update public.place_categories
+            set name = coalesce($2, name),
+                icon = case when $5 then $3 else icon end,
+                photo_place_id = case when $6 then $4::uuid else photo_place_id end
+          where id = $1
+          returning id, name, applies_to, icon, photo_place_id`,
+        [
+          id,
+          changes.name ?? null,
+          changes.icon ?? null,
+          changes.photo_place_id ?? null,
+          'icon' in changes,
+          'photo_place_id' in changes,
+        ],
+      );
+      if (rows.length === 0) throw new NotFoundException("We couldn't find that category.");
+      const [{ n }]: { n: number }[] = await runner.query(
+        `select ((select count(*) from public.destinations where category = $1)
+               + (select count(*) from public.accommodations where type = $1))::int as n`,
+        [id],
+      );
+      return { ...rows[0], place_count: n };
+    });
+  }
+
   // Deletes one that no place uses.
   remove(accessToken: string, id: string): Promise<{ id: string; message: string }> {
     return this.asAdmin(accessToken, async (runner) => {
@@ -130,6 +215,12 @@ export class CategoriesService {
   }
 
   private toHttpError(error: unknown) {
+    // The card photo's own check (058) has its own sentence.
+    const message = error instanceof QueryFailedError ? String(error.message) : '';
+    if (message.includes("own places")) {
+      return new BadRequestException("Please choose a photo of one of this category's own places.");
+    }
+    if (message.includes('icon_check')) return new BadRequestException('Please choose an icon from the list.');
     return httpErrorFrom(error, this.logger, 'save a category', {
       // The same name, or a name that makes the same id.
       '23505': () => new ConflictException('That name is already used.'),

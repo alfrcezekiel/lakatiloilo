@@ -19,6 +19,7 @@ export const textLink =
 export function ReplyActions({
   replierName,
   own,
+  canEdit = true,
   showReply,
   confirming,
   deleting,
@@ -32,6 +33,9 @@ export function ReplyActions({
   replierName: string;
   // The reply is the logged-in traveler's own (Edit and Delete show).
   own: boolean;
+  // False on a reply the team hid (ticket 140): it can be deleted, not
+  // edited (the database refuses it).
+  canEdit?: boolean;
   // False while this reply's own answer form is open.
   showReply: boolean;
   // The "Delete this reply?" step is showing, and the delete is running.
@@ -82,7 +86,7 @@ export function ReplyActions({
                 Reply
               </button>
             )}
-            {own && (
+            {own && canEdit && (
               <button
                 type="button"
                 onClick={onEdit}

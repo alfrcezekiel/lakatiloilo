@@ -6,9 +6,12 @@ import { TravelerTransactions } from '../traveler-transactions';
 import { CategoriesModule } from '../categories/categories.module';
 import { AdminCategoriesController } from './admin-categories.controller';
 import { AdminController } from './admin.controller';
+import { AdminTrashController } from './admin-trash.controller';
 import { AdminOnlyMiddleware } from './admin-only.middleware';
 import { AdminOverviewService } from './admin-overview.service';
 import { AdminPhotoCreditsService } from './admin-photo-credits.service';
+import { AdminPlaceGalleryService } from './admin-place-gallery.service';
+import { AdminTrashService } from './admin-trash.service';
 import { AdminPlacesService } from './admin-places.service';
 import { PlacePhotosService } from './place-photos.service';
 import { AdminReportsService } from './admin-reports.service';
@@ -21,12 +24,14 @@ import { AdminService } from './admin.service';
 // goes through AdminOnlyMiddleware first (admins only).
 @Module({
   imports: [AuthModule, SupabaseModule, CategoriesModule],
-  controllers: [AdminController, AdminCategoriesController],
+  controllers: [AdminController, AdminCategoriesController, AdminTrashController],
   providers: [
     AdminService,
     AdminOverviewService,
     AdminPlacesService,
     AdminPhotoCreditsService,
+    AdminPlaceGalleryService,
+    AdminTrashService,
     PlacePhotosService,
     AdminReportsService,
     AdminReviewsService,
@@ -40,6 +45,6 @@ export class AdminModule implements NestModule {
     consumer
       .apply(AdminOnlyMiddleware)
       .exclude({ path: 'v1/admin/login', method: RequestMethod.POST })
-      .forRoutes(AdminController, AdminCategoriesController);
+      .forRoutes(AdminController, AdminCategoriesController, AdminTrashController);
   }
 }

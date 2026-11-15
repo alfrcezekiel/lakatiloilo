@@ -278,7 +278,7 @@ export function SearchBar({
                       {suggestion.name}
                     </span>
                     <span className="shrink-0 text-xs text-white/60">
-                      {categoryLabels[suggestion.category] ?? extraNames[suggestion.category] ?? suggestion.category}
+                      {extraNames[suggestion.category] ?? categoryLabels[suggestion.category] ?? suggestion.category}
                       {" · "}
                       {locationLabels[suggestion.area] ?? suggestion.area}
                     </span>
@@ -301,7 +301,7 @@ export function SearchBar({
         <p aria-live="polite" className="truncate text-base text-white">
           {selectedCategory === "all"
             ? "All categories"
-            : (categoryLabels[selectedCategory] ?? extraNames[selectedCategory] ?? "All categories")}
+            : (extraNames[selectedCategory] ?? categoryLabels[selectedCategory] ?? "All categories")}
         </p>
       </div>
 

@@ -6,10 +6,20 @@ interface CategoryChipsProps {
   // Categories and kinds the team added (ticket 117), after the built-in
   // chips.
   extras?: ExtraCategory[];
+  // Built-in ones the team renamed (ticket 141): id -> new name.
+  renamed?: Record<string, string>;
 }
 
-export function CategoryChips({ selectedCategory, onCategoryChange, extras = [] }: CategoryChipsProps) {
-  const chips = [...categoryChips, ...extras.map((extra) => ({ id: extra.id, label: extra.name }))];
+export function CategoryChips({
+  selectedCategory,
+  onCategoryChange,
+  extras = [],
+  renamed = {},
+}: CategoryChipsProps) {
+  const chips = [
+    ...categoryChips.map((chip) => ({ ...chip, label: renamed[chip.id] ?? chip.label })),
+    ...extras.map((extra) => ({ id: extra.id, label: extra.name })),
+  ];
   return (
     <div className="mb-12 flex flex-wrap gap-2 sm:gap-3">
       {chips.map((chip) => {

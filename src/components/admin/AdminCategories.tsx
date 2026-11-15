@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, ChevronDown, Plus, Trash2 } from "lucide-react";
+import { Check, ChevronDown, Pencil, Plus, Trash2 } from "lucide-react";
 import { useId, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { adminGlass } from "@/components/admin/AdminFrame";
@@ -13,9 +13,12 @@ import {
   CATEGORY_NAME,
   deleteAdminCategory,
   getAdminCategories,
+  updateAdminCategory,
   type AdminPlaceType,
   type PlaceCategoryWithCount,
 } from "@/lib/api";
+import { useAdminPlaces } from "@/components/admin/AdminPlaces";
+import { BUILT_IN_ICONS, CATEGORY_ICONS, iconFor } from "@/lib/category-icons";
 import { freshToken } from "@/lib/login";
 import { cn } from "@/lib/utils";
 
@@ -56,6 +59,70 @@ function CategoryRow({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const inUse = category.place_count > 0;
+  // Edit (admin extras round, ticket 141): a new name. Its id, which places
+  // point at, stays, so no place changes.
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(category.name);
+  // Its card's icon and photo (ticket 142); "" = the default.
+  const [icon, setIcon] = useState(category.icon ?? "");
+  const [photoPlace, setPhotoPlace] = useState(category.photo_place_id ?? "");
+  const builtIn = category.id in BUILT_IN_ICONS;
+  // Its own places with a photo, for the photo picker (the dashboard sees
+  // every photo, allowed or not; a not-allowed one shows the splash art).
+  const places = useAdminPlaces();
+  const ownPlaces = (places.data ?? []).filter((p) => p.kind === category.id && p.photo_url);
+  const DefaultIcon = iconFor(category.id, null, category.applies_to);
+  const [saving, setSaving] = useState(false);
+  const [editError, setEditError] = useState<string | null>(null);
+  const editButton = useRef<HTMLButtonElement>(null);
+  const nameId = useId();
+
+  const closeEdit = () => {
+    setEditing(false);
+    setEditError(null);
+    requestAnimationFrame(() => editButton.current?.focus());
+  };
+
+  const rename = async (event: React.FormEvent) => {
+    event.preventDefault();
+    const name = draft.trim().replace(/\s+/g, " ");
+    if (name.length < CATEGORY_NAME.min || name.length > CATEGORY_NAME.max) {
+      setEditError(`Please write a name of ${CATEGORY_NAME.min} to ${CATEGORY_NAME.max} characters.`);
+      return;
+    }
+    // Only what changed is sent.
+    const changes: { name?: string; icon?: string | null; photo_place_id?: string | null } = {};
+    if (name !== category.name) changes.name = name;
+    if (icon !== (category.icon ?? "")) changes.icon = icon || null;
+    if (photoPlace !== (category.photo_place_id ?? "")) changes.photo_place_id = photoPlace || null;
+    if (Object.keys(changes).length === 0) {
+      closeEdit();
+      return;
+    }
+    setSaving(true);
+    setEditError(null);
+    try {
+      const token = await freshToken();
+      if (!token) throw new Error("Please log in again, then try again.");
+      const saved = await updateAdminCategory(token, category.id, changes);
+      queryClient.setQueryData<PlaceCategoryWithCount[]>(ADMIN_CATEGORIES_KEY, (list) =>
+        list?.map((c) => (c.id === saved.id ? saved : c)),
+      );
+      void queryClient.invalidateQueries({ queryKey: ADMIN_CATEGORIES_KEY });
+      // The place form's Category / Kind list uses the public list.
+      void queryClient.invalidateQueries({ queryKey: ["categories"] });
+      onDone(
+        changes.name
+          ? `"${category.name}" is now "${saved.name}". The site shows the change.`
+          : `"${saved.name}" saved. The site shows the change.`,
+      );
+      closeEdit();
+    } catch (e) {
+      setEditError(errorMessage(e));
+    } finally {
+      setSaving(false);
+    }
+  };
 
   const remove = async () => {
     setBusy(true);
@@ -84,7 +151,24 @@ function CategoryRow({
             {inUse ? `Used by ${plural(category.place_count, "place")}` : "Not used yet"}
           </p>
         </div>
-        {inUse ? (
+        {!editing && !confirming && (
+          <button
+            ref={editButton}
+            type="button"
+            onClick={() => {
+              setDraft(category.name);
+              setIcon(category.icon ?? "");
+              setPhotoPlace(category.photo_place_id ?? "");
+              setEditing(true);
+            }}
+            aria-label={`Edit ${category.name}`}
+            className={cn(smallButton, "border-white/40 hover:border-amber-300 hover:text-amber-300")}
+          >
+            <Pencil aria-hidden="true" className="size-4" />
+            Edit
+          </button>
+        )}
+        {editing ? null : inUse ? (
           // In use: it cannot be deleted, and saying so beats a dead button.
           <span className="text-sm text-white/70">In use</span>
         ) : confirming ? (
@@ -123,6 +207,139 @@ function CategoryRow({
           </button>
         )}
       </div>
+      {editing && (
+        <form
+          onSubmit={(event) => void rename(event)}
+          onKeyDown={(event) => {
+            if (event.key === "Escape" && !saving) closeEdit();
+          }}
+          noValidate
+          className="mt-2 space-y-2"
+        >
+          <label htmlFor={nameId} className="block text-sm font-semibold text-white/85">
+            New name
+          </label>
+          <input
+            id={nameId}
+            autoFocus
+            value={draft}
+            onChange={(event) => {
+              setDraft(event.target.value);
+              setEditError(null);
+            }}
+            maxLength={CATEGORY_NAME.max + 10}
+            aria-invalid={!!editError}
+            aria-describedby={editError ? `${nameId}-error` : `${nameId}-hint`}
+            className="block min-h-11 w-full rounded-xl border border-white/45 bg-transparent px-3 text-base text-white focus:border-white/90 focus:outline-none"
+          />
+          {editError ? (
+            <p id={`${nameId}-error`} role="alert" className="text-sm font-medium text-amber-200">
+              {editError}
+            </p>
+          ) : (
+            <p id={`${nameId}-hint`} className="text-xs text-white/70">
+              {CATEGORY_NAME.min} to {CATEGORY_NAME.max} characters. Places keep it; only the name changes.
+            </p>
+          )}
+          {/* The card's icon (ticket 142): the default, then the 16 choices.
+              Real radio buttons: arrow keys move between them. */}
+          <fieldset className="pt-1">
+            <legend className="text-sm font-semibold text-white/85">Icon on its card</legend>
+            <div className="mt-1.5 grid grid-cols-3 gap-2 sm:grid-cols-6">
+              {[{ id: "", label: "Default", Icon: DefaultIcon }, ...CATEGORY_ICONS].map(({ id, label, Icon }) => (
+                <label
+                  key={id || "default"}
+                  className={cn(
+                    "flex min-h-14 cursor-pointer flex-col items-center justify-center gap-1 rounded-xl border px-1 py-2 text-center text-xs font-semibold has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-white",
+                    icon === id ? "border-amber-300 text-amber-200" : "border-white/30 text-white/85 hover:border-white/60",
+                  )}
+                >
+                  <input
+                    type="radio"
+                    name={`${nameId}-icon`}
+                    value={id}
+                    checked={icon === id}
+                    onChange={() => setIcon(id)}
+                    className="sr-only"
+                  />
+                  <Icon aria-hidden="true" className="size-5 shrink-0" />
+                  {label}
+                </label>
+              ))}
+            </div>
+          </fieldset>
+          {/* The card's photo (ticket 142): one of its own places' photos,
+              which already have their credits; never a new upload. */}
+          <fieldset className="pt-1">
+            <legend className="text-sm font-semibold text-white/85">Photo on its card</legend>
+            <div className="mt-1.5 grid grid-cols-2 gap-2 sm:grid-cols-4">
+              <label
+                className={cn(
+                  "flex min-h-24 cursor-pointer items-center justify-center rounded-xl border px-2 py-2 text-center text-xs font-semibold has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-white",
+                  photoPlace === "" ? "border-amber-300 text-amber-200" : "border-white/30 text-white/85 hover:border-white/60",
+                )}
+              >
+                <input
+                  type="radio"
+                  name={`${nameId}-photo`}
+                  value=""
+                  checked={photoPlace === ""}
+                  onChange={() => setPhotoPlace("")}
+                  className="sr-only"
+                />
+                {builtIn ? "Its own photo (as now)" : "Its first place's photo (as now)"}
+              </label>
+              {ownPlaces.map((place) => (
+                <label
+                  key={place.id}
+                  className={cn(
+                    "flex cursor-pointer flex-col gap-1 rounded-xl border p-1.5 text-xs font-semibold has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-white",
+                    photoPlace === place.id ? "border-amber-300 text-amber-200" : "border-white/30 text-white/85 hover:border-white/60",
+                  )}
+                >
+                  <input
+                    type="radio"
+                    name={`${nameId}-photo`}
+                    value={place.id}
+                    checked={photoPlace === place.id}
+                    onChange={() => setPhotoPlace(place.id)}
+                    className="sr-only"
+                  />
+                  <img src={place.photo_url ?? ""} alt="" className="aspect-video w-full rounded-lg object-cover" />
+                  <span className="line-clamp-2 wrap-break-word">{place.name}</span>
+                </label>
+              ))}
+            </div>
+            {places.isPending ? (
+              <p className="mt-1 text-xs text-white/70">Loading its places&apos; photos…</p>
+            ) : ownPlaces.length === 0 ? (
+              <p className="mt-1 text-xs text-white/70">No place in it has a photo yet.</p>
+            ) : (
+              <p className="mt-1 text-xs text-white/70">
+                A photo whose credits are not allowed yet shows the splash art to travelers.
+              </p>
+            )}
+          </fieldset>
+          <div className="grid grid-cols-2 gap-2 sm:flex">
+            <button
+              type="submit"
+              disabled={saving}
+              className={cn(smallButton, "border-white bg-white text-teal-900 hover:bg-white/90")}
+            >
+              {saving ? <Spinner /> : <Check aria-hidden="true" className="size-4" />}
+              {saving ? "Saving…" : "Save"}
+            </button>
+            <button
+              type="button"
+              onClick={closeEdit}
+              disabled={saving}
+              className={cn(smallButton, "border-white/40 hover:border-amber-300 hover:text-amber-300")}
+            >
+              Cancel
+            </button>
+          </div>
+        </form>
+      )}
       {error && (
         <p role="alert" className="mt-1 text-sm font-medium text-amber-200">
           {error}

@@ -159,17 +159,18 @@ export class AdminReportsService {
   // reports, notifications and photo rows (on delete cascade). Its photo
   // files are then deleted from Storage, as the admin (040 lets admins do
   // that).
+  // Delete review (Reports and Reviews screens) since ticket 147: the
+  // review goes to the Trash for 30 days (supabase/sql/060), with its
+  // replies, likes, photos and reports kept, so Restore brings it all back.
+  // Its photo files stay in Storage until it is deleted for good.
   async remove(accessToken: string, reviewId: string): Promise<ModerationResult> {
-    const paths = await this.asAdmin(accessToken, async (runner) => {
-      const filePaths = await this.photos.pathsOf(runner, reviewId);
-      const [rows]: [unknown[], number] = await runner.query(
-        'delete from public.reviews where id = $1 returning id',
+    await this.asAdmin(accessToken, async (runner) => {
+      const [{ outcome }]: { outcome: string | null }[] = await runner.query(
+        'select public.admin_trash_review($1) as outcome',
         [reviewId],
       );
-      if (rows.length === 0) throw reviewGone();
-      return filePaths;
+      if (!outcome) throw reviewGone();
     });
-    for (const path of paths) await this.photos.remove(accessToken, path);
-    return { id: reviewId, message: 'Deleted, with its replies and photos.' };
+    return { id: reviewId, message: 'Moved to the Trash. You can restore it there for 30 days.' };
   }
 }

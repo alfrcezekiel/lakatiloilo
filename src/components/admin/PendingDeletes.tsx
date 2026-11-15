@@ -30,6 +30,9 @@ export type PendingDelete = {
   label: string;
   // The backend path of the DELETE (adminDeletePaths in api.ts).
   path: string;
+  // DELETE, or POST for Hide it on a reply (ticket 140), which waits
+  // with the same Undo.
+  method?: "DELETE" | "POST";
   // Lists to ask again once it is really deleted.
   refresh: QueryKey[];
   // Login at the moment of the delete, for sending while the tab closes
@@ -74,7 +77,7 @@ const send = async (item: PendingDelete, closing: boolean) => {
   if (!closing) changed();
   try {
     const token = closing ? item.token : ((await freshToken()) ?? item.token);
-    await adminSendDelete(token, item.path, closing);
+    await adminSendDelete(token, item.path, closing, item.method);
     pending = pending.filter((p) => p !== item);
     changed();
     for (const key of item.refresh) void queryClientRef?.invalidateQueries({ queryKey: key });
@@ -92,7 +95,8 @@ export async function scheduleDelete({
   label,
   path,
   refresh,
-}: Pick<PendingDelete, "key" | "label" | "path" | "refresh">) {
+  method = "DELETE",
+}: Pick<PendingDelete, "key" | "label" | "path" | "refresh" | "method">) {
   const token = await freshToken();
   if (!token) throw new Error("Please log in again, then try again.");
   const item: PendingDelete = {
@@ -100,6 +104,7 @@ export async function scheduleDelete({
     label,
     path,
     refresh,
+    method,
     token,
     until: Date.now() + UNDO_SECONDS * 1000,
     timer: setTimeout(() => void send(item, false), UNDO_SECONDS * 1000),
@@ -157,14 +162,17 @@ function UndoLine({ item }: { item: PendingDelete }) {
   if (item.sending) {
     return (
       <li className="rounded-xl border border-white/30 bg-teal-950 px-4 py-3 text-white shadow-2xl">
-        {item.label}. <span className="text-white/75">Deleting…</span>
+        {item.label}. <span className="text-white/75">{item.method === "POST" ? "Hiding…" : "Deleting…"}</span>
       </li>
     );
   }
   return (
     <li className="flex flex-wrap items-center gap-x-3 gap-y-2 rounded-xl border border-white/30 bg-teal-950 px-4 py-2 text-white shadow-2xl">
       <span className="min-w-0 flex-1 wrap-break-word">
-        {item.label}. <span className="text-white/75">Deleting in {left} s.</span>
+        {item.label}.{" "}
+        <span className="text-white/75">
+          {item.method === "POST" ? "Hiding" : "Deleting"} in {left} s.
+        </span>
       </span>
       <button
         type="button"

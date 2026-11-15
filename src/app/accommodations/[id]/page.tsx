@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
 import { cache } from "react";
 import { Mail, Phone } from "lucide-react";
-import { categoryName, getAccommodation } from "@/lib/api";
+import { categoryName, getAccommodation, getCategories } from "@/lib/api";
 import { pillButton } from "@/components/ui/button";
 import type { Accommodation } from "@/lib/api";
-import { accommodationTypeLabels, locationLabels } from "@/lib/labels";
+import { accommodationTypeLabels, locationLabels, renamedCategories } from "@/lib/labels";
 import { cn } from "@/lib/utils";
 import { ReviewsSection } from "@/components/ReviewsSection";
 import { Reveal } from "@/components/Reveal";
@@ -14,6 +14,7 @@ import {
   PanelFact,
   PlaceBody,
   PlaceHero,
+  PlacePhotosSection,
   PlaceNotFound,
   SectionHeading,
   SidePanel,
@@ -56,7 +57,12 @@ export default async function AccommodationDetailPage({
 
   // A kind the team added from the dashboard (ticket 117) is named in the
   // categories list, not in the built-in labels.
-  const type = accommodationTypeLabels[accommodation.type] ?? (await categoryName(accommodation.type));
+  // A built-in one the team renamed (ticket 141) shows its new name.
+  const renamed = renamedCategories(await getCategories().catch(() => []));
+  const type =
+    renamed[accommodation.type] ??
+    accommodationTypeLabels[accommodation.type] ??
+    (await categoryName(accommodation.type));
   const area = locationLabels[accommodation.location_type] ?? accommodation.location_type;
   const hasContact = Boolean(accommodation.phone || accommodation.email);
 
@@ -88,6 +94,8 @@ export default async function AccommodationDetailPage({
                   <p className="text-white/90 leading-relaxed">{accommodation.description}</p>
                 </section>
               </Reveal>
+              {/* Its other allowed photos (ticket 146). */}
+              <PlacePhotosSection name={accommodation.name} photos={accommodation.photos} />
             </>
           }
           aside={

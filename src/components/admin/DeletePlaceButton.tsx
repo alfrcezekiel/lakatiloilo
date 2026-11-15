@@ -5,7 +5,7 @@ import { useState } from "react";
 import { ADMIN_CATEGORIES_KEY } from "@/components/admin/AdminCategories";
 import { ConfirmDeleteDialog } from "@/components/admin/ConfirmDeleteDialog";
 import { scheduleDelete } from "@/components/admin/PendingDeletes";
-import { errorMessage } from "@/components/admin/admin-ui";
+import { ADMIN_TRASH_KEY, errorMessage } from "@/components/admin/admin-ui";
 import { adminDeletePaths, type AdminPlaceType } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
@@ -15,7 +15,8 @@ import { cn } from "@/lib/utils";
 // each row of the Places list, next to Edit (the Edit form has no Delete,
 // team request 2026-11-10). Since ticket 127, "Yes, delete" first offers
 // Undo for 8 seconds (PendingDeletes.tsx); the place leaves the list at
-// once.
+// once. Since ticket 148 the place goes to the Trash, with its reviews,
+// and can be restored there for 30 days.
 
 export type DeletablePlace = {
   type: AdminPlaceType;
@@ -36,7 +37,7 @@ export function DeletePlaceButton({ place, className }: { place: DeletablePlace;
     try {
       await scheduleDelete({
         key: `place:${place.id}`,
-        label: `${place.name} deleted, with its reviews and photos`,
+        label: `${place.name} moved to the Trash, with its reviews`,
         path: adminDeletePaths.place(place.type, place.id),
         refresh: [
           ["admin", "places"],
@@ -44,6 +45,7 @@ export function DeletePlaceButton({ place, className }: { place: DeletablePlace;
           ADMIN_CATEGORIES_KEY,
           ["admin", "reviews"],
           ["admin", "overview"],
+          ADMIN_TRASH_KEY,
         ],
       });
       setOpen(false);
@@ -73,12 +75,12 @@ export function DeletePlaceButton({ place, className }: { place: DeletablePlace;
       </button>
       <ConfirmDeleteDialog
         open={open}
-        title={`Delete ${place.name} for good?`}
-        message={`${
+        title={`Delete ${place.name}?`}
+        message={`It goes to the Trash for 30 days, where you can restore it${
           reviews === 0
-            ? "It has no reviews."
-            : `${reviews === 1 ? "Its 1 review" : `Its ${reviews} reviews`} will be deleted too, with their replies, Helpful marks, reports and photos.`
-        } Its photo is deleted too. You can Undo for 8 seconds.`}
+            ? " with its photos. It has no reviews."
+            : ` with its photos and ${reviews === 1 ? "its 1 review" : `its ${reviews} reviews`} (and their replies, Helpful marks, reports and photos). Until then they are off the site.`
+        } You can Undo for 8 seconds.`}
         busy={busy}
         error={error}
         onConfirm={() => void remove()}

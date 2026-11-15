@@ -7,6 +7,7 @@ import { useQuery } from "@tanstack/react-query";
 import { AdminShell } from "@/components/admin/AdminShell";
 import { adminGlass } from "@/components/admin/AdminFrame";
 import { PlaceForm } from "@/components/admin/PlaceForm";
+import { PlaceMorePhotos } from "@/components/admin/PlaceMorePhotos";
 import { AdminLoadError, adminQuerySettings } from "@/components/admin/admin-ui";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getAdminPlace } from "@/lib/api";
@@ -77,7 +78,21 @@ function PlaceEditData() {
     );
   }
   // Keyed by the place, so opening another place starts a fresh form.
-  return <PlaceForm key={`${params.type}-${params.id}`} place={place.data} />;
+  // "More photos" (ticket 144) has its own panel below the form, so each
+  // photo is saved on its own and Enter in its boxes never sends the form.
+  return (
+    <div className="space-y-4">
+      {/* Keyed by the cover too (ticket 145): a new cover reloads the form,
+          so its photo and credits box show the new cover's. */}
+      <PlaceForm
+        key={`${params.type}-${params.id}-${place.data.photos?.[0]?.id ?? ""}`}
+        place={place.data}
+      />
+      <div className={cn(adminGlass, "p-5 sm:p-8")}>
+        <PlaceMorePhotos key={`${params.type}-${params.id}`} place={place.data} />
+      </div>
+    </div>
+  );
 }
 
 export function AdminPlaceEdit() {

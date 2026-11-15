@@ -3,10 +3,10 @@ import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { QueryFailedError, type QueryRunner } from 'typeorm';
 import { httpErrorFrom } from '../database-errors';
 import { TravelerTransactions } from '../traveler-transactions';
-import { ReviewPhotosService, type UploadedPhoto } from '../reviews/review-photos.service';
+import type { UploadedPhoto } from '../reviews/review-photos.service';
 import { photoAllowedSql } from '../public-photo-credit';
 import { PlacePhotosService } from './place-photos.service';
-import { creditsOf, saveCredits, type PhotoCredits } from './photo-credits';
+import { creditsOf, photosOf, saveCredits, type PhotoCredits } from './photo-credits';
 import {
   placeNotFound,
   type AdminPlaceDetails,
@@ -28,7 +28,6 @@ export class AdminPlacesService {
   constructor(
     private readonly travelerTransactions: TravelerTransactions,
     private readonly placePhotos: PlacePhotosService,
-    private readonly reviewPhotos: ReviewPhotosService,
   ) {}
 
   private asAdmin<T>(accessToken: string, work: (runner: QueryRunner) => Promise<T>): Promise<T> {
@@ -45,18 +44,30 @@ export class AdminPlacesService {
              from public.reviews group by 1, 2
          )
          select d.id, 'destination' as type, d.name, d.category as kind, d.address, d.location_type,
-                coalesce(c.n, 0) as review_count, d.created_at, c.average_rating,
-                coalesce(not (${photoAllowedSql('pc')}), true) as credit_missing
+                coalesce(c.n, 0) as review_count, d.created_at, c.average_rating, d.photo_url,
+                -- Any of its photos without allowed credits (ticket 143:
+                -- credits belong to each photo, 059).
+                exists (
+                  select 1 from public.place_photos pp
+                    left join public.place_photo_credits pc on pc.photo_id = pp.id
+                   where pp.place_type = 'destination' and pp.place_id = d.id
+                     and (pc.photo_id is null or not (${photoAllowedSql('pc')}))
+                ) as credit_missing
            from public.destinations d
            left join counts c on c.place_type = 'destination' and c.place_id = d.id
-           left join public.place_photo_credits pc on pc.place_type = 'destination' and pc.place_id = d.id
          union all
          select a.id, 'accommodation' as type, a.name, a.type as kind, a.address, a.location_type,
-                coalesce(c.n, 0) as review_count, a.created_at, c.average_rating,
-                coalesce(not (${photoAllowedSql('pc')}), true) as credit_missing
+                coalesce(c.n, 0) as review_count, a.created_at, c.average_rating, a.photo_url,
+                -- Any of its photos without allowed credits (ticket 143:
+                -- credits belong to each photo, 059).
+                exists (
+                  select 1 from public.place_photos pp
+                    left join public.place_photo_credits pc on pc.photo_id = pp.id
+                   where pp.place_type = 'accommodation' and pp.place_id = a.id
+                     and (pc.photo_id is null or not (${photoAllowedSql('pc')}))
+                ) as credit_missing
            from public.accommodations a
            left join counts c on c.place_type = 'accommodation' and c.place_id = a.id
-           left join public.place_photo_credits pc on pc.place_type = 'accommodation' and pc.place_id = a.id
          order by name`,
       ) as Promise<AdminPlaceRow[]>,
     );
@@ -65,7 +76,7 @@ export class AdminPlacesService {
   // One place with the fields the Edit form changes.
   async findOne(accessToken: string, type: AdminPlaceType, id: string): Promise<AdminPlaceDetails> {
     const place = await this.asAdmin(accessToken, async (runner) => {
-      const [row]: Omit<AdminPlaceDetails, 'credits'>[] = await runner.query(
+      const [row]: Omit<AdminPlaceDetails, 'credits' | 'photos'>[] = await runner.query(
         type === 'destination'
           ? `select id, 'destination' as type, name, coalesce(description, '') as description, address,
                     null as phone, null as email, category as kind, location_type,
@@ -78,7 +89,11 @@ export class AdminPlacesService {
         [id],
       );
       if (!row) return null;
-      return { ...row, credits: await creditsOf(runner, type, id, row.photo_url) };
+      return {
+        ...row,
+        credits: await creditsOf(runner, type, id, row.photo_url),
+        photos: await photosOf(runner, type, id),
+      };
     });
     if (!place) throw placeNotFound();
     return place;
@@ -212,49 +227,26 @@ export class AdminPlacesService {
     return this.findOne(accessToken, type, id);
   }
 
-  // Deletes a place for good (ticket 121), and answers { id, message }:
-  //   1. in one transaction: the place's photo address and its reviews'
-  //      photo files are noted, then the place is deleted; the database
-  //      deletes its reviews with it (051), and each review its replies,
-  //      likes, reports, photo rows and notifications,
-  //   2. then the files are deleted from Storage, as the admin: the
-  //      place's uploaded photo (older Wikimedia and Unsplash addresses
-  //      are left alone) and every photo of its reviews. A file that
-  //      cannot be deleted is only logged; the place is already gone.
+  // Delete place (ticket 121; to the Trash since ticket 148), through the
+  // database's admin_trash_place (supabase/sql/061), and answers
+  // { id, message }. The place and its reviews (with their replies,
+  // likes, reports and photos) leave the site and every list; nothing is
+  // removed, and no file leaves Storage, so Restore in the Trash brings
+  // it all back. The function itself refuses anyone who is not an admin.
   async remove(
     accessToken: string,
     type: AdminPlaceType,
     id: string,
   ): Promise<{ id: string; message: string }> {
-    const found = await this.asAdmin(accessToken, async (runner) => {
-      const [place]: { photo_url: string | null }[] = await runner.query(
-        type === 'destination'
-          ? 'select photo_url from public.destinations where id = $1'
-          : 'select photo_url from public.accommodations where id = $1',
-        [id],
-      );
-      if (!place) return null;
-      const photos: { photo_path: string }[] = await runner.query(
-        `select p.photo_path from public.review_photos p
-           join public.reviews r on r.id = p.review_id
-          where r.place_type = $1 and r.place_id = $2`,
+    const outcome = await this.asAdmin(accessToken, async (runner) => {
+      const [row]: { outcome: string | null }[] = await runner.query(
+        'select public.admin_trash_place($1, $2) as outcome',
         [type, id],
       );
-      const [rows]: [unknown[], number] = await runner.query(
-        type === 'destination'
-          ? 'delete from public.destinations where id = $1 returning id'
-          : 'delete from public.accommodations where id = $1 returning id',
-        [id],
-      );
-      if (rows.length === 0) return null;
-      return { photoUrl: place.photo_url, reviewPhotoPaths: photos.map((photo) => photo.photo_path) };
+      return row.outcome;
     });
-    if (!found) throw placeNotFound();
-    await Promise.all([
-      this.placePhotos.remove(accessToken, found.photoUrl),
-      ...found.reviewPhotoPaths.map((path) => this.reviewPhotos.remove(accessToken, path)),
-    ]);
-    return { id, message: 'Deleted, with its reviews and photos.' };
+    if (!outcome) throw placeNotFound();
+    return { id, message: 'Moved to the Trash, with its reviews. You can restore it there for 30 days.' };
   }
 
   private toHttpError(error: unknown) {

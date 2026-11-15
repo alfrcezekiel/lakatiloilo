@@ -66,7 +66,7 @@ export default async function CreditsPage() {
             <ul className="space-y-3">
               {saved.map((credit) => (
                 <li
-                  key={`${credit.place_type}-${credit.place_id}`}
+                  key={credit.photo_id}
                   className="rounded-2xl border border-white/20 bg-white/10 p-4 sm:p-5"
                 >
                   <p className="font-semibold">

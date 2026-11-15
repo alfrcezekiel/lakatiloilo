@@ -7,7 +7,6 @@ import {
   Header,
   Headers,
   HttpCode,
-  NotFoundException,
   Param,
   Patch,
   Put,
@@ -25,9 +24,10 @@ import { loginToken } from '../login-token';
 import { emailAndPassword } from '../auth/auth.controller';
 import { AdminOverviewService } from './admin-overview.service';
 import { AdminPhotoCreditsService } from './admin-photo-credits.service';
+import { AdminPlaceGalleryService, MAX_PLACE_PHOTOS } from './admin-place-gallery.service';
 import { photoCreditsFrom } from './photo-credits';
 import { AdminPlacesService } from './admin-places.service';
-import { ADMIN_PLACE_TYPES, placeChangesFrom, type AdminPlaceType } from './place-changes';
+import { placeChangesFrom, placeType } from './place-changes';
 import { AdminReportsService } from './admin-reports.service';
 import { AdminReviewsService, reviewQueryFrom } from './admin-reviews.service';
 import { AdminService } from './admin.service';
@@ -35,15 +35,6 @@ import { AdminService } from './admin.service';
 // The admin dashboard's endpoints (admin dashboard & moderation round).
 // Every one except the sign-in is for admins only: 401 without a login,
 // 403 "This page is for the Lakat Iloilo team." for anyone else.
-// "destination" or "accommodation" in the address; anything else is not a
-// place, so 404 like an unknown id.
-const placeType = (type: string): AdminPlaceType => {
-  if (!ADMIN_PLACE_TYPES.includes(type as AdminPlaceType)) {
-    throw new NotFoundException("We couldn't find that place.");
-  }
-  return type as AdminPlaceType;
-};
-
 @Controller('v1/admin')
 export class AdminController {
   constructor(
@@ -53,6 +44,7 @@ export class AdminController {
     private readonly adminPlaces: AdminPlacesService,
     private readonly adminReviews: AdminReviewsService,
     private readonly photoCredits: AdminPhotoCreditsService,
+    private readonly gallery: AdminPlaceGalleryService,
   ) {}
 
   // POST /v1/admin/login
@@ -131,6 +123,28 @@ export class AdminController {
   // Deletes any reply by the writer's own rule (supabase/sql/052): with
   // answers it stays as "This reply was deleted". 200 { id, outcome:
   // "kept" | "removed", message }; 404 when it is gone already.
+  // POST /v1/admin/replies/<id>/hide and /show   (ticket 140)
+  // Hides a reply (travelers see "This reply was hidden by the Lakat
+  // Iloilo team.", its writer still sees the text) or shows it again.
+  // 200 { id, hidden, message }; 404 when it is gone or deleted.
+  @Post('replies/:id/hide')
+  @HttpCode(200)
+  hideReply(
+    @Headers('authorization') authorization: string | undefined,
+    @Param('id', idOf('reply')) id: string,
+  ) {
+    return this.adminReviews.setReplyHidden(loginToken(authorization), id, true);
+  }
+
+  @Post('replies/:id/show')
+  @HttpCode(200)
+  showReply(
+    @Headers('authorization') authorization: string | undefined,
+    @Param('id', idOf('reply')) id: string,
+  ) {
+    return this.adminReviews.setReplyHidden(loginToken(authorization), id, false);
+  }
+
   @Delete('replies/:id')
   @HttpCode(200)
   deleteReply(
@@ -224,9 +238,10 @@ export class AdminController {
     return this.adminReports.show(loginToken(authorization), id);
   }
 
-  // DELETE /v1/admin/reviews/<id>   (ticket 109)
-  // Deletes the review with its replies, likes, reports, notifications
-  // and photo. 200 { id, message }; 404 when it no longer exists.
+  // DELETE /v1/admin/reviews/<id>   (ticket 109; to the Trash since 147)
+  // Moves the review to the Trash, with its replies, likes, reports and
+  // photos. 200 { id, message }; 404 when it no longer exists.
+
   @Delete('reviews/:id')
   @HttpCode(200)
   remove(
@@ -348,6 +363,81 @@ export class AdminController {
   // JPG, PNG or WebP photo up to 2 MB." for a wrong file; 404 for an
   // unknown place. The upload handling keeps the file in memory and stops
   // reading past 4 MB.
+  // POST /v1/admin/places/<destination|accommodation>/<id>/photos   (ticket 144)
+  // Form data: one file "photo" (JPG, PNG or WebP, up to 2 MB) and its
+  // credits fields (as PUT .../credits). Adds it after the place's last
+  // photo and answers the place. 400 for a seventh photo ("A place can have
+  // up to 6 photos. Delete one first."), a wrong file or wrong credits;
+  // 404 unknown place.
+  @Post('places/:type/:id/photos')
+  @HttpCode(201)
+  @UseInterceptors(FileInterceptor('photo', { limits: { fileSize: 4 * 1024 * 1024, files: 1 } }))
+  @UseFilters(PhotoTooLargeFilter)
+  addPlacePhoto(
+    @Headers('authorization') authorization: string | undefined,
+    @Param('type') type: string,
+    @Param('id', idOf('place')) id: string,
+    @Body() body: Record<string, unknown> | undefined,
+    @UploadedFile() photo: UploadedPhoto | undefined,
+  ) {
+    const token = loginToken(authorization);
+    const checkedType = placeType(type);
+    if (!photo) throw new BadRequestException(PHOTO_MESSAGE);
+    return this.gallery.addPhoto(token, checkedType, id, photo, photoCreditsFrom(body));
+  }
+
+  // PUT /v1/admin/places/<type>/<id>/photos/<photoId>/credits   (ticket 144)
+  // One photo's credits; answers the place. 404 when the place has no
+  // such photo.
+  @Put('places/:type/:id/photos/:photoId/credits')
+  @HttpCode(200)
+  savePlacePhotoCredits(
+    @Headers('authorization') authorization: string | undefined,
+    @Param('type') type: string,
+    @Param('id', idOf('place')) id: string,
+    @Param('photoId', idOf('photo')) photoId: string,
+    @Body() body: Record<string, unknown> | undefined,
+  ) {
+    const checkedType = placeType(type);
+    return this.gallery.savePhotoCredits(loginToken(authorization), checkedType, id, photoId, photoCreditsFrom(body));
+  }
+
+  // PATCH /v1/admin/places/<type>/<id>/photos/<photoId>   (ticket 145)
+  // body: { position } (1 to the number of photos; 1 = the cover). Moves
+  // it, the others shift; answers the place. 404 for a photo that is not
+  // this place's.
+  @Patch('places/:type/:id/photos/:photoId')
+  @HttpCode(200)
+  movePlacePhoto(
+    @Headers('authorization') authorization: string | undefined,
+    @Param('type') type: string,
+    @Param('id', idOf('place')) id: string,
+    @Param('photoId', idOf('photo')) photoId: string,
+    @Body() body: Record<string, unknown> | undefined,
+  ) {
+    const checkedType = placeType(type);
+    const position = Number(body?.position);
+    if (!Number.isInteger(position) || position < 1 || position > MAX_PLACE_PHOTOS) {
+      throw new BadRequestException(`Please choose a position from 1 to ${MAX_PLACE_PHOTOS}.`);
+    }
+    return this.gallery.movePhoto(loginToken(authorization), checkedType, id, photoId, position);
+  }
+
+  // DELETE /v1/admin/places/<type>/<id>/photos/<photoId>   (ticket 145)
+  // Deletes it with its credits; answers the place. 400 "A place needs at
+  // least one photo…" for its last one; 404 for a photo not this place's.
+  @Delete('places/:type/:id/photos/:photoId')
+  @HttpCode(200)
+  deletePlacePhoto(
+    @Headers('authorization') authorization: string | undefined,
+    @Param('type') type: string,
+    @Param('id', idOf('place')) id: string,
+    @Param('photoId', idOf('photo')) photoId: string,
+  ) {
+    const checkedType = placeType(type);
+    return this.gallery.deletePhoto(loginToken(authorization), checkedType, id, photoId);
+  }
+
   @Post('places/:type/:id/photo')
   @HttpCode(200)
   @UseInterceptors(FileInterceptor('photo', { limits: { fileSize: 4 * 1024 * 1024, files: 1 } }))

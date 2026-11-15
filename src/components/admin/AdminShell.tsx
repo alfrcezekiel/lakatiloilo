@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, Flag, LayoutDashboard, LogOut, MapPin, Menu, MessageSquare, Tags, X, type LucideIcon } from "lucide-react";
+import { ArrowLeft, Flag, LayoutDashboard, LogOut, MapPin, Menu, MessageSquare, Tags, Trash2, X, type LucideIcon } from "lucide-react";
 import { useState } from "react";
 import Link from "next/link";
 import { notFound, usePathname, useRouter } from "next/navigation";
@@ -23,6 +23,8 @@ const sections: { href: string; label: string; icon: LucideIcon; ready: boolean 
   // Its own page since 2026-11-11 (team request): it was at the bottom of
   // Places.
   { href: "/admin/categories", label: "Categories", icon: Tags, ready: true },
+  // Ticket 147: what admins deleted waits there for 30 days.
+  { href: "/admin/trash", label: "Trash", icon: Trash2, ready: true },
 ];
 
 // One item in the sidebar or phone menu. The current section is marked

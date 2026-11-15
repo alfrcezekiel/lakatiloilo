@@ -5,7 +5,7 @@ import { useState } from "react";
 import { useQueryClient, type QueryClient } from "@tanstack/react-query";
 import { ConfirmDeleteDialog } from "@/components/admin/ConfirmDeleteDialog";
 import { scheduleDelete } from "@/components/admin/PendingDeletes";
-import { ADMIN_REVIEWS_KEY, REPORTS_KEY, errorMessage } from "@/components/admin/admin-ui";
+import { ADMIN_REVIEWS_KEY, ADMIN_TRASH_KEY, REPORTS_KEY, errorMessage } from "@/components/admin/admin-ui";
 import { Spinner } from "@/components/ui/spinner";
 import {
   adminDeletePaths,
@@ -88,7 +88,7 @@ export function ReviewActions({ review, onDone }: { review: AdminReview; onDone:
         key: `review:${review.id}`,
         label: `${who} deleted`,
         path: adminDeletePaths.review(review.id),
-        refresh: [ADMIN_REVIEWS_KEY, REPORTS_KEY, ["admin", "overview"]],
+        refresh: [ADMIN_REVIEWS_KEY, REPORTS_KEY, ["admin", "overview"], ADMIN_TRASH_KEY],
       });
       setConfirming(false);
     } catch (e) {
@@ -146,8 +146,8 @@ export function ReviewActions({ review, onDone }: { review: AdminReview; onDone:
       )}
       <ConfirmDeleteDialog
         open={confirming}
-        title="Delete this review for good?"
-        message={`${who}. Its replies, Helpful marks, reports and photos are deleted too. You can Undo for 8 seconds.`}
+        title="Delete this review?"
+        message={`${who}. It goes to the Trash with its replies, Helpful marks, reports and photos. You can Undo for 8 seconds, and restore it from the Trash for 30 days.`}
         busy={busy === "delete"}
         error={deleteError}
         onConfirm={() => void remove()}

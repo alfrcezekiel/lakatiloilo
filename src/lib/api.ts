@@ -19,6 +19,14 @@ export interface Destination {
   location_type: string;
   // On GET /v1/destinations/:id only (ticket 135).
   photo_credit?: PublicPhotoCredit | null;
+  // Its other allowed photos, in order (ticket 146); one place only.
+  photos?: PublicPlacePhoto[];
+}
+
+// One of a place's other photos travelers may see (ticket 146).
+export interface PublicPlacePhoto extends PublicPhotoCredit {
+  id: string;
+  url: string;
 }
 
 // The credit line under a place's photo (photo credits round, ticket 135).
@@ -43,6 +51,8 @@ export interface Accommodation {
   location_type: string;
   // On GET /v1/accommodations/:id only (ticket 135).
   photo_credit?: PublicPhotoCredit | null;
+  // Its other allowed photos, in order (ticket 146); one place only.
+  photos?: PublicPlacePhoto[];
 }
 
 // One axios client for the whole app, created on first use. Every request
@@ -172,6 +182,9 @@ export interface Reply {
   // (thread care round, ticket 100): the page shows "This reply was
   // deleted", and the name, tag, text and writer are empty.
   deleted?: boolean;
+  // Hidden by the Lakat Iloilo team (admin extras round, ticket 140): its
+  // text is empty for everyone but its writer, who gets their own text.
+  hidden?: boolean;
 }
 
 // Adds the logged-in traveler's reply under a review (POST
@@ -640,8 +653,105 @@ export interface AdminReply {
   created_at: string;
   updated_at: string | null;
   deleted: boolean;
+  // Hidden by the team (ticket 140); comment is still its text here.
+  hidden: boolean;
   helpful_count: number;
 }
+
+// What every item in the dashboard's Trash has (admin extras round,
+// tickets 147 and 148).
+interface TrashedBase {
+  id: string;
+  trashed_at: string;
+  trashed_by_name: string;
+  // When it is deleted for good (30 days after it went to the Trash).
+  expires_at: string;
+}
+
+// One review in the Trash (ticket 147).
+export interface TrashedReview extends TrashedBase {
+  kind: "review";
+  place_type: AdminPlaceType;
+  place_id: string;
+  place_name: string;
+  reviewer_name: string;
+  rating: number;
+  comment: string;
+  reply_count: number;
+  photo_count: number;
+  report_count: number;
+  // Its place is in the Trash too: restore the place first.
+  place_in_trash: boolean;
+}
+
+// One reply in the Trash (ticket 148).
+export interface TrashedReply extends TrashedBase {
+  kind: "reply";
+  review_id: string;
+  place_type: AdminPlaceType;
+  place_id: string;
+  place_name: string;
+  reviewer_name: string;
+  replier_name: string;
+  comment: string;
+  answer_count: number;
+  like_count: number;
+  // Its review is in the Trash too: restore the review first.
+  review_in_trash: boolean;
+}
+
+// One place in the Trash (ticket 148), with the reviews that went with it.
+export interface TrashedPlace extends TrashedBase {
+  kind: "place";
+  place_type: AdminPlaceType;
+  name: string;
+  photo_url: string | null;
+  review_count: number;
+  photo_count: number;
+}
+
+export type TrashedItem = TrashedReview | TrashedReply | TrashedPlace;
+
+export const getAdminTrash = async (accessToken: string) =>
+  (
+    await api().get<TrashedItem[]>("/v1/admin/trash", {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    })
+  ).data;
+
+// Restore (tickets 147 and 148): the item comes back as it was.
+export const restoreAdminTrashItem = async (accessToken: string, item: TrashedItem) =>
+  (
+    await api().post<{ id: string; message: string }>(
+      item.kind === "place"
+        ? `/v1/admin/trash/places/${item.place_type}/${item.id}/restore`
+        : `/v1/admin/trash/${item.kind === "review" ? "reviews" : "replies"}/${item.id}/restore`,
+      {},
+      { headers: { Authorization: `Bearer ${accessToken}` } },
+    )
+  ).data;
+
+// Delete for good (ticket 149): only for an item in the Trash, with its
+// photo files.
+export const deleteAdminTrashItemForGood = async (accessToken: string, item: TrashedItem) =>
+  (
+    await api().delete<{ id: string; message: string }>(
+      item.kind === "place"
+        ? `/v1/admin/trash/places/${item.place_type}/${item.id}`
+        : `/v1/admin/trash/${item.kind === "review" ? "reviews" : "replies"}/${item.id}`,
+      { headers: { Authorization: `Bearer ${accessToken}` } },
+    )
+  ).data;
+
+// Show it on a hidden reply (ticket 140); straight away, no Undo needed.
+export const adminShowReply = async (accessToken: string, replyId: string) =>
+  (
+    await api().post<{ id: string; hidden: boolean; message: string }>(
+      `/v1/admin/replies/${replyId}/show`,
+      {},
+      { headers: { Authorization: `Bearer ${accessToken}` } },
+    )
+  ).data;
 
 export const getAdminReplies = async (accessToken: string, reviewId: string) =>
   (
@@ -676,17 +786,25 @@ export const getAdminLikers = async (accessToken: string, kind: AdminLikeKind, i
 export const adminDeletePaths = {
   review: (id: string) => `/v1/admin/reviews/${id}`,
   reply: (id: string) => `/v1/admin/replies/${id}`,
+  // Hide it on a reply (ticket 140), sent as a POST after the Undo.
+  hideReply: (id: string) => `/v1/admin/replies/${id}/hide`,
   place: (type: AdminPlaceType, id: string) => `/v1/admin/places/${type}/${id}`,
   like: (kind: AdminLikeKind, id: string, userId: string) => `${likesPath(kind, id)}/${userId}`,
 };
 
 // Sends one of those deletes. Throws with the backend's own sentence when
 // it refuses; a 404 (already gone) counts as done.
-export const adminSendDelete = async (accessToken: string, path: string, keepalive = false) => {
+export const adminSendDelete = async (
+  accessToken: string,
+  path: string,
+  keepalive = false,
+  // POST for Hide it on a reply (ticket 140), which waits the same way.
+  method: "DELETE" | "POST" = "DELETE",
+) => {
   const baseURL = process.env.NEXT_PUBLIC_API_URL;
   if (!baseURL) throw new Error("NEXT_PUBLIC_API_URL is not set. Add it to .env.local (see .env.example).");
   const response = await fetch(`${baseURL}${path}`, {
-    method: "DELETE",
+    method,
     headers: { Authorization: `Bearer ${accessToken}` },
     keepalive,
   });
@@ -776,6 +894,8 @@ export interface AdminPlaceRow {
   created_at: string;
   average_rating: number | null;
   // No photo credits yet, or marked "Not checked yet" (ticket 134).
+  // The place's photo, for the category card photo picker (ticket 142).
+  photo_url: string | null;
   credit_missing: boolean;
 }
 
@@ -799,7 +919,81 @@ export interface AdminPlaceDetails {
   // The photo's credits and copyright, or null before any are saved
   // (photo credits round, ticket 132).
   credits: SavedPhotoCredits | null;
+  // Every photo of the place, cover first, each with its credits (admin
+  // extras round, ticket 144). Missing from an answer saved before it.
+  photos?: AdminPlacePhoto[];
 }
+
+// One photo of a place on the Edit form (ticket 144): position 1 is the
+// cover.
+export interface AdminPlacePhoto {
+  id: string;
+  position: number;
+  photo_url: string;
+  credits: SavedPhotoCredits | null;
+}
+
+export const MAX_PLACE_PHOTOS = 6;
+
+// Adds one more photo with its credits (POST …/photos, ticket 144), sent
+// as form data like Add a place. Answers the place.
+export const addAdminPlacePhoto = async (
+  accessToken: string,
+  type: AdminPlaceType,
+  id: string,
+  photo: File,
+  credits: PhotoCredits,
+) => {
+  const form = new FormData();
+  for (const [key, value] of Object.entries(credits)) form.append(key, String(value));
+  form.append("photo", photo);
+  return (
+    await api().post<AdminPlaceDetails>(`/v1/admin/places/${type}/${id}/photos`, form, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+      timeout: 60_000,
+    })
+  ).data;
+};
+
+// Moves a photo (PATCH …/photos/:photoId, ticket 145): position 1 makes it
+// the cover; the others shift. Answers the place.
+export const moveAdminPlacePhoto = async (
+  accessToken: string,
+  type: AdminPlaceType,
+  id: string,
+  photoId: string,
+  position: number,
+) =>
+  (
+    await api().patch<AdminPlaceDetails>(
+      `/v1/admin/places/${type}/${id}/photos/${photoId}`,
+      { position },
+      { headers: { Authorization: `Bearer ${accessToken}` } },
+    )
+  ).data;
+
+// Deletes a photo with its credits (DELETE …/photos/:photoId, ticket 145);
+// the last photo of a place cannot be deleted. Answers the place.
+export const deleteAdminPlacePhoto = async (accessToken: string, type: AdminPlaceType, id: string, photoId: string) =>
+  (
+    await api().delete<AdminPlaceDetails>(`/v1/admin/places/${type}/${id}/photos/${photoId}`, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    })
+  ).data;
+
+// Saves one photo's credits (PUT …/photos/:photoId/credits, ticket 144).
+export const saveAdminPlacePhotoCredits = async (
+  accessToken: string,
+  type: AdminPlaceType,
+  id: string,
+  photoId: string,
+  credits: PhotoCredits,
+) =>
+  (
+    await api().put<AdminPlaceDetails>(`/v1/admin/places/${type}/${id}/photos/${photoId}/credits`, credits, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    })
+  ).data;
 
 // A place photo's credits and copyright (ticket 132, supabase/sql/054).
 // publisher and source_url are empty for none.
@@ -894,6 +1088,11 @@ export interface PlaceCategory {
   id: string;
   name: string;
   applies_to: AdminPlaceType;
+  // Its card's icon and photo on the home page (ticket 142, supabase/sql
+  // 058): null for the default (its own built-in one, or a pin / a bed and
+  // its first place's photo). photo_place_id is one of its own places.
+  icon?: string | null;
+  photo_place_id?: string | null;
 }
 export type PlaceCategoryWithCount = PlaceCategory & { place_count: number };
 
@@ -903,6 +1102,8 @@ export const CATEGORY_NAME = { min: 2, max: 30 };
 // One place photo credit saved on the dashboard, for the Photo credits
 // page (photo credits round, ticket 136). source_url is empty for none.
 export interface PhotoCreditEntry {
+  // The photo it credits (a place can have several since ticket 143).
+  photo_id: string;
   place_type: "destination" | "accommodation";
   place_id: string;
   place_name: string;
@@ -912,6 +1113,20 @@ export interface PhotoCreditEntry {
 }
 
 export const getPhotoCredits = async () => (await get<PhotoCreditEntry[]>("/v1/photo-credits")) ?? [];
+
+// Edits a category or kind (admin extras round, tickets 141, 142): any of
+// its name, icon and card photo (null icon or photo = the default). Its
+// id, which places point at, stays.
+export const updateAdminCategory = async (
+  accessToken: string,
+  id: string,
+  changes: { name?: string; icon?: string | null; photo_place_id?: string | null },
+) =>
+  (
+    await api().patch<PlaceCategoryWithCount>(`/v1/admin/categories/${encodeURIComponent(id)}`, changes, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    })
+  ).data;
 
 export const getCategories = async () => (await get<PlaceCategory[]>("/v1/categories")) ?? [];
 

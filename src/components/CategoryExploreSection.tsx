@@ -1,23 +1,26 @@
 "use client";
 
-import { ArrowRight, BedDouble, Building2, Footprints, Hotel, Landmark, MapPin, Mountain, PartyPopper, Trees, UtensilsCrossed } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { useMemo } from "react";
 import type { Accommodation, Destination } from "@/lib/api";
+import { iconFor } from "@/lib/category-icons";
 import { locationFilters, sectionTitles, type ExtraCategory } from "@/lib/labels";
 import { scrollToSection } from "@/lib/utils/scroll";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Reveal } from "@/components/Reveal";
 
 // Card names come from src/lib/labels.ts, so they match the list headings.
+// Their own icons are in src/lib/category-icons.ts (BUILT_IN_ICONS); the
+// team can choose another icon and photo per card (ticket 142).
 const categories = [
-  { id: "mountain", icon: Mountain },
-  { id: "food", icon: UtensilsCrossed },
-  { id: "walking", icon: Footprints },
-  { id: "festival", icon: PartyPopper },
-  { id: "nature", icon: Trees },
-  { id: "heritage", icon: Landmark },
-  { id: "hotel", icon: Hotel },
-  { id: "condominium", icon: Building2 },
+  { id: "mountain", appliesTo: "destination" as const },
+  { id: "food", appliesTo: "destination" as const },
+  { id: "walking", appliesTo: "destination" as const },
+  { id: "festival", appliesTo: "destination" as const },
+  { id: "nature", appliesTo: "destination" as const },
+  { id: "heritage", appliesTo: "destination" as const },
+  { id: "hotel", appliesTo: "accommodation" as const },
+  { id: "condominium", appliesTo: "accommodation" as const },
 ].map((category) => ({ ...category, name: sectionTitles[category.id] }));
 
 // Real photos from Iloilo City and Province, from Wikimedia Commons under
@@ -53,6 +56,10 @@ interface CategoryExploreSectionProps {
   // Categories and kinds the team added (ticket 117): a card each after
   // the built-in ones, with a general icon and its first place's photo.
   extras?: ExtraCategory[];
+  // Built-in ones the team renamed (ticket 141): id -> new name.
+  renamed?: Record<string, string>;
+  // The icon and photo the team chose for built-in cards (ticket 142).
+  looks?: Record<string, { icon: string | null; imageUrl?: string }>;
 }
 
 export function CategoryExploreSection({
@@ -62,19 +69,23 @@ export function CategoryExploreSection({
   onLocationChange,
   loading,
   extras = [],
+  renamed = {},
+  looks = {},
 }: CategoryExploreSectionProps) {
   // The built-in cards, then the team's own: a pin for a destination
   // category, a bed for an accommodation kind.
   const cards = [
     ...categories.map((category) => ({
       ...category,
-      imageUrl: categoryImages[category.id as keyof typeof categoryImages],
+      name: renamed[category.id] ?? category.name,
+      icon: iconFor(category.id, looks[category.id]?.icon, category.appliesTo),
+      imageUrl: looks[category.id]?.imageUrl ?? categoryImages[category.id as keyof typeof categoryImages],
       sectionId: undefined as string | undefined,
     })),
     ...extras.map((extra) => ({
       id: extra.id,
       name: extra.name,
-      icon: extra.appliesTo === "destination" ? MapPin : BedDouble,
+      icon: iconFor(extra.id, extra.icon, extra.appliesTo),
       imageUrl: extra.imageUrl,
       sectionId: extra.appliesTo === "destination" ? `${extra.id}-list` : "accommodation-list",
     })),
@@ -148,14 +159,11 @@ export function CategoryExploreSection({
               // Cards in one row arrive one after another (4 per row on a
               // laptop).
               <Reveal key={category.id} delay={(index % 4) * 0.08}>
-                <div
-                  className="relative group overflow-hidden rounded-2xl h-48 cursor-pointer transition duration-300 hover:shadow-2xl motion-safe:hover:-translate-y-1"
-                  onClick={() => {
-                    if (sectionId) {
-                      scrollToSection(sectionId);
-                    }
-                  }}
-                >
+                {/* The button inside the heading covers the whole card
+                    (after:inset-0), so the card is one real button for the
+                    keyboard and screen readers (evaluation 2026-11-12: it
+                    was a div with onClick). */}
+                <div className="relative group overflow-hidden rounded-2xl h-48 transition duration-300 hover:shadow-2xl motion-safe:hover:-translate-y-1 has-focus-visible:outline-2 has-focus-visible:outline-offset-4 has-focus-visible:outline-white">
                   <div
                     className="absolute inset-0 bg-cover bg-center transition-transform duration-300 motion-safe:group-hover:scale-110"
                     style={{ backgroundImage: `url(${imageUrl})` }}
@@ -164,7 +172,15 @@ export function CategoryExploreSection({
                   <div className="absolute inset-0 flex flex-col justify-end p-6">
                     <category.icon aria-hidden="true" strokeWidth={1.75} className="size-10 shrink-0 mb-2 text-white" />
                     <h3 className="text-xl font-semibold text-white mb-1">
-                      {category.name}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (sectionId) scrollToSection(sectionId);
+                        }}
+                        className="cursor-pointer select-none text-left after:absolute after:inset-0 focus:outline-none"
+                      >
+                        {category.name}
+                      </button>
                     </h3>
                     {loading ? (
                       <Skeleton className="h-5 w-20" />

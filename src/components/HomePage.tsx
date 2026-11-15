@@ -18,7 +18,7 @@ import { Footer } from "@/components/Footer";
 import { DockNavbar } from "@/components/DockNavbar";
 import { ScrollToTop } from "@/components/ScrollToTop";
 import { Reveal } from "@/components/Reveal";
-import { extraCategories, sectionTitles } from "@/lib/labels";
+import { builtInLooks, extraCategories, renamedCategories, sectionTitles } from "@/lib/labels";
 
 // The destination list sections, in the order they appear on the page.
 const destinationSections = [
@@ -148,9 +148,16 @@ export function HomePage({ places }: { places: Promise<HomePlaces> }) {
     () => extraCategories(categories, destinations, accommodations),
     [categories, destinations, accommodations],
   );
+  // Built-in ones the team renamed (ticket 141): their new names win.
+  const renamed = useMemo(() => renamedCategories(categories), [categories]);
+  // The icon and photo the team chose for the built-in cards (ticket 142).
+  const looks = useMemo(
+    () => builtInLooks(categories, destinations, accommodations),
+    [categories, destinations, accommodations],
+  );
   const extraNames = useMemo(
-    () => Object.fromEntries(extras.map((extra) => [extra.id, extra.name])),
-    [extras],
+    () => ({ ...renamed, ...Object.fromEntries(extras.map((extra) => [extra.id, extra.name])) }),
+    [renamed, extras],
   );
 
   return (
@@ -191,6 +198,7 @@ export function HomePage({ places }: { places: Promise<HomePlaces> }) {
                 selectedCategory={selectedCategory}
                 onCategoryChange={setSelectedCategory}
                 extras={extras}
+                renamed={renamed}
               />
             </Reveal>
             <FeaturedCards destinations={destinations} ratings={ratings} loading={loading} />
@@ -211,6 +219,8 @@ export function HomePage({ places }: { places: Promise<HomePlaces> }) {
           selectedLocation={selectedLocation}
           onLocationChange={setSelectedLocation}
           extras={extras}
+          renamed={renamed}
+          looks={looks}
           loading={loading}
         />
       </section>
@@ -243,7 +253,7 @@ export function HomePage({ places }: { places: Promise<HomePlaces> }) {
             key={section.category}
             destinations={visibleDestinations}
             category={section.category}
-            title={section.title}
+            title={renamed[section.category] ?? section.title}
             id={`${section.category}-list`}
             ratings={ratings}
             loading={loading}
@@ -271,7 +281,7 @@ export function HomePage({ places }: { places: Promise<HomePlaces> }) {
           title={
             extras.some((extra) => extra.appliesTo === "accommodation")
               ? "Places to stay"
-              : "Hotels & Condominiums"
+              : `${renamed.hotel ?? "Hotels"} & ${renamed.condominium ?? "Condominiums"}`
           }
           id="accommodation-list"
           ratings={ratings}

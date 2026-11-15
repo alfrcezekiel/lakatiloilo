@@ -37,6 +37,9 @@ export type ReplyWithLikes = ReplyDto & {
   helpful_count: number;
   liked_by_me: boolean;
   deleted: boolean;
+  // Hidden by the Lakat Iloilo team (ticket 140): its text is empty for
+  // everyone but its writer, who gets their own text back.
+  hidden: boolean;
 };
 
 // What the website gets after marking or unmarking a reply as helpful.
@@ -76,6 +79,20 @@ const replyWasDeleted = () =>
 const replyNotYours = () =>
   new NotFoundException("We couldn't find that reply among yours. Please log in again and try.");
 
+// Leaves out a deleted reply with no answers left under it, and so on up
+// the thread. Deleting such a reply removes it (034), but one in the
+// Trash (061) waits in its place as "deleted"; with no answers under it
+// there is nothing to keep it there for.
+export function withoutEmptyDeleted<T extends { id: string; parent_reply_id: string | null; deleted: boolean }>(list: T[]): T[] {
+  let kept = list;
+  for (;;) {
+    const parents = new Set(kept.map((reply) => reply.parent_reply_id));
+    const next = kept.filter((reply) => !reply.deleted || parents.has(reply.id));
+    if (next.length === kept.length) return kept;
+    kept = next;
+  }
+}
+
 // Replies under reviews (review extras round, ticket 79), through the
 // ReviewReply entity. Reading uses the backend's own database login
 // (lakat_api may read replies, see 025). Adding and deleting run as the
@@ -106,7 +123,21 @@ export class RepliesService {
       let query = this.replies.createQueryBuilder('p').select([]);
       for (const column of REPLY_COLUMNS) query = query.addSelect(`p.${column}`, column);
       const rows = await query
-        .addSelect('p.deleted_at IS NOT NULL', 'deleted')
+        // A reply in the Trash (061) shows as deleted: the database already
+        // moved its text, name, tag and writer out of the row.
+        .addSelect('(p.deleted_at IS NOT NULL OR p.trashed_at IS NOT NULL)', 'deleted')
+        .addSelect('p.hidden_at IS NOT NULL', 'hidden')
+        // The writer's own hidden text (056: the backend's login may read
+        // it); everyone else gets the empty text the reply now holds.
+        .addSelect(
+          (own) =>
+            own
+              .select('h.comment')
+              .from('reply_hidden_texts', 'h')
+              .where('h.reply_id = p.id')
+              .andWhere('p.user_id = CAST(:viewerId AS uuid)'),
+          'own_hidden_text',
+        )
         .addSelect(replyHelpfulCountOf('p'), 'helpful_count')
         .addSelect(
           (mine) =>
@@ -120,17 +151,19 @@ export class RepliesService {
         .where('p.review_id IN (:...reviewIds)', { reviewIds })
         .setParameter('viewerId', viewerId)
         .orderBy('p.created_at', 'ASC')
-        .getRawMany<ReplyWithLikes>();
-      for (const row of rows) {
+        .getRawMany<ReplyWithLikes & { own_hidden_text: string | null }>();
+      for (const { own_hidden_text: ownHiddenText, ...row } of rows) {
+        if (row.hidden && ownHiddenText !== null) row.comment = ownHiddenText;
         // The database already cleared a deleted reply's text, name and
         // type (034); its writer is left out too.
         const reply: ReplyWithLikes = row.deleted
-          ? { ...row, user_id: '', helpful_count: 0, liked_by_me: false }
+          ? { ...row, user_id: '', helpful_count: 0, liked_by_me: false, hidden: false }
           : row;
         const list = byReview.get(reply.review_id) ?? [];
         list.push(reply);
         byReview.set(reply.review_id, list);
       }
+      for (const [reviewId, list] of byReview) byReview.set(reviewId, withoutEmptyDeleted(list));
       return byReview;
     } catch (error) {
       this.logger.error(`Could not read replies: ${String(error)}`);

@@ -1,7 +1,8 @@
 import { ArrowLeft, Camera, MapPin } from "lucide-react";
 import type { ReactNode } from "react";
 import Link from "next/link";
-import type { PublicPhotoCredit } from "@/lib/api";
+import type { PublicPhotoCredit, PublicPlacePhoto } from "@/lib/api";
+import { PlacePhotoGallery } from "@/components/PlacePhotoGallery";
 import { cn } from "@/lib/utils";
 import { Reveal } from "@/components/Reveal";
 import { pillButton } from "@/components/ui/button";
@@ -156,13 +157,15 @@ function PhotoCreditLine({ credit }: { credit: PublicPhotoCredit }) {
   );
 }
 
-// The name in big Fraunces letters, with the last word in italics:
+// The name in big Fraunces letters, with the last word in italics. A word
+// longer than a 320 px phone is wide ("Kabanwahanan") breaks instead of
+// running off the screen (wrap-break-word, ticket 146 check).
 // "Seda *Atria*". A one-word name stays upright.
 function PlaceTitle({ name }: { name: string }) {
   const words = name.trim().split(/\s+/);
   const last = words.length > 1 ? words.pop() : null;
   return (
-    <h1 className="font-fraunces text-[2.75rem] font-medium leading-[0.95] tracking-tight text-white sm:text-6xl lg:text-7xl">
+    <h1 className="font-fraunces text-[2.75rem] font-medium leading-[0.95] tracking-tight wrap-break-word text-white sm:text-6xl lg:text-7xl">
       {words.join(" ")}
       {last && (
         <>
@@ -201,6 +204,34 @@ export function SectionHeading({ id, children }: { id?: string; children: ReactN
     <h2 id={id} className="font-fraunces text-3xl font-medium text-white mb-4">
       {children}
     </h2>
+  );
+}
+
+// A place's other photos (admin extras round, ticket 146): the ones the
+// team added after the cover whose credits are allowed, as small squares
+// in a mosaic that opens a full-screen viewer with each photo's credit line
+// (PlacePhotoGallery). Nothing shows when there are none.
+export function PlacePhotosSection({ name, photos }: { name: string; photos: PublicPlacePhoto[] | undefined }) {
+  if (!photos || photos.length === 0) return null;
+  return (
+    <Reveal>
+      <section aria-labelledby="place-photos" aria-describedby="place-photos-hint">
+        {/* The serif heading with a count pill, then a one-line hint (team
+            request 2026-11-13: a design of its own, easy to read). */}
+        <div className="mb-4 flex flex-wrap items-end justify-between gap-x-4 gap-y-1">
+          <h2 id="place-photos" className="font-fraunces text-3xl font-medium text-white">
+            Photos
+          </h2>
+          <span className="rounded-full border border-white/25 bg-white/10 px-3 py-1 text-xs font-semibold tracking-wide text-white/90">
+            {photos.length} {photos.length === 1 ? "photo" : "photos"}
+          </span>
+        </div>
+        <p id="place-photos-hint" className="-mt-2 mb-4 text-sm leading-relaxed text-white/75">
+          Tap a photo to see it larger. Each photo shows its photographer&apos;s credit.
+        </p>
+        <PlacePhotoGallery photos={photos} placeName={name} />
+      </section>
+    </Reveal>
   );
 }
 
