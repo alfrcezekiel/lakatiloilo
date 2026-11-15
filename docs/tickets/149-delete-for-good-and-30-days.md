@@ -4,13 +4,13 @@
 
 **Blocked by:** 147
 
-**Status:** in progress
+**Status:** done
 
 - [x] Delete for good asks in a pop-up first, then removes the item and its photo files
 - [x] Each item shows how many days it has left
 - [x] An item past 30 days is gone after opening Trash (proved with a rolled-back test)
 - [x] Works with the keyboard alone, at 320, 375 and 425 px
-- [ ] Works on the live URL
+- [x] Works on the live URL
 
 ## Progress (2026-11-14)
 

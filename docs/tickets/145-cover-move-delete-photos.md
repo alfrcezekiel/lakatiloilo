@@ -4,13 +4,13 @@
 
 **Blocked by:** 144
 
-**Status:** in progress
+**Status:** done
 
 - [x] "Make it the cover" changes the photo on the home page cards
 - [x] The arrow buttons move a photo; the order is kept after a reload
 - [x] Delete removes a photo and its file; deleting the last one is refused
 - [x] Works with the keyboard alone (each button names its photo), at 320, 375 and 425 px
-- [ ] Works on the live URL
+- [x] Works on the live URL
 
 ## Progress (2026-11-13)
 

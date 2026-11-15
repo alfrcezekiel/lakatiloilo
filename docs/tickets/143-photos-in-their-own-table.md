@@ -4,13 +4,13 @@
 
 **Blocked by:** None
 
-**Status:** in progress
+**Status:** done
 
 - [x] The place_photos table exists with Row Level Security; only admins may add, move or delete photos; the backend reads them (proved with a rolled-back test)
 - [x] Every place's photo is its photo 1, and its credits belong to that photo
 - [x] The home page, place pages, /credits and the dashboard look and behave exactly as before
 - [x] Replacing a photo on Edit still works
-- [ ] Works on the live URL
+- [x] Works on the live URL
 
 ## Progress (2026-11-13)
 

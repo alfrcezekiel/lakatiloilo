@@ -4,7 +4,7 @@
 
 **Blocked by:** None
 
-**Status:** in progress
+**Status:** done
 
 - [x] The trash table exists with Row Level Security: admins only (proved with a rolled-back test)
 - [x] Deleting a review on Reviews or Reports puts it in Trash; it is gone from the site
@@ -12,7 +12,7 @@
 - [x] Its photo files stay in Storage while it is in Trash
 - [x] A logged-out visitor gets 401 and a traveler 403; /admin/trash is "not found" for them
 - [x] Works with the keyboard alone, at 320, 375 and 425 px
-- [ ] Works on the live URL
+- [x] Works on the live URL
 
 ## Progress (2026-11-13)
 

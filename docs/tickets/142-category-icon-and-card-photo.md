@@ -4,14 +4,14 @@
 
 **Blocked by:** 141
 
-**Status:** in progress
+**Status:** done
 
 - [x] place_categories has icon and photo_place_id; only admins may change them
 - [x] Edit shows the icon choices and the photos of that category's places
 - [x] The home page chip and card use the chosen icon and photo; a photo that is not allowed shows the splash art
 - [x] The eight built-in categories look the same until changed
 - [x] Works with the keyboard alone, at 320, 375 and 425 px
-- [ ] Works on the live URL
+- [x] Works on the live URL
 
 ## Progress (2026-11-13)
 

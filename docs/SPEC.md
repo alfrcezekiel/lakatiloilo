@@ -788,13 +788,13 @@ Admin dashboard & moderation round (changed 2026-11-08): the Lakat Iloilo team s
 - [x] Row Level Security is on for place_photo_credits, and no service_role or sb_secret_ key appears anywhere
 
 **Admin extras round (live URL):**
-- [ ] With /admin/places open, a place added or edited in another window shows within a few seconds without a reload
-- [ ] An admin hides a reply: travelers see "This reply was hidden by the Lakat Iloilo team.", its writer sees their text marked hidden, answers under it stay; Show it brings it back
-- [ ] An admin renames a category, gives it an icon and a card photo, and the home page shows them; a name already used is refused
-- [ ] A place gets up to 6 photos, each with its own credits; a new cover shows on the cards; the place page shows the allowed photos with their credit lines; a seventh is refused
-- [ ] A review, a reply and a place deleted by an admin appear in Trash; Restore brings each back with its replies, likes and photos; Delete for good removes it
-- [ ] Logged out or as a traveler, the new endpoints answer 401 or 403 (curl) and the database refuses the same changes
-- [ ] Row Level Security is on for place_photos and trash, and no service_role or sb_secret_ key appears anywhere
+- [x] With /admin/places open, a place added or edited in another window shows within a few seconds without a reload
+- [x] An admin hides a reply: travelers see "This reply was hidden by the Lakat Iloilo team.", its writer sees their text marked hidden, answers under it stay; Show it brings it back
+- [x] An admin renames a category, gives it an icon and a card photo, and the home page shows them; a name already used is refused
+- [x] A place gets up to 6 photos, each with its own credits; a new cover shows on the cards; the place page shows the allowed photos with their credit lines; a seventh is refused
+- [x] A review, a reply and a place deleted by an admin appear in Trash; Restore brings each back with its replies, likes and photos; Delete for good removes it
+- [x] Logged out or as a traveler, the new endpoints answer 401 or 403 (curl) and the database refuses the same changes
+- [x] Row Level Security is on for place_photos and trash, and no service_role or sb_secret_ key appears anywhere
 
 ## Out of scope
 - Admin extras round: travelers' own deletes going to the Trash (it is for admin deletes only), restoring a single Helpful like or notifications, uploading a new photo just for a category card, reordering photos by dragging (arrow buttons instead), more than 6 photos per place, and a scheduled job to empty the Trash

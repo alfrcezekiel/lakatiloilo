@@ -4,14 +4,14 @@
 
 **Blocked by:** 143
 
-**Status:** in progress
+**Status:** done
 
 - [x] "Add a photo" uploads one more (JPG, PNG or WebP, up to 2 MB) with its credits
 - [x] Each photo has its own credits box with the same checks as today
 - [x] A seventh photo is refused with a plain message
 - [x] A logged-out visitor gets 401 and a traveler 403
 - [x] Works with the keyboard alone, at 320, 375 and 425 px
-- [ ] Works on the live URL
+- [x] Works on the live URL
 
 ## Progress (2026-11-13)
 

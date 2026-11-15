@@ -4,7 +4,7 @@
 
 **Blocked by:** None
 
-**Status:** in progress
+**Status:** done
 
 - [x] The replies table has hidden_at; only admins may set or clear it (proved with a rolled-back test)
 - [x] Hide it / Show it on each reply, with Undo for 8 seconds
@@ -12,7 +12,7 @@
 - [x] The writer sees their own text marked "Hidden by the Lakat Iloilo team"
 - [x] A logged-out visitor gets 401 and a traveler 403 on the new endpoints
 - [x] Works with the keyboard alone, at 320, 375 and 425 px
-- [ ] Works on the live URL
+- [x] Works on the live URL
 
 ## Progress (2026-11-13)
 

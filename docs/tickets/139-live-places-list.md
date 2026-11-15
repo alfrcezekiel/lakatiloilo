@@ -4,13 +4,13 @@
 
 **Blocked by:** None
 
-**Status:** in progress
+**Status:** done
 
 - [x] A place added, edited or deleted in another window shows on an open Places list without a reload
 - [x] A new, hidden or deleted review updates that place's "★ 4.3 · 6 reviews" line
 - [x] The search text, filter, sort, number per page and page stay as the admin left them
 - [x] Coming back to the tab or reconnecting catches up
-- [ ] Works on the live URL
+- [x] Works on the live URL
 
 ## Progress (2026-11-13)
 

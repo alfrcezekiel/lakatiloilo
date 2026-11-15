@@ -4,14 +4,14 @@
 
 **Blocked by:** None
 
-**Status:** in progress
+**Status:** done
 
 - [x] Only admins may change a name; the database refuses a wrong length or a name already used (proved with a rolled-back test)
 - [x] Edit → name → Save, with plain refusals ("That name is already used.")
 - [x] The eight built-in categories can be renamed too
 - [x] The home page and the place form show the new name after a reload
 - [x] A logged-out visitor gets 401 and a traveler 403
-- [ ] Works on the live URL
+- [x] Works on the live URL
 
 ## Progress (2026-11-13)
 

@@ -4,14 +4,14 @@
 
 **Blocked by:** 144
 
-**Status:** in progress
+**Status:** done
 
 - [x] The public answer for a place lists only its allowed photos, cover first, with their credit lines (checked with curl)
 - [x] The photo row opens the viewer; each photo's credit line shows with it
 - [x] A place with no allowed photo still shows the splash art
 - [x] "Credit missing" follows every photo of the place
 - [x] Works with the keyboard alone and a screen reader, at 320, 375 and 425 px
-- [ ] Works on the live URL
+- [x] Works on the live URL
 
 ## Progress (2026-11-13)
 

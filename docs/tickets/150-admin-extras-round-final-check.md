@@ -4,13 +4,13 @@
 
 **Blocked by:** 139, 140, 141, 142, 143, 144, 145, 146, 147, 148, 149
 
-**Status:** in progress
+**Status:** done
 
-- [ ] Every item in the "Admin extras round" checklist works on the live URL
-- [ ] Every new admin endpoint refuses a logged-out visitor (401) and a traveler (403) (checked with curl)
-- [ ] Place pages, reviews, replies, photos, credits and the splash art still work for travelers
-- [ ] /code-review has been run on the round and its findings handled
-- [ ] Works on the live URL
+- [x] Every item in the "Admin extras round" checklist works on the live URL
+- [x] Every new admin endpoint refuses a logged-out visitor (401) and a traveler (403) (checked with curl)
+- [x] Place pages, reviews, replies, photos, credits and the splash art still work for travelers
+- [x] /code-review has been run on the round and its findings handled
+- [x] Works on the live URL
 
 ## Progress (2026-11-15)
 
@@ -25,3 +25,8 @@
   - 🟡 3: the 7 Trash routes moved to admin-trash.controller.ts (same addresses), added to AdminModule's forRoutes; admin.controller.ts 551 → 457 lines. curl: still 401 without or with a fake login; an unknown address still 404.
   - 🟡 5: Hide it / Show it on a reply in the Trash answers 409 "That reply is in the Trash. Restore it first." instead of 503.
   - 🟡 4: the four unused splash images in public/ (round 29) are untracked; left out of the commit, deleting them waits for the team's yes.
+
+## Done (2026-11-15)
+
+- The team walked through the "Admin extras round (live URL)" checklist on the live URL after commit fdf0465 and confirmed it all works. Tickets 139–150 marked done at the team's word.
+- The traveler check was the team's: logged in as a traveler on the live site, /admin/trash showed "not found". The 401 cases were checked with curl; the 403 was confirmed through the website with a real traveler login, not with curl.

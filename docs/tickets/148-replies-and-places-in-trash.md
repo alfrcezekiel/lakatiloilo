@@ -4,12 +4,12 @@
 
 **Blocked by:** 147, 143
 
-**Status:** in progress
+**Status:** done
 
 - [x] A deleted reply and a deleted place appear in Trash with what they were
 - [x] Restoring a place brings it back on the home page with its reviews and photos
 - [x] Restoring a reply puts it back in its thread; with its review gone, a plain refusal
-- [ ] Works on the live URL
+- [x] Works on the live URL
 
 ## Progress (2026-11-13)
 
