@@ -15,6 +15,17 @@ const securityHeaders = [
 const nextConfig: NextConfig = {
   // Don't announce "X-Powered-By: Next.js" to every visitor.
   poweredByHeader: false,
+  // Page titles and descriptions go in the <head> for every visitor
+  // (team decision, 2026-11-18). By default Next.js 16 sends the page first
+  // and streams this metadata in after the <head>, except for a list of
+  // bots. Search engines that run JavaScript still read it, but checkers
+  // such as Lighthouse's SEO audit, and link previews in apps not on that
+  // list, only look in the <head>: Lighthouse reported "no meta
+  // description" on place pages although they had one (SEO 91). The cost:
+  // a page waits for its metadata before sending anything. Place pages load
+  // their metadata from the same cached backend answer the page itself
+  // needs, so that is no extra request.
+  htmlLimitedBots: /.*/,
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
   },

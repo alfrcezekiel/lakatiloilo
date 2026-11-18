@@ -97,10 +97,51 @@ Use these while you build, whenever the situation fits.
 | Something looks wrong at one width    | `/responsive-check` | measured fix at 375–1440 px            |
 | The team says "commit and push"       | `/ship`             | one safe commit on `main`              |
 | After a push, or after the team tests | `/live-check`       | a test to follow, ticked ticket        |
+| A ticket, bug or demo needs tests     | `/write-tests`      | tests at the right layer, explained    |
+| Before a demo, or "is it good?"       | `/evaluate-app`     | graded, read-only report               |
 
 Project rules live in `.claude/rules/`: team habits always apply, and
-the backend, frontend and database rules apply when those files are
-worked on.
+the backend, frontend, database and testing rules apply when those files
+are worked on.
+
+## Testing (proposed)
+
+We test in layers, like a pyramid. The bottom has many small, fast
+tests, and the top has a few slow ones that check the whole app. The
+full plan is in [`docs/TESTING.md`](docs/TESTING.md). None of these
+tools is installed yet. The team agrees first, then installs them. They
+are all free, and none needs Docker.
+
+| # | Layer | Checks that… | Tool |
+|---|-------|--------------|------|
+| 0 | Static | the code has no type or lint errors | TypeScript, ESLint (in place) |
+| 1 | Unit | one function gives the right answer | Vitest, Jest |
+| 2 | Component | a screen shows the right thing and works with a keyboard | Vitest + React Testing Library |
+| 3 | API | the backend refuses the wrong people with the right code | Jest + supertest |
+| 4 | Database | every table has Row Level Security | SQL checks in Supabase |
+| 5 | End-to-end | a traveler can finish a whole task in a browser | Playwright + axe |
+| 6 | Live smoke | the live URL is up after a push | Playwright |
+| 7 | Security | there are no well-known weaknesses (headers, cookies, injection) | OWASP ZAP |
+| 8 | Performance | the app stays fast with many travelers: **load, stress, spike, soak** | Grafana k6 |
+
+Once the tools are installed:
+
+```bash
+npm run test
+```
+
+```bash
+npm run test:e2e
+```
+
+```bash
+npm run perf:smoke
+```
+
+**Before any security or performance test, know this:** your local
+backend uses the *real* hosted database. So ZAP's attack scan runs on
+localhost only. k6 only reads public pages, and its heavy tests (stress,
+spike, soak) run on localhost unless the whole team agrees otherwise.
 
 ## The rules
 
@@ -119,7 +160,22 @@ src/components/ui/        Button, Card, Input, Textarea, Label
 src/lib/supabase/         database clients, with comments
 supabase/sql/             your database changes, numbered
 docs/                     problem, pitch, spec and tickets live here
+docs/TESTING.md           the testing plan: layers, tools, folders
 CLAUDE.md                 the rules the agent follows
+AGENTS.md                 the same rules for any AI coding agent
+```
+
+Planned test folders (created when the team sets up testing):
+
+```
+src/**/*.test.tsx         unit + component tests, next to the code
+test/                     shared frontend test helpers and mocks
+backend/src/**/*.spec.ts  backend unit tests, next to the code
+backend/test/api/         backend API tests
+e2e/                      Playwright: flows, accessibility, live smoke
+supabase/checks/          read-only RLS checks
+security/zap/             OWASP ZAP scan plans
+performance/k6/           Grafana k6: smoke, load, stress, spike, soak
 ```
 
 ## When something breaks

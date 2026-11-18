@@ -1,0 +1,15 @@
+https://api-lakat-iloilo.vercel.app/v1/destinations
+https://api-lakat-iloilo.vercel.app/v1/destinations?category=food
+https://api-lakat-iloilo.vercel.app/v1/destinations/5d1155a1-6e40-417d-9c84-09a990cae00d
+https://api-lakat-iloilo.vercel.app/v1/destinations/near?lat=10.72&lng=122.56&radius_km=5
+https://api-lakat-iloilo.vercel.app/v1/accommodations
+https://api-lakat-iloilo.vercel.app/v1/accommodations?type=hotel
+https://api-lakat-iloilo.vercel.app/v1/accommodations/fc4df660-ddb0-4927-8e00-406a011c05cf
+https://api-lakat-iloilo.vercel.app/v1/accommodations/near?lat=10.72&lng=122.56&radius_km=5
+https://api-lakat-iloilo.vercel.app/v1/ratings
+https://api-lakat-iloilo.vercel.app/v1/categories
+https://api-lakat-iloilo.vercel.app/v1/photo-credits
+https://api-lakat-iloilo.vercel.app/v1/reviews?place_type=destination&place_id=5d1155a1-6e40-417d-9c84-09a990cae00d
+https://api-lakat-iloilo.vercel.app/v1/reviews?place_type=accommodation&place_id=fc4df660-ddb0-4927-8e00-406a011c05cf
+https://api-lakat-iloilo.vercel.app/v1/destinations/99999999-9999-4999-8999-999999999999
+https://api-lakat-iloilo.vercel.app/v1/nowhere

@@ -5,3 +5,12 @@
 // of the PNG's 2.2 MB. Kept here once, so the cards, the place pages and a
 // new category's card all use the same file.
 export const SPLASH_ART = "/splash-desktop-1920x1080.webp";
+
+// The same art at half size, 960 × 540, about 27 KB instead of 251 KB
+// (2026-11-18). Phones and the small home cards don't need more: a
+// phone's place-page hero is about 400 px wide. The browser picks one of
+// the two by itself (srcSet in PlacePhoto). On a phone, Lighthouse
+// measured the full-size art as the place page's slowest part (LCP 4.2 s
+// on slow 4G).
+export const SPLASH_ART_SMALL = "/splash-desktop-960x540.webp";
+export const SPLASH_ART_SRCSET = `${SPLASH_ART_SMALL} 960w, ${SPLASH_ART} 1920w`;

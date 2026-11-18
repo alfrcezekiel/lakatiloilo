@@ -26,18 +26,20 @@ export function HeroSection({ children }: HeroSectionProps) {
 
       {/* Hero Content */}
       <div className="relative z-10 mx-auto max-w-6xl px-4 pt-28 pb-12 sm:px-6 sm:pt-32 sm:pb-16">
-        {/* The label, headline and intro rise one after another. */}
-        <Reveal>
+        {/* The label, headline and intro rise one after another. They are
+            visible from the first paint (visibleFromStart): they are the
+            page's main content, which a slow phone should show at once. */}
+        <Reveal visibleFromStart>
           <p className="mb-4 text-xs font-semibold uppercase tracking-[0.25em] text-white/80 sm:text-sm">
             Iloilo City · Iloilo Province
           </p>
         </Reveal>
-        <Reveal delay={0.1}>
+        <Reveal delay={0.1} visibleFromStart>
           <h1 className="font-fraunces mb-6 text-5xl leading-[0.95] font-medium tracking-tight text-white sm:text-6xl md:text-7xl lg:text-8xl">
             Lakat na, <em className="font-normal italic">Iloilo.</em>
           </h1>
         </Reveal>
-        <Reveal delay={0.2}>
+        <Reveal delay={0.2} visibleFromStart>
           <p className="mb-10 max-w-2xl text-base leading-relaxed text-white/85 md:text-lg">
             Discover the beauty of Iloilo City and Province. From mountain
             peaks to cultural treasures, and from cozy hotels to modern

@@ -5,6 +5,7 @@ import { renamedCategories } from "@/lib/labels";
 import type { Destination } from "@/lib/api";
 import { locationLabels } from "@/lib/labels";
 import { cn } from "@/lib/utils";
+import { metaDescription } from "@/lib/meta-description";
 import { ReviewsSection } from "@/components/ReviewsSection";
 import { Reveal } from "@/components/Reveal";
 import { PlaceReviewsProvider, RatingTile } from "@/components/PlaceReviews";
@@ -44,14 +45,21 @@ const load = cache(async (id: string): Promise<{ destination: Destination | null
 });
 
 // The tab names the place, so travelers (and screen readers) can tell tabs
-// apart (evaluation B2, 2026-11-04; WCAG 2.4.2 Page Titled).
+// apart (evaluation B2, 2026-11-04; WCAG 2.4.2 Page Titled). It also gives
+// search engines a summary of the place (Lighthouse SEO, 2026-11-18).
 export async function generateMetadata({
   params,
 }: {
   params: Promise<{ id: string }>;
 }): Promise<Metadata> {
   const { destination, failed } = await load((await params).id);
-  if (destination) return { title: `${destination.name} · Lakat Iloilo` };
+  if (destination) {
+    return {
+      title: `${destination.name} · Lakat Iloilo`,
+      // The summary search results show under the title (SEO).
+      description: metaDescription(destination.description, destination.name),
+    };
+  }
   return { title: failed ? "Lakat Iloilo" : "Destination not found · Lakat Iloilo" };
 }
 

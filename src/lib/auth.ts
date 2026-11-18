@@ -7,11 +7,28 @@
 // Where to send someone after they log in, from the ?next= part of the
 // address. Only paths on this site are allowed ("/destinations/…"), so a
 // crafted link cannot bounce people to another website after logging in.
+//
+// The text is not checked as typed, because browsers quietly change an
+// address before using it: they delete tabs and newlines and read "\" as
+// "/". So "/<tab>/evil.example" looked like a path here but opened
+// "//evil.example", another website (open redirect found by the Playwright
+// address-attack tests, 2026-11-18). Instead, the browser's own address
+// reader (URL) works out where `next` would really go, and only a place on
+// this site is allowed. Anything else goes to the home page.
+const THIS_SITE = "https://this-site.invalid";
+
 export function safeNextPath(next: string | null) {
-  if (!next || !next.startsWith("/") || next.startsWith("//") || next.includes("\\")) {
+  if (!next || !next.startsWith("/")) return "/";
+  let target: URL;
+  try {
+    target = new URL(next, THIS_SITE);
+  } catch {
     return "/";
   }
-  return next;
+  if (target.origin !== THIS_SITE) return "/";
+  // Rebuilt from the cleaned address, so what is used is exactly what
+  // was checked.
+  return `${target.pathname}${target.search}${target.hash}`;
 }
 
 // "Remember my email" (ticket 45).

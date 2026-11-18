@@ -74,6 +74,12 @@
    setting is on. */
 @theme {
   --animate-fade-up: fade-up 0.8s cubic-bezier(0.22, 1, 0.36, 1) both;
+  /* The same rise, but visible from the first paint (no fade from
+     invisible). For the first thing a traveler sees, the home hero: text
+     that starts invisible is not counted as shown until it fades in, and
+     on a slow phone that made the home page's main content (LCP) about
+     8 s late in Lighthouse (2026-11-18). See Reveal's visibleFromStart. */
+  --animate-rise-up: rise-up 0.8s cubic-bezier(0.22, 1, 0.36, 1) both;
   /* The new page fading in when the traveler moves between pages (see
      src/app/template.tsx). See-through only, no movement. */
   --animate-page-fade: page-fade 0.35s ease-out both;
@@ -98,6 +104,15 @@
     to {
       background-color: transparent;
       box-shadow: 0 0 0 2px transparent;
+    }
+  }
+
+  @keyframes rise-up {
+    from {
+      transform: translateY(40px);
+    }
+    to {
+      transform: none;
     }
   }
 

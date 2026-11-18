@@ -1,0 +1,9 @@
+{
+  // The editor (VS Code) checks each file with the NEAREST tsconfig.json.
+  // Without this file, files in backend/test/ were checked with default
+  // settings (no decorators, no Jest types, no esModuleInterop) and showed
+  // red lines although the tests pass. This gives them the same settings
+  // Jest uses (../tsconfig.spec.json). It is never used to build the app.
+  "extends": "../tsconfig.spec.json",
+  "include": ["../src/**/*", "./**/*"]
+}

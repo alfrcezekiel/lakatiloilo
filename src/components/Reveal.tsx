@@ -7,6 +7,8 @@ import { cn } from "@/lib/utils";
 
 // How far (in pixels) things travel as they fade in.
 const DISTANCE = 40;
+// How long the slide in takes.
+const SLIDE_SECONDS = 0.7;
 const EASE = [0.22, 1, 0.36, 1] as const;
 
 // Makes its contents fade in, every time they come onto the screen:
@@ -31,12 +33,19 @@ export function Reveal({
   delay = 0,
   amount = 0.15,
   as = "div",
+  visibleFromStart = false,
 }: {
   children: ReactNode;
   className?: string;
   delay?: number;
   amount?: number | "some";
   as?: "div" | "li" | "section";
+  // On page load, rise without starting invisible ("animate-rise-up").
+  // For the first thing a traveler sees (the home hero): text that starts
+  // invisible counts as shown only once it fades in, which made the home
+  // page's main content (LCP) about 8 s late on a slow phone in
+  // Lighthouse (2026-11-18). Scrolling away and back still fades as usual.
+  visibleFromStart?: boolean;
 }) {
   const ref = useRef<HTMLElement>(null);
   const reduceMotion = useReducedMotion();
@@ -51,15 +60,30 @@ export function Reveal({
       element.style.animation = "none";
     };
 
+    // Why `shown` and `arriving` (jiggle fix, found by the Playwright tests
+    // 2026-11-17): the browser decides "on screen" from where the element
+    // is DRAWN, and the fade-in itself moves it. A block whose edge sat just
+    // inside the screen jiggled forever: sliding in starts 40 px lower,
+    // which put it off the screen, so it faded out, came back on, and slid
+    // in again, over and over. Now:
+    // - "left the screen" while it is still arriving is ignored (the slide
+    //   moved it, not the traveler), and
+    // - "came on screen" while it is already shown does nothing.
+    let shown = false; // visible, or on its way in
+    let arriving = false; // the page-load fade or a slide is still playing
+    let arrived: ReturnType<typeof setTimeout> | undefined;
+
     // Is the CSS fade from page load still playing on screen?
     const box = element.getBoundingClientRect();
-    let cssPlaying =
+    const cssPlaying =
       box.top < window.innerHeight && box.bottom > 0 && element.getAnimations().length > 0;
     if (cssPlaying) {
+      shown = true;
+      arriving = true;
       element.addEventListener(
         "animationend",
         () => {
-          cssPlaying = false;
+          arriving = false;
           stopCss();
         },
         { once: true },
@@ -73,7 +97,8 @@ export function Reveal({
     }
 
     const fadeOut = () => {
-      cssPlaying = false;
+      if (arriving) return;
+      shown = false;
       stopCss();
       animate(element, { opacity: 0 }, { duration: 0.25 });
     };
@@ -81,16 +106,23 @@ export function Reveal({
     const stop = inView(
       element,
       (_, entry) => {
-        // Still rising from page load: let the CSS fade finish.
-        if (cssPlaying) return fadeOut;
+        // Already visible or on its way in (including the page-load fade):
+        // nothing to start.
+        if (shown) return fadeOut;
+        shown = true;
+        arriving = true;
         stopCss();
         // Entering at the top edge means the traveler is scrolling up.
         const fromAbove = entry.boundingClientRect.top < (entry.rootBounds?.top ?? 0);
         animate(
           element,
           { opacity: [0, 1], y: [fromAbove ? -DISTANCE : DISTANCE, 0] },
-          { duration: 0.7, delay, ease: EASE },
+          { duration: SLIDE_SECONDS, delay, ease: EASE },
         );
+        clearTimeout(arrived);
+        arrived = setTimeout(() => {
+          arriving = false;
+        }, (delay + SLIDE_SECONDS) * 1000);
         // Returning a function makes inView call it when the element
         // leaves the screen, and keep watching for the next time.
         return fadeOut;
@@ -100,6 +132,7 @@ export function Reveal({
 
     return () => {
       stop();
+      clearTimeout(arrived);
       // Leave it visible if this component goes away mid-animation.
       element.style.animation = "";
       animate(element, { opacity: 1, y: 0 }, { duration: 0 });
@@ -111,7 +144,7 @@ export function Reveal({
   return (
     <Tag
       ref={ref as RefObject<HTMLDivElement>}
-      className={cn("motion-safe:animate-fade-up", className)}
+      className={cn(visibleFromStart ? "motion-safe:animate-rise-up" : "motion-safe:animate-fade-up", className)}
       style={style}
     >
       {children}

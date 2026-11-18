@@ -1,0 +1,144 @@
+# OWASP ZAP plan 2: ACTIVE scan of LOCALHOST ONLY.
+# (Layer 7 in docs/TESTING.md, rules in .claude/rules/testing.md.)
+#
+# An active scan ATTACKS: it sends thousands of requests with SQL
+# injection, cross-site scripting (XSS) and path tricks to every page and
+# parameter it finds.
+#
+#   - NEVER point it at a vercel.app address.
+#   - The TEAM starts it, after agreeing to. The agent never does.
+#   - The local backend (localhost:5000) talks to the HOSTED Supabase
+#     database, so this is real traffic to the real database. That is why:
+#       * it runs WITHOUT a login (no token, no cookie, no "users:" here),
+#         so every write route must answer 401 and nothing is saved,
+#       * log-in, sign-up and admin routes are excluded (it must never try
+#         passwords or create accounts),
+#       * it only gets the GET routes in api-urls-local.txt, plus whatever
+#         the two spiders (plain and headless Chrome) find on the website.
+#   - Afterwards, check in Supabase (Table Editor) that no new reviews,
+#     replies or reports appeared.
+#
+# Before you run it: start the team's dev servers (npm run dev, and
+# `nest start --watch` in backend/), then from the project folder:
+#   zap.sh -cmd -port 8099 -config rules.domxss.browserid=chrome-headless -autorun "$PWD/security/zap/active-local.yaml"
+# Windows PowerShell:
+#   & "C:\Program Files\ZAP\Zed Attack Proxy\zap.bat" -cmd -port 8099 -config rules.domxss.browserid=chrome-headless -autorun "$PWD\security\zap\active-local.yaml"
+#
+# Why "-config rules.domxss.browserid=chrome-headless": the DOM XSS rule
+# (script injection that happens inside the browser) needs ZAP to drive a
+# real browser. ZAP's default is Firefox, which fails on Ubuntu because its
+# Firefox is a sandboxed "snap" that ZAP's driver cannot reach, so the
+# rule was skipped on 2026-11-17. Google Chrome works (ZAP's chromedriver
+# must match the installed Chrome; ZAP updates it with its add-ons). A
+# plan file cannot hold this setting, so it goes on the command line.
+# Needs Google Chrome installed.
+#
+# Takes up to about 35 minutes (the main attack up to 15, DOM XSS up to 15).
+# Reports land in security/zap/reports/
+
+env:
+  contexts:
+    - name: lakat-local
+      urls:
+        - http://localhost:3000
+        - http://localhost:5000
+      includePaths:
+        - "http://localhost:3000.*"
+        - "http://localhost:5000.*"
+      excludePaths:
+        - ".*supabase\\.co.*"
+        - "http://localhost:5000/v1/auth/.*"   # log-in, sign-up, log-out: never attack
+        - "http://localhost:5000/v1/admin/.*"  # admin routes
+        - "http://localhost:3000/admin.*"
+        - "http://localhost:3000/(login|reset-password|forgot-password).*"
+        - ".*/logout.*"
+        - ".*/_next/static/.*"                 # built files: only noise
+        # The dev server's own addresses, which the live site does not have
+        # (found 2026-11-18): its live-reload connection (Next.js 16 calls it
+        # /_next/hmr, older versions webpack-hmr) and its font route.
+        - ".*/_next/(webpack-)?hmr.*"
+        - ".*/__nextjs_font/.*"
+  parameters:
+    failOnError: true
+    failOnWarning: false
+    progressToStdout: true
+
+jobs:
+  - type: passiveScan-config
+    parameters:
+      maxAlertsPerRule: 10
+      scanOnlyInScope: true
+
+  - type: import
+    parameters:
+      type: url
+      fileName: api-urls-local.txt
+
+  - type: spider
+    parameters:
+      context: lakat-local
+      maxDuration: 2
+      threadCount: 2
+
+  # The same crawl with a real (headless Chrome) browser, which also finds
+  # pages and links that only appear after the page's JavaScript runs.
+  # Checked on 2026-11-17 without attacking: in one minute it made 77
+  # requests, all GET, all to localhost, and never opened log-in, sign-up
+  # or admin pages.
+  - type: spiderAjax
+    parameters:
+      context: lakat-local
+      url: http://localhost:3000
+      browserId: chrome-headless
+      maxDuration: 2
+      numberOfBrowsers: 1
+      inScopeOnly: true
+
+  - type: passiveScan-wait
+    parameters:
+      maxDuration: 5
+
+  # The attack, every rule except DOM XSS. Gentle (two threads), at most 3
+  # minutes per rule, and it stops after 15 minutes whatever happens.
+  - type: activeScan
+    parameters:
+      context: lakat-local
+      maxScanDurationInMins: 15
+      maxRuleDurationInMins: 3
+      threadPerHost: 2
+    policyDefinition:
+      rules:
+        - id: 40026          # DOM XSS: runs on its own in the next step
+          name: Cross Site Scripting (DOM Based)
+          threshold: "off"
+
+  # DOM XSS on its own, with more time. It drives a real browser (headless
+  # Chrome, see the run command), which is slow on the dev server: each
+  # page compiles the first time it opens. On 2026-11-18 it finished on the
+  # backend (98 requests, nothing found), but ran out of its 3 minutes on
+  # the website. Here it gets up to 15.
+  - type: activeScan
+    parameters:
+      context: lakat-local
+      maxScanDurationInMins: 15
+      maxRuleDurationInMins: 15
+      threadPerHost: 2
+    policyDefinition:
+      defaultThreshold: "off"
+      rules:
+        - id: 40026
+          name: Cross Site Scripting (DOM Based)
+          strength: medium
+          threshold: medium
+
+  - type: report
+    parameters:
+      template: traditional-html
+      reportDir: reports
+      reportFile: active-local
+      reportTitle: Lakat Iloilo, active scan of localhost
+  - type: report
+    parameters:
+      template: traditional-json
+      reportDir: reports
+      reportFile: active-local

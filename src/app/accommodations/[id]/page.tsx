@@ -6,6 +6,7 @@ import { pillButton } from "@/components/ui/button";
 import type { Accommodation } from "@/lib/api";
 import { accommodationTypeLabels, locationLabels, renamedCategories } from "@/lib/labels";
 import { cn } from "@/lib/utils";
+import { metaDescription } from "@/lib/meta-description";
 import { ReviewsSection } from "@/components/ReviewsSection";
 import { Reveal } from "@/components/Reveal";
 import { PlaceReviewsProvider, RatingTile } from "@/components/PlaceReviews";
@@ -34,14 +35,21 @@ const load = cache(async (id: string): Promise<{ accommodation: Accommodation | 
 });
 
 // The tab names the place, so travelers (and screen readers) can tell tabs
-// apart (evaluation B2, 2026-11-04; WCAG 2.4.2 Page Titled).
+// apart (evaluation B2, 2026-11-04; WCAG 2.4.2 Page Titled). It also gives
+// search engines a summary of the place (Lighthouse SEO, 2026-11-18).
 export async function generateMetadata({
   params,
 }: {
   params: Promise<{ id: string }>;
 }): Promise<Metadata> {
   const { accommodation, failed } = await load((await params).id);
-  if (accommodation) return { title: `${accommodation.name} · Lakat Iloilo` };
+  if (accommodation) {
+    return {
+      title: `${accommodation.name} · Lakat Iloilo`,
+      // The summary search results show under the title (SEO).
+      description: metaDescription(accommodation.description, accommodation.name),
+    };
+  }
   return { title: failed ? "Lakat Iloilo" : "Accommodation not found · Lakat Iloilo" };
 }
 

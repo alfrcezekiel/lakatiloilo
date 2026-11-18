@@ -53,6 +53,37 @@ English, and wait for the team to agree.
 - `npm audit` reports issues in the eslint toolchain. These are
   development-only and the "fix" downgrades the project. Ignore them.
 
+## Testing and quality (proposed — the team agrees before installing)
+
+The full strategy is in `docs/TESTING.md`. The rules for writing and
+running tests are in `.claude/rules/testing.md`. To add tests, use
+`/write-tests`. The test tools are free and development-only, and none
+of them needs Docker. All nine layers are set up and have been run (see the
+status at the top of `docs/TESTING.md`). Ask the team
+before adding any new test tool.
+
+| # | Layer | Tool | Lives in |
+|---|-------|------|----------|
+| 0 | Static checks | TypeScript + ESLint (in place) | — |
+| 1 | Unit | Vitest (frontend), Jest + `@nestjs/testing` (backend) | next to the file |
+| 2 | Component | Vitest + React Testing Library + MSW | next to the component |
+| 3 | API integration | Jest + supertest | `backend/test/api/` |
+| 4 | Database / RLS | read-only SQL checks | `supabase/checks/` |
+| 5 | End-to-end + accessibility | Playwright + axe-core | `e2e/` |
+| 6 | Live smoke | Playwright, read-only | `e2e/smoke/` |
+| 7 | Security scan | OWASP ZAP desktop app | `security/zap/` |
+| 8 | Performance & load (load, stress, spike, soak) | Grafana k6 | `performance/k6/` |
+| 8 | Page quality: Core Web Vitals, accessibility, best practices, SEO | Lighthouse | `performance/lighthouse/` |
+
+Testing never weakens the security baseline:
+
+- Tests use fakes, never a real Supabase key, token or account.
+- ZAP's active scan runs on localhost only.
+- k6 sends public GET requests only. Stress, spike and soak tests run on
+  localhost unless the team agrees otherwise.
+- The local backend uses the **hosted** database, so heavy or attacking
+  tests are real traffic. The team starts them, not the agent.
+
 ## The workflow
 
 | Step                        | Command            | Produces                    |
@@ -73,9 +104,11 @@ Project helpers (Lakat Iloilo):
 | Something looks wrong at one width    | `/responsive-check` | measured fix at 375–1440 px      |
 | The team says "commit and push"       | `/ship`             | one safe commit on `main`        |
 | After a push, or after the team tests | `/live-check`       | a test to follow, ticked ticket  |
+| A ticket, bug or demo needs tests     | `/write-tests`      | tests at the right layer, a plain-English result |
+| Before a demo, or "is it good?"       | `/evaluate-app`     | graded, read-only report         |
 
 Project rules live in `.claude/rules/` (team habits always; backend,
-frontend and database rules when those files are worked on).
+frontend, database and testing rules when those files are worked on).
 
 ## Where things live
 
@@ -89,3 +122,8 @@ frontend and database rules when those files are worked on).
 - `src/components/ui/` — the UI building blocks
 - `src/lib/supabase/` — the database clients, with comments explaining
   which to use where
+- `docs/TESTING.md` — the testing pyramid, tools, folder layout and how
+  to run each layer
+- `docs/evaluations/` — evaluation reports, ZAP, k6 and Lighthouse summaries
+- `test/`, `backend/test/`, `e2e/`, `supabase/checks/`, `security/zap/`,
+  `performance/k6/` — tests and test plans, by layer

@@ -2,7 +2,7 @@ import { Logger } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import { AppModule } from './app.module';
-import { UnknownRouteFilter } from './unknown-route.filter';
+import { configureApp } from './app-setup';
 
 // Importing AppModule runs ConfigModule.forRoot, which loads backend/.env
 // into process.env, so the variables below are available on your computer.
@@ -28,24 +28,9 @@ const bootstrap = async () => {
   // Read before starting Nest, so a missing CORS_ORIGIN fails straight away.
   const origins = corsOrigins();
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
-  // Security headers on every answer (evaluation B5, 2026-11-04): don't
-  // announce "X-Powered-By: Express", never let a browser guess a file's
-  // type, and never let another site show an answer inside a frame.
-  app.disable('x-powered-by');
-  app.use((_request: unknown, response: { setHeader: (name: string, value: string) => void }, next: () => void) => {
-    response.setHeader('X-Content-Type-Options', 'nosniff');
-    response.setHeader('X-Frame-Options', 'DENY');
-    next();
-  });
-  // Browsers may read (GET), add (POST), replace (PUT, photo credits,
-  // ticket 132), edit (PATCH) and delete (DELETE). The Authorization header carries the traveler's login token.
-  app.enableCors({
-    origin: origins,
-    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
-  });
-  // An unknown address answers a plain sentence (unknown-route.filter.ts).
-  app.useGlobalFilters(new UnknownRouteFilter());
+  // Security headers, CORS and the "unknown address" answer (app-setup.ts,
+  // shared with the API tests).
+  configureApp(app, origins);  
   // Vercel (and most hosts) tell the app which port to use through PORT.
   // On your computer PORT may be unset, so it falls back to 5000.
   const port = process.env.PORT ?? 5000;

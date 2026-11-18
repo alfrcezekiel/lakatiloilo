@@ -40,25 +40,49 @@ const sslOptions = (caCert?: string) => {
   return { rejectUnauthorized: false };
 };
 
+// How many database connections the backend keeps open at once (its
+// "pool"). Every request borrows one, so this caps how many database
+// questions run at the same time; the rest wait in line.
+//
+// Default 20 (team decision, 2026-11-18). node-postgres' own default is 10,
+// and a k6 stress test showed that was the bottleneck: with 150 travelers at
+// once, answers took 2.1 s (p95) on 10 connections and 0.3 s on 20, with no
+// other change (docs/evaluations/2026-11-17-k6.md).
+//
+// DATABASE_POOL_MAX (backend/.env or Vercel) overrides it, 1 to 50. On
+// Vercel each running copy of the backend has its own pool, so copies x
+// pool size must stay under the Supabase plan's connection limit. Lower it
+// there if Supabase ever refuses connections.
+const DEFAULT_POOL_MAX = 20;
+const poolMax = (value?: string) => {
+  const max = Number(value);
+  return Number.isInteger(max) && max >= 1 && max <= 50 ? max : DEFAULT_POOL_MAX;
+};
+
 // Opens the connection to the hosted Supabase Postgres database.
 // Import this module once, in AppModule.
 @Module({
   imports: [
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
-      useFactory: (configService: ConfigService) => ({
-        type: 'postgres',
-        url: configService.get<string>('DATABASE_URL'),
-        ssl: sslOptions(configService.get<string>('DATABASE_CA_CERT')),
-        entities: [Destination, Accommodation, Review, ReviewLike, ReviewReply, ReviewReport, ReplyLike],
-        synchronize: false,
-        // PostGIS is already installed by the SQL scripts; never try to
-        // create extensions (the backend's lakat_api role is not allowed to).
-        installExtensions: false,
-        // Print every SQL query while developing, but not on Vercel, where
-        // it would bury real errors in the logs.
-        logging: configService.get<string>('NODE_ENV') !== 'production',
-      }),
+      useFactory: (configService: ConfigService) => {
+        const max = poolMax(configService.get<string>('DATABASE_POOL_MAX'));
+        new Logger('DatabaseModule').log(`Database pool: up to ${max} connections at once.`);
+        return {
+          type: 'postgres' as const,
+          url: configService.get<string>('DATABASE_URL'),
+          ssl: sslOptions(configService.get<string>('DATABASE_CA_CERT')),
+          extra: { max },
+          entities: [Destination, Accommodation, Review, ReviewLike, ReviewReply, ReviewReport, ReplyLike],
+          synchronize: false,
+          // PostGIS is already installed by the SQL scripts; never try to
+          // create extensions (the backend's lakat_api role is not allowed to).
+          installExtensions: false,
+          // Print every SQL query while developing, but not on Vercel, where
+          // it would bury real errors in the logs.
+          logging: configService.get<string>('NODE_ENV') !== 'production',
+        };
+      },
       inject: [ConfigService],
     }),
   ],

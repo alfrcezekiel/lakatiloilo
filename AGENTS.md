@@ -22,8 +22,9 @@ the entry point and follow the links from here.
 
 These are summaries. The full text wins: `CLAUDE.md`,
 `.claude/rules/working-with-the-team.md`, and the path-scoped rules
-`.claude/rules/frontend.md` (`src/**`), `backend.md` (`backend/**`) and
-`database.md` (`supabase/**`).
+`.claude/rules/frontend.md` (`src/**`), `backend.md` (`backend/**`),
+`database.md` (`supabase/**`) and `testing.md` (test files, `e2e/**`,
+`security/**`, `performance/**`).
 
 1. **Pinned stack.** No new framework, database, host, CSS library, paid
    service, or Docker. Ask the team first if you think one is needed.
@@ -47,6 +48,11 @@ These are summaries. The full text wins: `CLAUDE.md`,
 8. **Same error twice → stop** and explain instead of trying a third
    variation.
 9. Ignore `npm audit` warnings from the eslint toolchain.
+10. **Testing is safe by default.** Tests use fakes, never real Supabase
+    keys, tokens or accounts. OWASP ZAP's active scan runs on localhost
+    only. Grafana k6 sends public GET requests only. Stress, spike and
+    soak tests run on localhost unless the team agrees, and the team
+    starts them. Full rules: `.claude/rules/testing.md`.
 
 ## 3. Skills catalogue
 
@@ -75,7 +81,59 @@ open that file and follow it step by step.
 | `/responsive-check` | `.claude/skills/responsive-check/SKILL.md` | Measures an element with `getBoundingClientRect()` at 375/640/768/1024/1440 px, finds why it is squeezed or overflowing, fixes it and re-measures. |
 | `/ship` | `.claude/skills/ship/SKILL.md` | Safe commit: stages only the named files, checks for secrets, runs type-check/lint/build, writes the message, pushes to `main`. |
 | `/live-check` | `.claude/skills/live-check/SKILL.md` | Turns a ticket's acceptance criteria into a numbered test for the team on the live URL, then records their results. |
+| `/write-tests` | `.claude/skills/write-tests/SKILL.md` | Picks the lowest test layer that can catch the risk (unit, component, API, RLS check, end-to-end, accessibility, live smoke, ZAP security scan, or k6 load/stress/spike/soak), writes the tests, runs the safe ones, and reports in plain English. |
 | `/evaluate-app` | `.claude/skills/evaluate-app/SKILL.md` (procedure: **this file, section 4**) | Full evaluation of UI/UX, workflows, API, middleware, functions, end-to-end flows and accessibility, or one part of it: `/evaluate-app api`, `/evaluate-app a11y /login`, `/evaluate-app e2e reviews live`, `/evaluate-app 93`. Produces a graded, read-only report. |
+
+## 3a. Testing architecture
+
+The full strategy is in `docs/TESTING.md`: the pyramid, why each tool
+was chosen, the folder layout, scripts, and example ZAP plans and k6
+scripts. The tools are **proposed**. None is installed yet, and the team
+agrees before any is added. All are free, and none needs Docker.
+
+```
+ 8  Performance & load   Grafana k6         performance/k6/   load · stress · spike · soak
+ 7  Security scan        OWASP ZAP          security/zap/     passive live · active localhost
+ 6  Live smoke           Playwright         e2e/smoke/        read-only, live URL
+ 5  End-to-end + a11y    Playwright + axe   e2e/flows/, e2e/a11y/
+ 4  Database / RLS       SQL checks         supabase/checks/  read-only
+ 3  API integration      Jest + supertest   backend/test/api/
+ 2  Component            Vitest + RTL + MSW next to the component
+ 1  Unit                 Vitest / Jest      next to the file
+ 0  Static checks        tsc + ESLint       (in place)
+```
+
+**How the folders are laid out:**
+
+- Unit and component tests sit next to the file they test.
+- Tests that span many files get a top-level folder (`backend/test/`,
+  `e2e/`).
+- The file name says the runner: `*.test.ts(x)` is Vitest, `*.spec.ts`
+  is Jest (unit), `*.e2e-spec.ts` is Jest (API), `e2e/**/*.spec.ts` is
+  Playwright.
+- `fixtures/` holds sample data, `fakes/` and `mocks/` hold pretend
+  services, and `helpers/` holds setup code.
+- Raw ZAP reports and k6 results are git-ignored. Summaries go in
+  `docs/evaluations/`.
+
+**The four k6 test types** use the same public GET routes
+(`performance/k6/lib/routes.js`) and thresholds (p(95) under 800 ms,
+errors under 1 %). Only the traffic shape changes:
+
+| Type | Shape | Where |
+|------|-------|-------|
+| Load | ramp to 20 virtual users, hold 5 min | localhost or live |
+| Stress | steps of 20 → 50 → 100 → 150, stops at 5 % errors | localhost (live needs `-e LIVE_OK=yes` and the team's OK) |
+| Spike | 5 → 100 in 10 s, back to 5, watch recovery | localhost (same) |
+| Soak | 20 for 30–60 min | localhost (same) |
+
+A 30-second smoke run comes before each of them. Agents may run the
+smoke test on localhost. The team runs everything else.
+
+**How it connects to `/evaluate-app`:** that skill is a read-only audit
+done by hand. The test layers turn its findings into checks that can be
+run again. When an evaluation finds a bug, `/write-tests` adds a test
+that fails before the fix and passes after it.
 
 ## 4. Skill: `/evaluate-app` — evaluate the whole application
 

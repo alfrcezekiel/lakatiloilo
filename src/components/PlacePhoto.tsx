@@ -10,7 +10,7 @@
 // decoration (alt=""), because the place's name is always written next to
 // it or on it.
 
-import { SPLASH_ART } from "@/lib/splash";
+import { SPLASH_ART, SPLASH_ART_SRCSET } from "@/lib/splash";
 
 export function PlacePhoto({
   src,
@@ -28,6 +28,17 @@ export function PlacePhoto({
   return src ? (
     <img src={src} alt={alt} className={className} />
   ) : (
-    <img src={splash} alt="" width={1920} height={1080} className={className} />
+    // The splash art in two sizes: the browser downloads the one that fits
+    // the screen (the small one on phones, see src/lib/splash.ts). A
+    // different splash passed in is used as it is.
+    <img
+      src={splash}
+      srcSet={splash === SPLASH_ART ? SPLASH_ART_SRCSET : undefined}
+      sizes={splash === SPLASH_ART ? "100vw" : undefined}
+      alt=""
+      width={1920}
+      height={1080}
+      className={className}
+    />
   );
 }

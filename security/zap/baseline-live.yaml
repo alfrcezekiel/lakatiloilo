@@ -1,0 +1,97 @@
+# OWASP ZAP plan 1: PASSIVE baseline scan of the LIVE site and API.
+# (Layer 7 in docs/TESTING.md, rules in .claude/rules/testing.md.)
+#
+# SAFE TO RUN ON THE LIVE URLS AT ANY TIME. It only visits pages like a
+# visitor (GET requests) and READS the answers: security headers, cookies,
+# CORS, error pages, information leaks. It never fills in or sends a form,
+# never logs in, and never attacks anything.
+#
+# Run (Ubuntu, from the project folder):
+#   zap.sh -cmd -port 8099 -autorun "$PWD/security/zap/baseline-live.yaml"
+# Run (Windows PowerShell; the install folder may differ):
+#   & "C:\Program Files\ZAP\Zed Attack Proxy\zap.bat" -cmd -port 8099 -autorun "$PWD\security\zap\baseline-live.yaml"
+# Or in the ZAP app: Automation tab -> Load plan -> Run.
+#
+# Takes about 3-6 minutes. Reports land in security/zap/reports/
+# (git-ignored). Write a short summary in docs/evaluations/YYYY-MM-DD-zap.md.
+
+env:
+  contexts:
+    - name: lakat-live
+      urls:
+        - https://lakat-iloilo.vercel.app
+        - https://api-lakat-iloilo.vercel.app
+      includePaths:
+        - "https://lakat-iloilo\\.vercel\\.app.*"
+        - "https://api-lakat-iloilo\\.vercel\\.app.*"
+      excludePaths:
+        - ".*supabase\\.co.*"        # Supabase's servers are not ours to scan
+        - ".*/logout.*"
+        - ".*/_next/static/.*"       # built JavaScript and CSS files: only noise
+  parameters:
+    failOnError: true
+    failOnWarning: false
+    progressToStdout: true
+
+jobs:
+  - type: passiveScan-config
+    parameters:
+      maxAlertsPerRule: 10
+      scanOnlyInScope: true
+
+  # CONFIRMED false alarms (first scan, 2026-11-17; see
+  # docs/evaluations/2026-11-17-zap.md). Each one is narrow, so a real
+  # problem of the same kind is still reported.
+  - type: alertFilter
+    alertFilters:
+      # "Sub Resource Integrity Attribute Missing" on <link rel="preload"
+      # as="image">: integrity only protects scripts and stylesheets, and
+      # browsers ignore it on images. A script or stylesheet without it is
+      # still reported.
+      - ruleId: 90003
+        newRisk: "False Positive"
+        evidence: '.*as="image".*'
+        evidenceRegex: true
+      # "Cross-Domain Misconfiguration" (Access-Control-Allow-Origin: *) on
+      # Vercel's public static files: images, robots.txt and sitemap.xml
+      # are public anyway and hold nothing private. Pages and the API are
+      # still checked (the API refuses other websites).
+      - ruleId: 10098
+        newRisk: "False Positive"
+        url: 'https://lakat-iloilo\.vercel\.app/.*\.(png|webp|jpg|svg|ico|txt|xml)(\?.*)?'
+        urlRegex: true
+
+  # Backend routes the spider cannot find by following links (GET only).
+  - type: import
+    parameters:
+      type: url
+      fileName: api-urls-live.txt
+
+  # Follow the links on the website, like a visitor clicking around. Two
+  # threads and three minutes keep it gentle on Vercel.
+  - type: spider
+    parameters:
+      context: lakat-live
+      maxDuration: 3
+      threadCount: 2
+
+  - type: passiveScan-wait
+    parameters:
+      maxDuration: 5
+
+  - type: report
+    parameters:
+      template: traditional-html
+      reportDir: reports
+      reportFile: baseline-live
+      reportTitle: Lakat Iloilo, passive scan of the live site
+  - type: report
+    parameters:
+      template: traditional-json
+      reportDir: reports
+      reportFile: baseline-live
+
+# A CONFIRMED false alarm can be hidden with an alertFilter job here, with
+# a comment saying why (see docs/TESTING.md). Never hide an alert just
+# because it is inconvenient. Content-Security-Policy is a real, parked
+# item (docs/LATER.md), so it stays in the report.

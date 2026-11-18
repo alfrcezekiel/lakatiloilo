@@ -6,7 +6,18 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:e2e": "playwright test --project=local --project=local-phone",
+    "test:smoke": "playwright test --project=live",
+    "test:writes": "playwright test --project=real-writes",
+    "perf:smoke": "k6 run -e BASE_URL=http://localhost:5000 performance/k6/scenarios/smoke.js",
+    "perf:load": "k6 run -e BASE_URL=http://localhost:5000 --summary-export performance/k6/results/load.json performance/k6/scenarios/load.js",
+    "perf:stress": "k6 run -e BASE_URL=http://localhost:5000 --summary-export performance/k6/results/stress.json performance/k6/scenarios/stress.js",
+    "perf:spike": "k6 run -e BASE_URL=http://localhost:5000 --summary-export performance/k6/results/spike.json performance/k6/scenarios/spike.js",
+    "perf:soak": "k6 run -e BASE_URL=http://localhost:5000 --summary-export performance/k6/results/soak.json performance/k6/scenarios/soak.js",
+    "perf:lighthouse": "node performance/lighthouse/run.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.7",
@@ -17,19 +28,33 @@
     "clsx": "^2.1.1",
     "lucide-react": "^1.54.0",
     "motion": "^12.43.0",
-    "next": "16.4.3",
+    "next": "16.4.6",
     "react": "19.3.0",
     "react-dom": "19.3.0",
     "tailwind-merge": "^3.7.0"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.14.0",
+    "@playwright/test": "^1.65.1",
     "@tailwindcss/turbopack": "^4",
+    "@testing-library/dom": "^10.4.2",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.3",
+    "@testing-library/user-event": "^14.6.12",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@vitejs/plugin-react": "^5.2.0",
+    "chrome-launcher": "^1.2.3",
     "eslint": "^9",
-    "eslint-config-next": "16.4.3",
+    "eslint-config-next": "16.4.6",
+    "jsdom": "^26.1.0",
+    "lighthouse": "^13.6.0",
+    "msw": "^2.15.0",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vite": "^7.3.8",
+    "vite-tsconfig-paths": "^5.1.4",
+    "vitest": "^4.1.12"
   }
 }
