@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Logo } from "@/components/Logo";
-import { heroBackgroundUrl } from "@/components/HeroSection";
+import { HeroBackground } from "@/components/HeroBackground";
 
 // The look of option 1a from the "Lakat Auth" design, shared by the log-in,
 // Forgot password and Set new password pages, in two pieces:
@@ -12,7 +12,7 @@ export function AuthFrame({ children }: { children: React.ReactNode }) {
   return (
     <main className="relative flex min-h-screen flex-col bg-linear-to-br from-teal-800 via-emerald-700 to-green-600 text-white">
       <div aria-hidden="true" className="absolute inset-0">
-        <img src={heroBackgroundUrl} alt="" className="h-full w-full object-cover opacity-40" />
+        <HeroBackground className="opacity-40" />
         <div className="absolute inset-0 bg-linear-to-br from-teal-900/60 via-emerald-800/60 to-green-700/60" />
       </div>
 
