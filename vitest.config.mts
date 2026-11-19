@@ -13,9 +13,11 @@ export default defineConfig({
     environment: "jsdom",
     include: ["src/**/*.test.{ts,tsx}"],
     setupFiles: ["./test/setup.ts"],
-    // The backend address the app reads. Nothing listens there: every
-    // request is answered by the pretend backend (test/mocks/server.ts).
-    env: { NEXT_PUBLIC_API_URL: "http://api.example.test" },
+    // The pretend page's address. In the browser the app calls /api/v1/...
+    // on its own site (src/lib/api.ts), so requests go to
+    // http://localhost:3000/api and the pretend backend
+    // (test/mocks/server.ts) answers them. Nothing listens there.
+    environmentOptions: { jsdom: { url: "http://localhost:3000" } },
     css: false,
   },
 });

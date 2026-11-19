@@ -18,7 +18,8 @@ import { expect, test, type Locator, type Page } from "@playwright/test";
 const EMAIL = process.env.E2E_TEST_EMAIL ?? "";
 const PASSWORD = process.env.E2E_TEST_PASSWORD ?? "";
 const PLACE = process.env.E2E_TEST_PLACE || "/destinations/5d1155a1-6e40-417d-9c84-09a990cae00d";
-const API = "http://localhost:5000";
+// The browser reaches the backend through the website's /api proxy (ticket 152).
+const API = "http://localhost:3000/api";
 
 // One run's texts, so this run's review is easy to find, and easy to spot
 // in the database if anything is ever left behind.

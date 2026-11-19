@@ -48,6 +48,8 @@ Photo credits round (2026-11-11, team request): every place photo the team adds 
 
 Admin extras round (2026-11-12, team request; five features parked from the full admin management round, built as one round): the Places list updates by itself; the team can hide a reply instead of deleting it; categories and kinds can be renamed and given an icon and a card photo; a place can have up to six photos, each with its own credits; and whatever an admin deletes goes to a Trash for 30 days, where it can be restored after the 8-second Undo has passed.
 
+Security hardening round (team request; from docs/LATER.md, parked after evaluations 2026-11-04 and 2026-11-05): the backend address is kept private on the server, and a Content-Security-Policy header is added. The browser no longer calls the NestJS backend directly; all backend calls go through Next.js API routes under /api/*, which forward requests to the backend. The backend address is stored in a server-side environment variable (API_URL), never exposed to the browser. A Content-Security-Policy header is added to control which resources the browser may load: it allows scripts and styles from the site's own domain, images from Supabase Storage and Wikimedia, and connections to Supabase for Realtime updates. The CSP is tested in report-only mode first to ensure it does not block Supabase live updates, review photos, or Next.js's own scripts, then enforced after verification.
+
 ## The user
 Travelers planning weekend trips around Iloilo Province. No login required for browsing; an account is needed only to write a review.
 
@@ -103,6 +105,13 @@ Travelers planning weekend trips around Iloilo Province. No login required for b
 47. As a member of the Lakat Iloilo team, I want to hide a reply instead of deleting it, and rename a category or give it an icon and a card photo, so that I can moderate gently and keep the home page tidy without a code change.
 48. As a traveler, I want to see several photos of a place, each with its photographer's credit, so that I know what to expect before I go.
 49. As a member of the Lakat Iloilo team, I want a Trash where my deletes wait for 30 days, and a Places list that updates by itself, so that a wrong delete noticed later is not final and I always see the places as they are now.
+50. As a developer, I want the backend address to stay private on the server, so that it is not exposed in browser network traffic.
+51. As a developer, I want all backend calls to go through Next.js API routes, so that we have a single point of control for API access.
+52. As a developer, I want a Content-Security-Policy header, so that the browser only loads scripts and resources from approved sources.
+53. As a developer, I want the CSP to allow Supabase live updates, so that real-time features continue to work.
+54. As a developer, I want the CSP to allow review photos from Supabase Storage, so that travelers can see uploaded images.
+55. As a developer, I want the CSP to allow Next.js's own scripts and styles, so that the application functions correctly.
+56. As a developer, I want the CSP to be testable, so that we can verify it does not block legitimate features.
 
 ## Screens
 1. Home page hero — redesigned to match the team's mockup:
@@ -269,6 +278,15 @@ Travelers planning weekend trips around Iloilo Province. No login required for b
    - **Group C — Trash.**
      - **Trash (/admin/trash, "Trash" in the sidebar):** every review, reply and place an admin deleted, newest first, each with what it was, when, and by which admin, and two buttons: **Restore** (it comes back as it was, with its replies, Helpful likes, photos, reports and credits) and **Delete for good** (after a pop-up).
      - Items stay 30 days, then are deleted for good (when an admin opens Trash; no scheduled job). The 8-second Undo stays: the Trash is the second chance after it.
+
+31. Security hardening round — backend address private and Content-Security-Policy header (from docs/LATER.md, parked after evaluations 2026-11-04 and 2026-11-05):
+   - **Backend address private:** the browser no longer calls the NestJS backend directly. All backend calls go through Next.js API routes under /api/*, which forward requests to the backend. The backend address is stored in a server-side environment variable (API_URL), never exposed to the browser. The frontend's src/lib/api.ts is updated to call /api/* instead of the backend address directly. Travelers see no change; all features work as before.
+   - **Content-Security-Policy header:** a CSP header is added to control which resources the browser may load. The policy allows scripts and styles from the site's own domain, images from Supabase Storage (for review and place photos) and Wikimedia Commons (for initial data), and connections to Supabase for Realtime updates. The CSP is tested in report-only mode first to ensure it does not block Supabase live updates, review photos, or Next.js's own scripts, then enforced after verification. The policy is:
+     ```
+     Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.supabase.co https://upload.wikimedia.org https://thumb.wikimedia.org https://images.unsplash.com; font-src 'self'; connect-src 'self' https://*.supabase.co wss://*.supabase.co; frame-src 'none'; frame-ancestors 'none'; object-src 'none'; base-uri 'self'; form-action 'self'
+     ```
+     Set in `src/proxy.ts`; `'unsafe-eval'` is added to script-src in development only (`npm run dev` needs it). **Change (2026-11-19, team request):** added blob: (photo previews), thumb.wikimedia.org and images.unsplash.com (the home page's photos), wss://*.supabase.co (Realtime's WebSocket), frame-ancestors and object-src 'none' (tickets 154).
+   - **No new screens or features:** all existing screens (home, detail pages, login, admin dashboard) work exactly as before. The changes are internal to the application's architecture and security headers.
 
 ## Data
 
@@ -440,6 +458,8 @@ PostGIS extension: Enabled on Supabase database. The `location` column stores ge
 - **Delete for good and 30 days (ticket 149, supabase/sql/062):** only for an item in the Trash, after a pop-up (no Undo). A review goes with its replies, likes, reports and photos; a reply follows the rule from before the Trash (with answers it stays for good as "This reply was deleted", without it is removed); a place goes with every review of it, its photos and credits. The database answers the photo files and the backend deletes them from Storage as the admin. Opening the Trash first deletes for good everything that went there more than 30 days ago (no scheduled job).
 - **Code review (2026-11-15):** the Overview's "Reports waiting" and "Reported reviews" leave out reports on reviews in the Trash, and the Reviews screen's "Replies (N)" and its Most relevant sort leave out replies in the Trash, so each number matches what the screen shows. The Trash's endpoints moved to their own controller (same addresses, admins only). admin_delete_reply (052) is dropped, unused since ticket 148 (supabase/sql/063).
 
+**Security hardening round (from docs/LATER.md, parked after evaluations 2026-11-04 and 2026-11-05):** no database changes. The same Supabase tables and Row Level Security policies remain unchanged. No new tables, columns, or policies. The backend address is moved from the client-side NEXT_PUBLIC_API_URL environment variable to a server-side API_URL environment variable, and all backend calls go through Next.js API routes. The Content-Security-Policy header is added at the Next.js application level (in src/proxy.ts), not in the database.
+
 ## API Endpoints (NestJS Backend)
 
 **Version 1 (/v1):**
@@ -570,6 +590,81 @@ All writes in these rounds run as the logged-in traveler (the asTraveler step), 
 - The admin deletes (reviews, replies, places) now mark the item as in the Trash (nothing is copied; see the Trash change note)
 - GET /v1/destinations/:id and GET /v1/accommodations/:id — also photos: [{ url, credit_line, licence, source_url }], allowed photos only, cover first; GET /v1/reviews (and the place pages) — a hidden reply's text is replaced for everyone but its writer
 
+**Security hardening round (from docs/LATER.md, parked after evaluations 2026-11-04 and 2026-11-05):**
+- No new backend endpoints. All existing backend endpoints are now accessed through Next.js API routes under /api/*:
+  - GET /api/v1/destinations — proxies to backend GET /v1/destinations
+  - GET /api/v1/destinations/:id — proxies to backend GET /v1/destinations/:id
+  - GET /api/v1/destinations/near — proxies to backend GET /v1/destinations/near
+  - GET /api/v1/accommodations — proxies to backend GET /v1/accommodations
+  - GET /api/v1/accommodations/:id — proxies to backend GET /v1/accommodations/:id
+  - GET /api/v1/accommodations/near — proxies to backend GET /v1/accommodations/near
+  - GET /api/v1/reviews — proxies to backend GET /v1/reviews
+  - POST /api/v1/reviews — proxies to backend POST /v1/reviews
+  - PATCH /api/v1/reviews/:id — proxies to backend PATCH /v1/reviews/:id
+  - DELETE /api/v1/reviews/:id — proxies to backend DELETE /v1/reviews/:id
+  - POST /api/v1/reviews/:id/like — proxies to backend POST /v1/reviews/:id/like
+  - DELETE /api/v1/reviews/:id/like — proxies to backend DELETE /v1/reviews/:id/like
+  - POST /api/v1/reviews/:id/replies — proxies to backend POST /v1/reviews/:id/replies
+  - DELETE /api/v1/replies/:id — proxies to backend DELETE /v1/replies/:id
+  - PATCH /api/v1/replies/:id — proxies to backend PATCH /v1/replies/:id
+  - POST /api/v1/replies/:id/like — proxies to backend POST /v1/replies/:id/like
+  - DELETE /api/v1/replies/:id/like — proxies to backend DELETE /v1/replies/:id/like
+  - POST /api/v1/reviews/:id/report — proxies to backend POST /v1/reviews/:id/report
+  - POST /api/v1/reviews/:id/photos — proxies to backend POST /v1/reviews/:id/photos
+  - DELETE /api/v1/reviews/:id/photos/:photoId — proxies to backend DELETE /v1/reviews/:id/photos/:photoId
+  - GET /api/v1/ratings — proxies to backend GET /v1/ratings
+  - GET /api/v1/travelers/:id — proxies to backend GET /v1/travelers/:id
+  - GET /api/v1/auth/me — proxies to backend GET /v1/auth/me
+  - PATCH /api/v1/auth/me — proxies to backend PATCH /v1/auth/me
+  - POST /api/v1/auth/signup — proxies to backend POST /v1/auth/signup
+  - POST /api/v1/auth/login — proxies to backend POST /v1/auth/login
+  - POST /api/v1/auth/refresh — proxies to backend POST /v1/auth/refresh
+  - POST /api/v1/auth/logout — proxies to backend POST /v1/auth/logout
+  - GET /api/v1/notifications — proxies to backend GET /v1/notifications
+  - POST /api/v1/notifications/read — proxies to backend POST /v1/notifications/read
+  - POST /api/v1/admin/login — proxies to backend POST /v1/admin/login
+  - GET /api/v1/admin/me — proxies to backend GET /v1/admin/me
+  - GET /api/v1/admin/overview — proxies to backend GET /v1/admin/overview
+  - GET /api/v1/admin/reports — proxies to backend GET /v1/admin/reports
+  - POST /api/v1/admin/reviews/:id/keep — proxies to backend POST /v1/admin/reviews/:id/keep
+  - POST /api/v1/admin/reviews/:id/hide — proxies to backend POST /v1/admin/reviews/:id/hide
+  - DELETE /api/v1/admin/reviews/:id — proxies to backend DELETE /v1/admin/reviews/:id
+  - POST /api/v1/admin/reviews/:id/show — proxies to backend POST /v1/admin/reviews/:id/show
+  - GET /api/v1/admin/places — proxies to backend GET /v1/admin/places
+  - GET /api/v1/admin/places/:type/:id — proxies to backend GET /v1/admin/places/:type/:id
+  - PATCH /api/v1/admin/places/:type/:id — proxies to backend PATCH /v1/admin/places/:type/:id
+  - POST /api/v1/admin/places/:type — proxies to backend POST /v1/admin/places/:type
+  - POST /api/v1/admin/places/:type/:id/photo — proxies to backend POST /v1/admin/places/:type/:id/photo
+  - DELETE /api/v1/admin/places/:type/:id — proxies to backend DELETE /v1/admin/places/:type/:id
+  - GET /api/v1/admin/reviews/:id/replies — proxies to backend GET /v1/admin/reviews/:id/replies
+  - DELETE /api/v1/admin/replies/:id — proxies to backend DELETE /v1/admin/replies/:id
+  - GET /api/v1/admin/reviews/:id/likes — proxies to backend GET /v1/admin/reviews/:id/likes
+  - GET /api/v1/admin/replies/:id/likes — proxies to backend GET /v1/admin/replies/:id/likes
+  - DELETE /api/v1/admin/reviews/:id/likes/:userId — proxies to backend DELETE /v1/admin/reviews/:id/likes/:userId
+  - DELETE /api/v1/admin/replies/:id/likes/:userId — proxies to backend DELETE /v1/admin/replies/:id/likes/:userId
+  - GET /api/v1/categories — proxies to backend GET /v1/categories
+  - GET /api/v1/admin/categories — proxies to backend GET /v1/admin/categories
+  - POST /api/v1/admin/categories — proxies to backend POST /v1/admin/categories
+  - DELETE /api/v1/admin/categories/:id — proxies to backend DELETE /v1/admin/categories/:id
+  - GET /api/v1/photo-credits — proxies to backend GET /v1/photo-credits
+  - PUT /api/v1/admin/places/:type/:id/credits — proxies to backend PUT /v1/admin/places/:type/:id/credits
+  - POST /api/v1/admin/replies/:id/hide — proxies to backend POST /v1/admin/replies/:id/hide
+  - POST /api/v1/admin/replies/:id/show — proxies to backend POST /v1/admin/replies/:id/show
+  - PATCH /api/v1/admin/categories/:id — proxies to backend PATCH /v1/admin/categories/:id
+  - POST /api/v1/admin/places/:type/:id/photos — proxies to backend POST /v1/admin/places/:type/:id/photos
+  - PATCH /api/v1/admin/places/:type/:id/photos/:photoId — proxies to backend PATCH /v1/admin/places/:type/:id/photos/:photoId
+  - PUT /api/v1/admin/places/:type/:id/photos/:photoId/credits — proxies to backend PUT /v1/admin/places/:type/:id/photos/:photoId/credits
+  - DELETE /api/v1/admin/places/:type/:id/photos/:photoId — proxies to backend DELETE /v1/admin/places/:type/:id/photos/:photoId
+  - GET /api/v1/admin/trash — proxies to backend GET /v1/admin/trash
+  - POST /api/v1/admin/trash/reviews/:id/restore — proxies to backend POST /v1/admin/trash/reviews/:id/restore
+  - POST /api/v1/admin/trash/replies/:id/restore — proxies to backend POST /v1/admin/trash/replies/:id/restore
+  - POST /api/v1/admin/trash/places/:type/:id/restore — proxies to backend POST /v1/admin/trash/places/:type/:id/restore
+  - DELETE /api/v1/admin/trash/reviews/:id — proxies to backend DELETE /v1/admin/trash/reviews/:id
+  - DELETE /api/v1/admin/trash/replies/:id — proxies to backend DELETE /v1/admin/trash/replies/:id
+  - DELETE /api/v1/admin/trash/places/:type/:id — proxies to backend DELETE /v1/admin/trash/places/:type/:id
+- The Next.js API route layer accepts requests with the same path structure as the backend, forwards only paths starting with v1/ (anything else 404 without calling the backend) and the methods GET, POST, PUT, PATCH, DELETE; forwards only the Authorization, Content-Type, Accept and X-Forwarded-For headers, the body as raw bytes (photo uploads arrive intact; Vercel caps a body at 4.5 MB) and the query string; and returns the backend's status code, body, Content-Type and Cache-Control. A backend that does not answer within 15 seconds gives 504, one that cannot be reached 502. Server components call the backend directly at API_URL, not through /api (ticket 152). The backend address is stored in a server-side environment variable (API_URL, not NEXT_PUBLIC_), never exposed to the browser.
+- Content-Security-Policy header is set on the Next.js application (in src/proxy.ts). The policy allows scripts and styles from the site's own domain, images from Supabase Storage and Wikimedia Commons, and connections to Supabase for Realtime updates. The CSP is tested in report-only mode first, then enforced after verification.
+
 ## Architecture
 
 **Frontend (Next.js):**
@@ -577,7 +672,7 @@ All writes in these rounds run as the logged-in traveler (the asTraveler step), 
 - Tailwind CSS with UI components in `src/components/ui/`
 - Polish round: Lucide icons (`lucide-react`, already installed) for every icon; Motion (the `motion` package, formerly Framer Motion) for animations, set to follow the device's "reduce motion" setting (the fade-up of whatever is on screen when a page loads is plain CSS instead, so it never waits for the page's JavaScript and the text is in the page from the server; Motion takes over for scrolling, and only hides what is off screen once the JavaScript has loaded); TanStack Query for the reviews fetched in the browser (reading, plus writing, editing and deleting as updates to its copy). Places stay fetched on the Next.js server, and the login keeps its own code
 - Navigation round: "who is logged in" is read through TanStack Query, kept per login, so every component shares one copy and logging in or out (in this tab or another) refreshes it. Login renewal (the timer, the one-tab-at-a-time lock and the retries) keeps its own code. The fade between pages is opacity only, with no movement, because a moving page wrapper would stop the floating navbar and scroll-to-top button from staying in place; the old page does not animate out (the App Router cannot keep it on screen without an experimental setting)
-- Fetches data from NestJS backend via HTTP calls (the home page on the server from the backend round, like the detail pages)
+- Security hardening round: all backend calls go through Next.js API routes under /api/*, which forward requests to the NestJS backend. The backend address is stored in a server-side environment variable (API_URL), never exposed to the browser. A Content-Security-Policy header is added to control which resources the browser may load. Before this round, the browser called the backend directly; after this round, the browser only calls Next.js, and Next.js calls the backend.
 - Live updates round: the browser's Supabase client also listens to Supabase Realtime, as a doorbell only: "a row in this table changed". The page then asks the backend again (reviews through TanStack Query; the home and detail pages through a server refresh). The browser never reads places or reviews from Supabase itself (team decision, 2026-11-02).
 - Deployed on Vercel
 
@@ -620,6 +715,8 @@ Photo credits round: travelers need no login to see credits. Saving them needs a
 Admin extras round: nothing new for travelers' logins. Hiding replies, editing categories, place photos and the Trash need an admin account.
 
 Admin dashboard & moderation round (changed 2026-11-08): the Lakat Iloilo team signs in on its own page, /admin/login, with the same kind of Supabase Auth account (email and password). Only accounts in the admins table get in; the app keeps the admin's login the same way as a traveler's, so an admin is also logged in on the traveler site. Nobody can become an admin through the app.
+
+Security hardening round: no login changes. The same Supabase Auth flow continues to work. Login tokens are still sent through the proxy to the backend, which validates them with Supabase Auth. The browser's network inspection shows only calls to /api/*, not direct backend calls.
 
 ## Done for the demo
 - [x] NestJS backend project structure created in `backend/` directory
@@ -796,6 +893,23 @@ Admin dashboard & moderation round (changed 2026-11-08): the Lakat Iloilo team s
 - [x] Logged out or as a traveler, the new endpoints answer 401 or 403 (curl) and the database refuses the same changes
 - [x] Row Level Security is on for place_photos and trash, and no service_role or sb_secret_ key appears anywhere
 
+**Security hardening round (live URL):**
+- [ ] Next.js API route proxy layer created under /api/[...path]
+- [ ] All backend calls in src/lib/api.ts updated to use /api/* instead of direct backend calls
+- [ ] NEXT_PUBLIC_API_URL removed from client-side code; backend address stored in server-side API_URL environment variable
+- [ ] Content-Security-Policy header added in report-only mode
+- [ ] CSP tested to ensure Supabase Realtime still works (live updates arrive)
+- [ ] CSP tested to ensure review photos load from Supabase Storage
+- [ ] CSP tested to ensure place photos load from Supabase Storage and Wikimedia
+- [ ] CSP tested to ensure Next.js scripts and styles work correctly
+- [ ] CSP tested to ensure admin dashboard functions correctly
+- [ ] CSP switched from report-only to enforced mode after verification
+- [ ] Browser network inspection shows only calls to /api/*, not direct backend calls
+- [ ] Backend address is not visible in browser JavaScript or network tab
+- [ ] All existing features (home, detail pages, reviews, login, admin dashboard) work as before
+- [ ] Live updates (Supabase Realtime) continue to work
+- [ ] Photo uploads and display continue to work
+
 ## Out of scope
 - Admin extras round: travelers' own deletes going to the Trash (it is for admin deletes only), restoring a single Helpful like or notifications, uploading a new photo just for a category card, reordering photos by dragging (arrow buttons instead), more than 6 photos per place, and a scheduled job to empty the Trash
 - Photo credits round: removing a place's credits once saved (they can be changed, not cleared), moving the 30 hard-coded Wikimedia credits into the table (they keep working as they are), credits for travelers' review photos, and checking automatically whether a URL or licence is real (the team checks by hand; the status records it)
@@ -819,6 +933,7 @@ Admin dashboard & moderation round (changed 2026-11-08): the Lakat Iloilo team s
 - A full search results page, advanced filters, or searching inside descriptions (live suggestions match names and addresses only)
 - Social features (sharing, favorites)
 - Advanced spatial queries beyond radius search
-- Password reset through the backend, "Nearby places" using the /near endpoints, and keeping the backend address private (all parked in docs/LATER.md)
+- Password reset through the backend and "Nearby places" using the /near endpoints (parked in docs/LATER.md; keeping the backend address private moved into the security hardening round)
 - Listing all users (needs the service_role key, which this project never uses) and logging out of every device at once
 - Blurred photo previews, speeding up the backend, and skeletons on the Photo credits page (it has no data to wait for)
+- Security hardening round: moving Supabase Auth calls (forgot password, set new password) through the proxy — these still use Supabase's browser library directly; adding nonce or hash-based CSP — using 'unsafe-inline' for styles is acceptable for this phase; implementing a full API gateway or rate limiting at the proxy layer; adding authentication to the proxy itself (the backend still validates tokens); CSP blocking external fonts or analytics (none are used in the current stack); CSP blocking all inline scripts (some may be needed for third-party libraries in the future)

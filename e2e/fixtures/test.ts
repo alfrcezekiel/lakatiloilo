@@ -44,11 +44,12 @@ export const pretendSession = () => ({
 // Answers every backend request that carries the pretend login, so it never
 // reaches the real backend (which would ask Supabase about a made-up token).
 async function answerAsPretendTraveler(page: Page) {
-  // Any other request to the real local backend goes on WITHOUT the pretend
+  // Any other request to the real local backend (through the website's
+  // /api proxy, ticket 152) goes on WITHOUT the pretend
   // token (so the backend treats it as logged out and never asks Supabase
   // about a made-up token). Registered first: Playwright tries the routes
   // added later first, so the specific answers below win.
-  await page.route("http://localhost:5000/**", (route) => {
+  await page.route("http://localhost:3000/api/v1/**", (route) => {
     const headers = { ...route.request().headers() };
     delete headers.authorization;
     return route.continue({ headers });

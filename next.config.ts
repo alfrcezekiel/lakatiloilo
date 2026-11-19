@@ -3,9 +3,9 @@ import type { NextConfig } from "next";
 // Security headers for every page (evaluation B5, 2026-11-04). The simple,
 // safe ones only: nosniff (the browser never guesses a file's type),
 // Referrer-Policy (other sites see only our domain, not the full address),
-// and X-Frame-Options (no other site can show ours inside a frame). A
-// Content-Security-Policy is parked in docs/LATER.md: it could block
-// Supabase live updates, review photos or Next.js's own scripts.
+// and X-Frame-Options (no other site can show ours inside a frame). The
+// Content-Security-Policy is set per page in src/proxy.ts (ticket 154), so
+// development and the live site can differ.
 const securityHeaders = [
   { key: "X-Content-Type-Options", value: "nosniff" },
   { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },

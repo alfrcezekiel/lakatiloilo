@@ -54,7 +54,7 @@ async function isAdmin(accessToken: string) {
   if (until && until > Date.now()) return true;
   accepted.delete(accessToken);
 
-  const backend = process.env.NEXT_PUBLIC_API_URL;
+  const backend = process.env.API_URL;
   if (!backend) return false;
   try {
     const response = await fetch(`${backend}/v1/admin/me`, {
@@ -77,8 +77,43 @@ async function isAdmin(accessToken: string) {
   }
 }
 
+// Content-Security-Policy (ticket 154): a list the site gives the browser of
+// where pages may load scripts, styles, images and connections from. If an
+// attacker ever sneaks a script into a page, the browser refuses to run it.
+// Report-only for now: the browser only warns in the console, so ticket 155
+// can find what is missing before ticket 156 switches it on for real.
+//   - 'unsafe-inline' scripts: Next.js puts small inline scripts in each page.
+//   - 'unsafe-eval' in development only: `npm run dev` needs it, the live site not.
+//   - blob: images: the review and admin photo pickers preview a photo before upload.
+//   - wss://*.supabase.co: Supabase Realtime (live updates) uses a WebSocket.
+const CSP_HEADER = "Content-Security-Policy-Report-Only";
+const CSP = [
+  "default-src 'self'",
+  `script-src 'self' 'unsafe-inline'${process.env.NODE_ENV === "development" ? " 'unsafe-eval'" : ""}`,
+  "style-src 'self' 'unsafe-inline'",
+  // Place photos come from Supabase Storage and Wikimedia (thumb. serves the
+  // resized copies); the hero and category cards use Unsplash photos.
+  "img-src 'self' data: blob: https://*.supabase.co https://upload.wikimedia.org https://thumb.wikimedia.org https://images.unsplash.com",
+  "font-src 'self'",
+  "connect-src 'self' https://*.supabase.co wss://*.supabase.co",
+  "frame-src 'none'",
+  "frame-ancestors 'none'",
+  "object-src 'none'",
+  "base-uri 'self'",
+  "form-action 'self'",
+].join("; ");
+
 export async function proxy(request: NextRequest) {
-  if (request.nextUrl.pathname === "/admin/login") return NextResponse.next();
+  const { pathname } = request.nextUrl;
+  const isAdminPage =
+    (pathname === "/admin" || pathname.startsWith("/admin/")) && pathname !== "/admin/login";
+  // Every answer gets the policy, including the admin "not found" rewrite.
+  const response = isAdminPage ? await handleAdmin(request) : NextResponse.next();
+  response.headers.set(CSP_HEADER, CSP);
+  return response;
+}
+
+async function handleAdmin(request: NextRequest) {
   const token = request.cookies.get(ADMIN_COOKIE)?.value;
   // Moving between pages inside the site, or preloading one: only the
   // page's code, no data (see above). Only with the admin cookie, which
@@ -91,6 +126,7 @@ export async function proxy(request: NextRequest) {
   return NextResponse.rewrite(new URL(NOT_FOUND, request.url));
 }
 
+// Every page, but not /api (JSON, not pages), Next.js's own files or the icon.
 export const config = {
-  matcher: ["/admin", "/admin/:path*"],
+  matcher: ["/((?!api|_next/static|_next/image|favicon.ico).*)"],
 };

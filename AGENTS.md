@@ -193,7 +193,8 @@ cd backend && npx tsc --noEmit -p tsconfig.json
 Then read the core functions and check each against its comment and the
 spec. Name the file and line for anything that disagrees.
 
-- `src/lib/api.ts` — every backend call; uses `NEXT_PUBLIC_API_URL`;
+- `src/lib/api.ts` — every backend call; `/api` in the browser (the proxy in
+  `src/app/api/[...path]/route.ts`), server-only `API_URL` on the server;
   writes send `Authorization: Bearer` from `loginToken()`; errors go
   through `backendMessage()` with the fallback sentence.
 - `src/lib/auth.ts`, `src/lib/login.ts` — login storage, renewal timer,

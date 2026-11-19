@@ -4,8 +4,15 @@ import axios from "axios";
 // component gets its data through these functions, so the backend address
 // lives in one place.
 //
-// NEXT_PUBLIC_API_URL is the backend's address, e.g. http://localhost:5000.
-// It is safe in the browser: it is a web address, not a secret.
+// Where the calls go (security hardening round, tickets 151–153):
+//   - in the browser: /api/v1/... on our own website. The proxy route
+//     (src/app/api/[...path]/route.ts) passes them on to the backend, so
+//     the backend's address never reaches a visitor;
+//   - on the server (server components): straight to the backend at
+//     API_URL. Going through /api there would mean our server calling
+//     itself over the internet, which is slower and fails during the build.
+// API_URL has no NEXT_PUBLIC_ prefix on purpose: Next.js copies every
+// NEXT_PUBLIC_ variable into the JavaScript each visitor downloads.
 
 export interface Destination {
   id: string;
@@ -59,16 +66,16 @@ export interface Accommodation {
 // starts from baseURL, so pages only pass paths like "/v1/destinations".
 let client: ReturnType<typeof axios.create> | null = null;
 
+// The start of every backend address; the only place that reads API_URL.
+const backendBase = () => {
+  if (typeof window !== "undefined") return "/api";
+  const backend = process.env.API_URL;
+  if (!backend) throw new Error("API_URL is not set. Add it to .env.local (see .env.example).");
+  return backend.replace(/\/+$/, "");
+};
+
 const api = () => {
-  if (!client) {
-    const baseURL = process.env.NEXT_PUBLIC_API_URL;
-    if (!baseURL) {
-      throw new Error(
-        "NEXT_PUBLIC_API_URL is not set. Add it to .env.local (see .env.example).",
-      );
-    }
-    client = axios.create({ baseURL, timeout: 10_000 });
-  }
+  if (!client) client = axios.create({ baseURL: backendBase(), timeout: 10_000 });
   return client;
 };
 
@@ -801,9 +808,7 @@ export const adminSendDelete = async (
   // POST for Hide it on a reply (ticket 140), which waits the same way.
   method: "DELETE" | "POST" = "DELETE",
 ) => {
-  const baseURL = process.env.NEXT_PUBLIC_API_URL;
-  if (!baseURL) throw new Error("NEXT_PUBLIC_API_URL is not set. Add it to .env.local (see .env.example).");
-  const response = await fetch(`${baseURL}${path}`, {
+  const response = await fetch(`${backendBase()}${path}`, {
     method,
     headers: { Authorization: `Bearer ${accessToken}` },
     keepalive,

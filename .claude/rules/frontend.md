@@ -7,9 +7,11 @@ paths:
 
 ## Talking to the backend
 
-- All calls to the NestJS backend live in `src/lib/api.ts` (axios,
-  `NEXT_PUBLIC_API_URL`). Components never build backend URLs
-  themselves.
+- All calls to the NestJS backend live in `src/lib/api.ts` (axios).
+  In the browser they go to `/api/v1/...` (the proxy in
+  `src/app/api/[...path]/route.ts`); on the server straight to the
+  server-only `API_URL`. Never add a `NEXT_PUBLIC_` backend address.
+  Components never build backend URLs or `fetch` the backend themselves.
 - Writes send the traveler's token from `loginToken()` in
   `src/lib/auth.ts` as `Authorization: Bearer …`.
 - Show the backend's own refusal with `backendMessage(error)`, and fall

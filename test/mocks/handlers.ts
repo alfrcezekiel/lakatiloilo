@@ -1,7 +1,8 @@
 import { http, HttpResponse, type JsonBodyType } from "msw";
 
-// The backend address the app uses in tests (vitest.config.mts).
-export const API = "http://api.example.test";
+// Where the app's browser calls go in tests: the proxy on the pretend
+// page's own site (vitest.config.mts, src/lib/api.ts).
+export const API = "http://localhost:3000/api";
 
 // Answers every test starts with. Empty on purpose: each test says what
 // the backend should answer for the requests it expects, and any other

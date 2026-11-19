@@ -100,12 +100,8 @@ before it becomes a ticket:
   they can be deleted by hand in the Storage dashboard.
 
 ### From the evaluations (2026-11-04 and 2026-11-05)
-Parked by the team; none is needed for the demo. Details in
-`docs/evaluations/`.
-- A Content-Security-Policy header (a list of where pages may load
-  scripts, images and connections from). The simple security headers are
-  in; a CSP needs careful testing because it could block Supabase live
-  updates, review photos or Next.js's own scripts.
+Parked by the team; moved into the security hardening round in the spec
+(2026-11-19). Details in `docs/evaluations/`.
 - B8: the Log in / Create account switch and the submit button are both
   called "Log in". Screen readers already tell them apart ("toggle
   button, pressed" inside the "Log in or create an account" group);
@@ -161,9 +157,8 @@ the NestJS backend. Still parked:
   service_role key.
 - "Nearby places" on detail pages, using the backend's /near endpoints
   (they exist but nothing uses them yet).
-- Keeping the backend address private. The browser now calls the backend
-  for reviews and log-in, so the address has to stay visible; making it
-  private would need the Next.js server to pass those requests on.
+- Keeping the backend address private. Moved into the security hardening
+  round in the spec (2026-11-19).
 
 ### Interactive map (Mapbox GL) — needs a team decision
 Proposed 2026-10-21. Mapbox GL is outside the pinned stack: it adds a new
