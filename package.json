@@ -17,7 +17,8 @@
     "perf:stress": "k6 run -e BASE_URL=http://localhost:5000 --summary-export performance/k6/results/stress.json performance/k6/scenarios/stress.js",
     "perf:spike": "k6 run -e BASE_URL=http://localhost:5000 --summary-export performance/k6/results/spike.json performance/k6/scenarios/spike.js",
     "perf:soak": "k6 run -e BASE_URL=http://localhost:5000 --summary-export performance/k6/results/soak.json performance/k6/scenarios/soak.js",
-    "perf:lighthouse": "node performance/lighthouse/run.mjs"
+    "perf:lighthouse": "node performance/lighthouse/run.mjs",
+    "perf:lighthouse:focus": "node performance/lighthouse/focus.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.7",

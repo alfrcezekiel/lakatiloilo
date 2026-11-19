@@ -88,6 +88,7 @@ export function FeaturedCards({ destinations, ratings, loading }: FeaturedCardsP
               <PlacePhoto
                 src={place.photo_url}
                 alt={place.name}
+                size="thumb"
                 className="h-full w-full object-cover transition-transform duration-300 motion-safe:group-hover:scale-105"
               />
             </div>

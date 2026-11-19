@@ -14,3 +14,9 @@ export const SPLASH_ART = "/splash-desktop-1920x1080.webp";
 // on slow 4G).
 export const SPLASH_ART_SMALL = "/splash-desktop-960x540.webp";
 export const SPLASH_ART_SRCSET = `${SPLASH_ART_SMALL} 960w, ${SPLASH_ART} 1920w`;
+
+// A 480 × 270 copy for small cards; the browser picks the 960 copy when a
+// high-density screen needs more detail. This avoids sending the 960 asset
+// to a card that only displays about 350 CSS pixels wide.
+export const SPLASH_ART_CARD = "/splash-desktop-480x270.webp";
+export const SPLASH_ART_CARD_SRCSET = `${SPLASH_ART_CARD} 480w, ${SPLASH_ART_SMALL} 960w`;

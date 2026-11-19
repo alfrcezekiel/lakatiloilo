@@ -3,6 +3,7 @@
 import { Camera, ChevronLeft, ChevronRight, Maximize2, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import type { PublicPlacePhoto } from "@/lib/api";
+import { photoThumb } from "@/lib/photo-url";
 import { cn } from "@/lib/utils";
 import { pillButton } from "@/components/ui/button";
 
@@ -115,7 +116,7 @@ export function PlacePhotoGallery({ photos, placeName }: { photos: PublicPlacePh
               className="group relative block size-full cursor-zoom-in overflow-hidden rounded-2xl border border-white/15 bg-white/5 text-left transition-colors hover:border-white/45 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
             >
               <img
-                src={item.url}
+                src={photoThumb(item.url, 1024)}
                 alt=""
                 loading="lazy"
                 className="absolute inset-0 size-full object-cover transition-transform duration-500 ease-out motion-safe:group-hover:scale-105 motion-safe:group-focus-visible:scale-105"

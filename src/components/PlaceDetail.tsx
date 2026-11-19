@@ -85,6 +85,7 @@ export function PlaceHero({
       <PlacePhoto
         src={photoUrl}
         alt={name}
+        size="hero"
         // The art has its own title at the top; cropping it from the
         // centre like a photo cut that title in half on a laptop, so the
         // splash art is kept to its top edge (same frame and size).

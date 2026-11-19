@@ -5,6 +5,7 @@ import { useMemo } from "react";
 import type { Accommodation, Destination } from "@/lib/api";
 import { iconFor } from "@/lib/category-icons";
 import { locationFilters, sectionTitles, type ExtraCategory } from "@/lib/labels";
+import { photoSrcSet, photoThumb } from "@/lib/photo-url";
 import { scrollToSection } from "@/lib/utils/scroll";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Reveal } from "@/components/Reveal";
@@ -137,11 +138,10 @@ export function CategoryExploreSection({
               <button
                 key={filter.id}
                 onClick={() => onLocationChange(filter.id)}
-                className={`px-6 py-2 rounded-full text-sm font-medium transition-all ${
-                  selectedLocation === filter.id
-                    ? "bg-white text-teal-900"
-                    : "text-white/80 hover:text-white"
-                }`}
+                className={`px-6 py-2 rounded-full text-sm font-medium transition-all ${selectedLocation === filter.id
+                  ? "bg-white text-teal-900"
+                  : "text-white/80 hover:text-white"
+                  }`}
               >
                 {filter.label}
               </button>
@@ -164,10 +164,19 @@ export function CategoryExploreSection({
                     keyboard and screen readers (evaluation 2026-11-12: it
                     was a div with onClick). */}
                 <div className="relative group overflow-hidden rounded-2xl h-48 transition duration-300 hover:shadow-2xl motion-safe:hover:-translate-y-1 has-focus-visible:outline-2 has-focus-visible:outline-offset-4 has-focus-visible:outline-white">
-                  <div
-                    className="absolute inset-0 bg-cover bg-center transition-transform duration-300 motion-safe:group-hover:scale-110"
-                    style={{ backgroundImage: `url(${imageUrl})` }}
-                  />
+                  {/* A real <img>, not a CSS background: it can lazy-load
+                      (below-the-fold cards no longer all download at once)
+                      and ask for a smaller size of the same photo. */}
+                  {imageUrl && (
+                    <img
+                      src={photoThumb(imageUrl, 384)}
+                      srcSet={photoSrcSet(imageUrl, [384, 640])}
+                      sizes="(min-width: 768px) 258px, calc((100vw - 56px) / 2)"
+                      alt=""
+                      loading="lazy"
+                      className="absolute inset-0 size-full object-cover transition-transform duration-300 motion-safe:group-hover:scale-110"
+                    />
+                  )}
                   <div className="absolute inset-0 bg-linear-to-t from-black/70 via-black/30 to-transparent" />
                   <div className="absolute inset-0 flex flex-col justify-end p-6">
                     <category.icon aria-hidden="true" strokeWidth={1.75} className="size-10 shrink-0 mb-2 text-white" />

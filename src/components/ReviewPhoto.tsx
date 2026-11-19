@@ -2,15 +2,17 @@
 
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
 import { useRef, useState } from "react";
+import { reviewPhotoThumb } from "@/lib/photo-url";
 import { cn } from "@/lib/utils";
 import { pillButton } from "@/components/ui/button";
 
 // A review's photos (review extras round, ticket 81; up to four since
 // ticket 113; the gallery since ticket 114).
 //
-// Under the review they show as a row of small squares. Clicking one opens
-// it larger in a pop-up (the browser's own <dialog>, so Escape closes it
-// and the focus goes back to the square that opened it). With more than
+// Under the review they show in equal square frames, regardless of whether
+// the source is portrait or landscape. The whole photo fits without cropping.
+// Clicking one opens it larger in a pop-up (the browser's own <dialog>);
+// Escape closes it and returns focus to the photo. With more than
 // one photo the pop-up has Previous and Next buttons, the left and right
 // arrow keys do the same, and "2 of 4" says where you are (read out by
 // screen readers too). Going past the last photo starts again at the
@@ -52,10 +54,15 @@ export function ReviewPhotos({
                 setOpen(index);
                 dialog.current?.showModal();
               }}
-              className="block cursor-zoom-in overflow-hidden rounded-lg border border-white/20 transition-colors hover:border-white/50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+              className="flex size-28 shrink-0 cursor-zoom-in items-center justify-center overflow-hidden rounded-lg border border-white/20 transition-colors hover:border-white/50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
               aria-label={`${altOf(index)}, open larger`}
             >
-              <img src={photo.url} alt="" loading="lazy" className="size-24 object-cover sm:size-28" />
+              <img
+                src={reviewPhotoThumb(photo.url)}
+                alt=""
+                loading="lazy"
+                className="size-full object-contain"
+              />
             </button>
           </li>
         ))}

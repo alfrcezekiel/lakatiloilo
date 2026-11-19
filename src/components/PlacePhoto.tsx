@@ -9,14 +9,51 @@
 // src/lib/splash.ts: one file everywhere, so it is loaded once). It is
 // decoration (alt=""), because the place's name is always written next to
 // it or on it.
+//
+// `size` says how big the photo shows, so the browser downloads the file
+// that fits instead of the full-size original (Lighthouse, 2026-11-18:
+// the home page's photos were about 3.2 MB bigger than they needed to be).
+// photoThumb/photoSrcSet in src/lib/photo-url.ts request smaller Wikimedia
+// thumbnails and high-quality WebP place-photo copies. Uploads in
+// Storage remain unchanged.
 
-import { SPLASH_ART, SPLASH_ART_SRCSET } from "@/lib/splash";
+import {
+  SPLASH_ART,
+  SPLASH_ART_CARD,
+  SPLASH_ART_CARD_SRCSET,
+  SPLASH_ART_SRCSET,
+} from "@/lib/splash";
+import { photoSrcSet, photoThumb } from "@/lib/photo-url";
+
+// Where each size shows on screen, in CSS pixels — the "sizes" hint the
+// browser uses to pick from the srcset:
+//   thumb — the small square in the Featured/Trending cards.
+//   card  — the photo on the home page's grid cards (one column on a
+//           phone, two from 640 px, three from 1024 px).
+//   hero  — the photo across the top of a place page (the screen's width).
+const SIZES = {
+  thumb: "(min-width: 640px) 192px, (min-width: 400px) 128px, 96px",
+  card: "(min-width: 1024px) 352px, (min-width: 640px) calc((100vw - 72px) / 2), calc(100vw - 32px)",
+  hero: "100vw",
+} as const;
+
+type PhotoSize = keyof typeof SIZES;
+
+// The fallback src (for browsers without srcset) and the srcset
+// candidates, in pixels asked of the photo host.
+const FALLBACK = { thumb: 384, card: 768, hero: 1280 } as const;
+const CANDIDATES = {
+  thumb: [320, 512],
+  card: [512, 800],
+  hero: [640, 960, 1280],
+} as const;
 
 export function PlacePhoto({
   src,
   alt,
   className,
   splash = SPLASH_ART,
+  size = "card",
 }: {
   // The place's photo, or null while it may not be shown.
   src: string | null | undefined;
@@ -24,20 +61,39 @@ export function PlacePhoto({
   alt: string;
   className?: string;
   splash?: string;
+  size?: PhotoSize;
 }) {
-  return src ? (
-    <img src={src} alt={alt} className={className} />
-  ) : (
-    // The splash art in two sizes: the browser downloads the one that fits
-    // the screen (the small one on phones, see src/lib/splash.ts). A
-    // different splash passed in is used as it is.
+  if (!src) {
+    // Cards use a 480 px copy and a 960 px option for high-density screens.
+    // The hero keeps its 960/1920 options (see src/lib/splash.ts).
+    // A different splash passed in is used as it is.
+    const cardSplash = size !== "hero" && splash === SPLASH_ART;
+    return (
+      <img
+        src={cardSplash ? SPLASH_ART_CARD : splash}
+        srcSet={
+          cardSplash
+            ? SPLASH_ART_CARD_SRCSET
+            : splash === SPLASH_ART
+              ? SPLASH_ART_SRCSET
+              : undefined
+        }
+        sizes={cardSplash ? SIZES[size] : splash === SPLASH_ART ? SIZES.hero : undefined}
+        alt=""
+        width={1920}
+        height={1080}
+        loading={size === "hero" ? "eager" : "lazy"}
+        className={className}
+      />
+    );
+  }
+  return (
     <img
-      src={splash}
-      srcSet={splash === SPLASH_ART ? SPLASH_ART_SRCSET : undefined}
-      sizes={splash === SPLASH_ART ? "100vw" : undefined}
-      alt=""
-      width={1920}
-      height={1080}
+      src={photoThumb(src, FALLBACK[size])}
+      srcSet={photoSrcSet(src, [...CANDIDATES[size]])}
+      sizes={SIZES[size]}
+      alt={alt}
+      loading={size === "hero" ? "eager" : "lazy"}
       className={className}
     />
   );
