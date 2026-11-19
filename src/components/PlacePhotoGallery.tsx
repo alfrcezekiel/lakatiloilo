@@ -3,7 +3,6 @@
 import { Camera, ChevronLeft, ChevronRight, Maximize2, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import type { PublicPlacePhoto } from "@/lib/api";
-import { photoThumb } from "@/lib/photo-url";
 import { cn } from "@/lib/utils";
 import { pillButton } from "@/components/ui/button";
 
@@ -29,6 +28,10 @@ import { pillButton } from "@/components/ui/button";
 //     with the keyboard focus goes, the focus moves to the other one;
 //   - "2 of 4" and the photo's credit line sit at the bottom of the screen.
 // Close and a click on the dark area around the photo also close it.
+//
+// The tiles fill their frames (object-cover) at full resolution
+// (team request 2026-11-19), matching the admin dashboard's style.
+// The viewer shows the whole photo (object-contain) so nothing is cropped.
 
 // The tile's shape in the mosaic, by its place in the list, so the mosaic
 // never leaves a gap (2 columns on phones, 4 from 640 px):
@@ -115,8 +118,11 @@ export function PlacePhotoGallery({ photos, placeName }: { photos: PublicPlacePh
               aria-label={`${altOf(index)}, open larger`}
               className="group relative block size-full cursor-zoom-in overflow-hidden rounded-2xl border border-white/15 bg-white/5 text-left transition-colors hover:border-white/45 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
             >
+              {/* Original URL at full resolution (team request 2026-11-19):
+                  no photoThumb resizing. Tiles fill their frames
+                  (object-cover), matching the admin dashboard style. */}
               <img
-                src={photoThumb(item.url, 1024)}
+                src={item.url}
                 alt=""
                 loading="lazy"
                 className="absolute inset-0 size-full object-cover transition-transform duration-500 ease-out motion-safe:group-hover:scale-105 motion-safe:group-focus-visible:scale-105"

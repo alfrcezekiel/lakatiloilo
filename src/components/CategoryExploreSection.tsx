@@ -5,7 +5,6 @@ import { useMemo } from "react";
 import type { Accommodation, Destination } from "@/lib/api";
 import { iconFor } from "@/lib/category-icons";
 import { locationFilters, sectionTitles, type ExtraCategory } from "@/lib/labels";
-import { photoSrcSet, photoThumb } from "@/lib/photo-url";
 import { scrollToSection } from "@/lib/utils/scroll";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Reveal } from "@/components/Reveal";
@@ -164,14 +163,11 @@ export function CategoryExploreSection({
                     keyboard and screen readers (evaluation 2026-11-12: it
                     was a div with onClick). */}
                 <div className="relative group overflow-hidden rounded-2xl h-48 transition duration-300 hover:shadow-2xl motion-safe:hover:-translate-y-1 has-focus-visible:outline-2 has-focus-visible:outline-offset-4 has-focus-visible:outline-white">
-                  {/* A real <img>, not a CSS background: it can lazy-load
-                      (below-the-fold cards no longer all download at once)
-                      and ask for a smaller size of the same photo. */}
+                  {/* Original URL at full resolution (team request 2026-11-19):
+                      no photoThumb/photoSrcSet resizing. */}
                   {imageUrl && (
                     <img
-                      src={photoThumb(imageUrl, 384)}
-                      srcSet={photoSrcSet(imageUrl, [384, 640])}
-                      sizes="(min-width: 768px) 258px, calc((100vw - 56px) / 2)"
+                      src={imageUrl}
                       alt=""
                       loading="lazy"
                       className="absolute inset-0 size-full object-cover transition-transform duration-300 motion-safe:group-hover:scale-110"

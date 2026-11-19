@@ -22,6 +22,8 @@ interface FeaturedCardsProps {
 // gradient, so the blur added almost nothing.
 const cardClass =
   "flex min-w-0 items-center gap-4 sm:gap-5 rounded-3xl border border-white/25 bg-white/10 p-3 sm:p-4";
+// Fixed aspect ratio for alignment; original photo at full resolution
+// (team request 2026-11-19).
 const photoClass =
   "aspect-3/2 w-24 shrink-0 min-[400px]:w-32 overflow-hidden rounded-2xl sm:w-48";
 
@@ -89,6 +91,7 @@ export function FeaturedCards({ destinations, ratings, loading }: FeaturedCardsP
                 src={place.photo_url}
                 alt={place.name}
                 size="thumb"
+                fullSize={true}
                 className="h-full w-full object-cover transition-transform duration-300 motion-safe:group-hover:scale-105"
               />
             </div>

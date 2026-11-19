@@ -77,19 +77,25 @@ export function PlaceHero({
   photoCredit?: PublicPhotoCredit | null;
 }) {
   return (
-    // The splash art (ticket 138) uses exactly the frame a credited photo
-    // uses (team request 2026-11-11: "restore it to the original similar
-    // to the credited photo"): the same tall photo area, filled and
-    // cropped the same way, with the chips, name and address on it.
+    // The splash art (ticket 138) fills the same tall photo area a real
+    // photo uses, kept to its top edge so the art's own title is not cut,
+    // with the chips, name and address on it (team request 2026-11-11:
+    // "restore it to the original similar to the credited photo"). A real
+    // credited photo fills the frame (object-cover) at full resolution,
+    // no thumbnail resizing (team request 2026-11-19).
     <header className="relative min-h-105 h-[62vh] w-full overflow-hidden">
       <PlacePhoto
         src={photoUrl}
         alt={name}
         size="hero"
+        fullSize={true}
         // The art has its own title at the top; cropping it from the
         // centre like a photo cut that title in half on a laptop, so the
         // splash art is kept to its top edge (same frame and size).
-        className={cn("absolute inset-0 h-full w-full object-cover", !photoUrl && "object-top")}
+        className={cn(
+          "absolute inset-0 h-full w-full",
+          photoUrl ? "object-cover" : "object-cover object-top",
+        )}
       />
       <div
         className={cn("absolute inset-0 bg-linear-to-t to-transparent", tones[tone].fade)}

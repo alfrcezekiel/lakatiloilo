@@ -63,10 +63,13 @@ export function AccommodationList({
                 className={cardLink}
               >
                 <Card className="overflow-hidden bg-white/15 border border-white/25 shadow-none transition duration-300 motion-safe:hover:-translate-y-1 cursor-pointer h-full flex flex-col">
+                  {/* Fixed aspect ratio for card alignment; original photo
+                      at full resolution (team request 2026-11-19). */}
                   <div className="aspect-video w-full overflow-hidden bg-muted">
                     <PlacePhoto
                       src={accommodation.photo_url}
                       alt={accommodation.name}
+                      fullSize={true}
                       className="h-full w-full object-cover"
                     />
                   </div>

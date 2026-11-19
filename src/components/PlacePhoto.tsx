@@ -3,19 +3,18 @@
 // and the place page. The backend sends the photo only once the team has
 // saved its credits with an allowed status (not "Not checked yet"); until
 // then photo_url is null, and the Lakat Iloilo splash art shows in the
-// same frame, filled and cropped the same way as a photo.
+// same frame instead. A real photo is never cropped or zoomed: wherever
+// it shows, it keeps its own aspect ratio (object-contain; team request
+// 2026-11-19).
+//
+// By default, photos are resized for performance (photoThumb/photoSrcSet
+// request smaller copies). The `fullSize` prop skips that and uses the
+// original uploaded URL at its full resolution (team request 2026-11-19).
 //
 // The splash art is the team's own art, 1920 × 1080 (SPLASH_ART in
 // src/lib/splash.ts: one file everywhere, so it is loaded once). It is
 // decoration (alt=""), because the place's name is always written next to
 // it or on it.
-//
-// `size` says how big the photo shows, so the browser downloads the file
-// that fits instead of the full-size original (Lighthouse, 2026-11-18:
-// the home page's photos were about 3.2 MB bigger than they needed to be).
-// photoThumb/photoSrcSet in src/lib/photo-url.ts request smaller Wikimedia
-// thumbnails and high-quality WebP place-photo copies. Uploads in
-// Storage remain unchanged.
 
 import {
   SPLASH_ART,
@@ -54,6 +53,7 @@ export function PlacePhoto({
   className,
   splash = SPLASH_ART,
   size = "card",
+  fullSize = false,
 }: {
   // The place's photo, or null while it may not be shown.
   src: string | null | undefined;
@@ -62,6 +62,9 @@ export function PlacePhoto({
   className?: string;
   splash?: string;
   size?: PhotoSize;
+  // When true, use the original URL at full resolution instead of
+  // requesting a smaller copy (team request 2026-11-19).
+  fullSize?: boolean;
 }) {
   if (!src) {
     // Cards use a 480 px copy and a 960 px option for high-density screens.
@@ -87,6 +90,20 @@ export function PlacePhoto({
       />
     );
   }
+
+  if (fullSize) {
+    // Original URL at full resolution — no resizing.
+    return (
+      <img
+        src={src}
+        alt={alt}
+        loading={size === "hero" ? "eager" : "lazy"}
+        className={className}
+      />
+    );
+  }
+
+  // Resized copy for performance (photoThumb/photoSrcSet).
   return (
     <img
       src={photoThumb(src, FALLBACK[size])}
