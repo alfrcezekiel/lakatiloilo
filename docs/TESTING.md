@@ -417,7 +417,7 @@ app: **Automation** tab → **Load plan** → **Run**. Paths inside a plan
 | Content Security Policy header not set | No CSP. It is parked in `docs/LATER.md` (see `next.config.ts`) | Expected. Record it as known |
 | Strict-Transport-Security missing | The browser isn't told to always use HTTPS | Vercel usually adds this. Check on the API too |
 | Cookie without SameSite / HttpOnly / Secure | A cookie could be read by scripts or sent from other sites | Fix: set the flags where the cookie is made (`src/lib/admin-cookie.ts`) |
-| CORS misconfiguration | Another website could call our API | Check that `CORS_ORIGIN` lists only our own sites |
+| CORS misconfiguration | Another website could call our API | Check that `CORS_ORIGIN` is unset (no browser needs it since ticket 152), or lists only our own sites |
 | Application error disclosure | An error page shows stack traces or SQL | Fix: return a short message and log the details |
 | SQL injection / XSS (active scan) | Untrusted input reaches the database or the page | **Stop and fix before the demo** |
 

@@ -242,18 +242,20 @@ before the handler runs. The website has one Next.js proxy,
 unless the request carries an admin's login; the backend decides. Check
 it answers 404 logged out and as a traveler. Do not add another.
 
-- **CORS** (`backend/src/main.ts`): an allowed origin gets
-  `Access-Control-Allow-Origin`; another origin does not.
+- **CORS** (`backend/src/main.ts`, `app-setup.ts`): since tickets 151–153
+  no browser calls the backend (the website's `/api` proxy does, server to
+  server), so `CORS_ORIGIN` is normally unset and CORS is off: no origin,
+  not even the website's own, gets `Access-Control-Allow-Origin`
+  (code review 2026-11-20). If `CORS_ORIGIN` is set, an allowed origin gets
+  the header and another origin does not.
   ```bash
   curl -s -i -X OPTIONS $API/v1/reviews -H "Origin: https://lakat-iloilo.vercel.app" -H "Access-Control-Request-Method: POST" | grep -i access-control
   curl -s -i -X OPTIONS $API/v1/reviews -H "Origin: https://evil.example" -H "Access-Control-Request-Method: POST" | grep -i access-control
   ```
   Methods should be exactly GET, POST, PUT, PATCH, DELETE (PUT since
   ticket 132, for photo credits); headers Content-Type and
-  Authorization. Startup must fail loudly when `CORS_ORIGIN` is unset,
-  so never delete that variable on Vercel: change its value. The live
-  backend's value is the live site only, without localhost
-  (evaluation 2026-11-12).
+  Authorization, when `CORS_ORIGIN` is set. Unset (the normal case since
+  ticket 152) means CORS off; it no longer stops the backend starting.
 - **Auth guard** (`loginToken` + Supabase token check): every write
   endpoint calls it; read endpoints that show `liked_by_me` still work
   without a login.

@@ -80,28 +80,51 @@ async function isAdmin(accessToken: string) {
 // Content-Security-Policy (ticket 154): a list the site gives the browser of
 // where pages may load scripts, styles, images and connections from. If an
 // attacker ever sneaks a script into a page, the browser refuses to run it.
-// Report-only for now: the browser only warns in the console, so ticket 155
-// can find what is missing before ticket 156 switches it on for real.
+// Enforced (ticket 156): the browser blocks anything not on the list. It was
+// report-only first (tickets 154–155) and the team checked every feature with
+// no warnings. If something ever breaks, the console names the blocked
+// address: add only that host below, with a comment saying what needs it.
+// Emergency switch back to "only warn": set CSP_HEADER to
+// "Content-Security-Policy-Report-Only" and push.
 //   - 'unsafe-inline' scripts: Next.js puts small inline scripts in each page.
 //   - 'unsafe-eval' in development only: `npm run dev` needs it, the live site not.
 //   - blob: images: the review and admin photo pickers preview a photo before upload.
-//   - wss://*.supabase.co: Supabase Realtime (live updates) uses a WebSocket.
-const CSP_HEADER = "Content-Security-Policy-Report-Only";
-const CSP = [
-  "default-src 'self'",
-  `script-src 'self' 'unsafe-inline'${process.env.NODE_ENV === "development" ? " 'unsafe-eval'" : ""}`,
-  "style-src 'self' 'unsafe-inline'",
-  // Place photos come from Supabase Storage and Wikimedia (thumb. serves the
-  // resized copies); the hero and category cards use Unsplash photos.
-  "img-src 'self' data: blob: https://*.supabase.co https://upload.wikimedia.org https://thumb.wikimedia.org https://images.unsplash.com",
-  "font-src 'self'",
-  "connect-src 'self' https://*.supabase.co wss://*.supabase.co",
-  "frame-src 'none'",
-  "frame-ancestors 'none'",
-  "object-src 'none'",
-  "base-uri 'self'",
-  "form-action 'self'",
-].join("; ");
+//   - Supabase: only OUR project (from NEXT_PUBLIC_SUPABASE_URL), not every
+//     *.supabase.co site (code review 2026-11-20): https for Storage photos
+//     and Auth, wss for Realtime (live updates uses a WebSocket).
+const CSP_HEADER = "Content-Security-Policy";
+
+// Our Supabase project's address, e.g. https://abcd.supabase.co, or "" if
+// the variable is missing (the app's Supabase client then fails loudly).
+function supabaseOrigin() {
+  try {
+    return new URL(process.env.NEXT_PUBLIC_SUPABASE_URL ?? "").origin;
+  } catch {
+    return "";
+  }
+}
+
+function contentSecurityPolicy() {
+  const supabase = supabaseOrigin();
+  const realtime = supabase.replace(/^https:/, "wss:");
+  return [
+    "default-src 'self'",
+    `script-src 'self' 'unsafe-inline'${process.env.NODE_ENV === "development" ? " 'unsafe-eval'" : ""}`,
+    "style-src 'self' 'unsafe-inline'",
+    // Place photos come from Supabase Storage and Wikimedia (thumb. serves the
+    // resized copies); the hero and category cards use Unsplash photos.
+    `img-src 'self' data: blob: ${supabase} https://upload.wikimedia.org https://thumb.wikimedia.org https://images.unsplash.com`,
+    "font-src 'self'",
+    `connect-src 'self' ${supabase} ${realtime}`,
+    "frame-src 'none'",
+    "frame-ancestors 'none'",
+    "object-src 'none'",
+    "base-uri 'self'",
+    "form-action 'self'",
+  ]
+    .map((directive) => directive.replace(/\s+/g, " ").trim())
+    .join("; ");
+}
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -109,7 +132,7 @@ export async function proxy(request: NextRequest) {
     (pathname === "/admin" || pathname.startsWith("/admin/")) && pathname !== "/admin/login";
   // Every answer gets the policy, including the admin "not found" rewrite.
   const response = isAdminPage ? await handleAdmin(request) : NextResponse.next();
-  response.headers.set(CSP_HEADER, CSP);
+  response.headers.set(CSP_HEADER, contentSecurityPolicy());
   return response;
 }
 

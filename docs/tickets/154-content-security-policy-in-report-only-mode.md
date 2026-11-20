@@ -29,7 +29,7 @@ for real in ticket 156.
 - [x] The policy adds `frame-ancestors 'none'` and `object-src 'none'`
 - [x] `'unsafe-eval'` is added in development only (`npm run dev` needs it), never in production
 - [x] The comment in `next.config.ts` points to `src/proxy.ts` instead of `docs/LATER.md`
-- [ ] Works on the live URL
+- [x] Works on the live URL
 
 ## Agent steps
 
@@ -100,3 +100,7 @@ site is reported. `next.config.ts` comment fixed. Not checked: place
 pages, admin pages and live updates (ticket 155), and the live URL.
 
 **Team confirmed (2026-11-20):** every box ticked on localhost. "Works on the live URL" stays open until the team checks the live site.
+
+**Team confirmed (2026-11-20, live URL):** the proxy and the report-only CSP work on the live site. All boxes ticked.
+
+**Change (2026-11-20, team request after code review):** `img-src` and `connect-src` name only our Supabase project (built from `NEXT_PUBLIC_SUPABASE_URL` in `src/proxy.ts`) instead of every `*.supabase.co` site; checked on a production build: our photos and Realtime pass, another project's image is blocked.

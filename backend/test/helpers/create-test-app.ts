@@ -18,7 +18,8 @@ export const ALLOWED_ORIGIN = 'http://localhost:3000';
 //   - the database (an empty pretend DataSource instead of DatabaseModule),
 //   - Supabase Auth (a pretend SupabaseService that knows two tokens).
 // It reads no backend/.env, so no real address, key or password is used.
-export async function createTestApp(): Promise<{
+// origins: the CORS_ORIGIN list; [] is the live setup since ticket 152.
+export async function createTestApp({ origins = [ALLOWED_ORIGIN] }: { origins?: string[] } = {}): Promise<{
   app: INestApplication;
   supabase: ReturnType<typeof fakeSupabase>;
 }> {
@@ -43,7 +44,7 @@ export async function createTestApp(): Promise<{
     .compile();
 
   const app = moduleRef.createNestApplication<NestExpressApplication>({ logger: false });
-  configureApp(app, [ALLOWED_ORIGIN]);
+  configureApp(app, origins);
   await app.init();
   return { app, supabase };
 }

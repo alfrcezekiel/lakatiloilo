@@ -15,7 +15,11 @@
 
 type Context = { params: Promise<{ path: string[] }> };
 
-const TIMEOUT_MS = 15_000;
+// As long as the longest wait the browser allows (photo uploads, 60 s in
+// src/lib/api.ts): a shorter one would cut off a slow upload that the
+// backend is still saving (code review 2026-11-20). Everyday calls give up
+// sooner on their own (axios, 10 s). Vercel lets a function run 300 s.
+const TIMEOUT_MS = 60_000;
 const REQUEST_HEADERS = ["authorization", "content-type", "accept", "x-forwarded-for"];
 const RESPONSE_HEADERS = ["content-type", "cache-control"];
 
@@ -53,7 +57,9 @@ async function forward(request: Request, { params }: Context) {
       body: request.method === "GET" || request.method === "HEAD" ? undefined : await request.arrayBuffer(),
       cache: "no-store",
       redirect: "manual",
-      signal: AbortSignal.timeout(TIMEOUT_MS),
+      // Stops when the time is up, or as soon as the browser gives up or
+      // leaves the page, so the server never waits for nobody.
+      signal: AbortSignal.any([request.signal, AbortSignal.timeout(TIMEOUT_MS)]),
     });
   } catch (error) {
     // AbortSignal.timeout throws a DOMException named TimeoutError.

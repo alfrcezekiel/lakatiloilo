@@ -44,6 +44,18 @@ describe('Public reads, headers and CORS (API)', () => {
 
       expect(res.headers['access-control-allow-origin']).toBeUndefined();
     });
+
+    it('lets no website call the API from a browser when CORS_ORIGIN is unset (since ticket 152)', async () => {
+      const { app: noCorsApp } = await createTestApp({ origins: [] });
+
+      const res = await request(noCorsApp.getHttpServer())
+        .options('/v1/reviews')
+        .set('Origin', ALLOWED_ORIGIN)
+        .set('Access-Control-Request-Method', 'POST');
+      await noCorsApp.close();
+
+      expect(res.headers['access-control-allow-origin']).toBeUndefined();
+    });
   });
 
   describe('lists anyone may read', () => {

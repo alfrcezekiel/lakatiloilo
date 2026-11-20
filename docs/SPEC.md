@@ -283,9 +283,9 @@ Travelers planning weekend trips around Iloilo Province. No login required for b
    - **Backend address private:** the browser no longer calls the NestJS backend directly. All backend calls go through Next.js API routes under /api/*, which forward requests to the backend. The backend address is stored in a server-side environment variable (API_URL), never exposed to the browser. The frontend's src/lib/api.ts is updated to call /api/* instead of the backend address directly. Travelers see no change; all features work as before.
    - **Content-Security-Policy header:** a CSP header is added to control which resources the browser may load. The policy allows scripts and styles from the site's own domain, images from Supabase Storage (for review and place photos) and Wikimedia Commons (for initial data), and connections to Supabase for Realtime updates. The CSP is tested in report-only mode first to ensure it does not block Supabase live updates, review photos, or Next.js's own scripts, then enforced after verification. The policy is:
      ```
-     Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.supabase.co https://upload.wikimedia.org https://thumb.wikimedia.org https://images.unsplash.com; font-src 'self'; connect-src 'self' https://*.supabase.co wss://*.supabase.co; frame-src 'none'; frame-ancestors 'none'; object-src 'none'; base-uri 'self'; form-action 'self'
+     Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://<our project>.supabase.co https://upload.wikimedia.org https://thumb.wikimedia.org https://images.unsplash.com; font-src 'self'; connect-src 'self' https://<our project>.supabase.co wss://<our project>.supabase.co; frame-src 'none'; frame-ancestors 'none'; object-src 'none'; base-uri 'self'; form-action 'self'
      ```
-     Set in `src/proxy.ts`; `'unsafe-eval'` is added to script-src in development only (`npm run dev` needs it). **Change (2026-11-19, team request):** added blob: (photo previews), thumb.wikimedia.org and images.unsplash.com (the home page's photos), wss://*.supabase.co (Realtime's WebSocket), frame-ancestors and object-src 'none' (tickets 154).
+     Set in `src/proxy.ts`; `'unsafe-eval'` is added to script-src in development only (`npm run dev` needs it). **Change (2026-11-19, team request):** added blob: (photo previews), thumb.wikimedia.org and images.unsplash.com (the home page's photos), wss://*.supabase.co (Realtime's WebSocket), frame-ancestors and object-src 'none' (tickets 154). **Change (2026-11-20, team request after code review):** the policy is enforced (ticket 156), and Supabase is only our own project, read from NEXT_PUBLIC_SUPABASE_URL, not every *.supabase.co site. The backend's CORS is off unless CORS_ORIGIN is set: no browser calls the backend since ticket 152. The proxy waits up to 60 seconds, like photo uploads.
    - **No new screens or features:** all existing screens (home, detail pages, login, admin dashboard) work exactly as before. The changes are internal to the application's architecture and security headers.
 
 ## Data
@@ -662,7 +662,7 @@ All writes in these rounds run as the logged-in traveler (the asTraveler step), 
   - DELETE /api/v1/admin/trash/reviews/:id — proxies to backend DELETE /v1/admin/trash/reviews/:id
   - DELETE /api/v1/admin/trash/replies/:id — proxies to backend DELETE /v1/admin/trash/replies/:id
   - DELETE /api/v1/admin/trash/places/:type/:id — proxies to backend DELETE /v1/admin/trash/places/:type/:id
-- The Next.js API route layer accepts requests with the same path structure as the backend, forwards only paths starting with v1/ (anything else 404 without calling the backend) and the methods GET, POST, PUT, PATCH, DELETE; forwards only the Authorization, Content-Type, Accept and X-Forwarded-For headers, the body as raw bytes (photo uploads arrive intact; Vercel caps a body at 4.5 MB) and the query string; and returns the backend's status code, body, Content-Type and Cache-Control. A backend that does not answer within 15 seconds gives 504, one that cannot be reached 502. Server components call the backend directly at API_URL, not through /api (ticket 152). The backend address is stored in a server-side environment variable (API_URL, not NEXT_PUBLIC_), never exposed to the browser.
+- The Next.js API route layer accepts requests with the same path structure as the backend, forwards only paths starting with v1/ (anything else 404 without calling the backend) and the methods GET, POST, PUT, PATCH, DELETE; forwards only the Authorization, Content-Type, Accept and X-Forwarded-For headers, the body as raw bytes (photo uploads arrive intact; Vercel caps a body at 4.5 MB) and the query string; and returns the backend's status code, body, Content-Type and Cache-Control. A backend that does not answer within 60 seconds (the photo uploads' own limit; code review 2026-11-20) gives 504, a browser that gives up first stops the call, one that cannot be reached 502. Server components call the backend directly at API_URL, not through /api (ticket 152). The backend address is stored in a server-side environment variable (API_URL, not NEXT_PUBLIC_), never exposed to the browser.
 - Content-Security-Policy header is set on the Next.js application (in src/proxy.ts). The policy allows scripts and styles from the site's own domain, images from Supabase Storage and Wikimedia Commons, and connections to Supabase for Realtime updates. The CSP is tested in report-only mode first, then enforced after verification.
 
 ## Architecture
@@ -894,18 +894,18 @@ Security hardening round: no login changes. The same Supabase Auth flow continue
 - [x] Row Level Security is on for place_photos and trash, and no service_role or sb_secret_ key appears anywhere
 
 **Security hardening round (live URL):**
-- [ ] Next.js API route proxy layer created under /api/[...path]
-- [ ] All backend calls in src/lib/api.ts updated to use /api/* instead of direct backend calls
-- [ ] NEXT_PUBLIC_API_URL removed from client-side code; backend address stored in server-side API_URL environment variable
-- [ ] Content-Security-Policy header added in report-only mode
-- [ ] CSP tested to ensure Supabase Realtime still works (live updates arrive)
-- [ ] CSP tested to ensure review photos load from Supabase Storage
-- [ ] CSP tested to ensure place photos load from Supabase Storage and Wikimedia
-- [ ] CSP tested to ensure Next.js scripts and styles work correctly
-- [ ] CSP tested to ensure admin dashboard functions correctly
+- [x] Next.js API route proxy layer created under /api/[...path]
+- [x] All backend calls in src/lib/api.ts updated to use /api/* instead of direct backend calls
+- [x] NEXT_PUBLIC_API_URL removed from client-side code; backend address stored in server-side API_URL environment variable
+- [x] Content-Security-Policy header added in report-only mode
+- [x] CSP tested to ensure Supabase Realtime still works (live updates arrive)
+- [x] CSP tested to ensure review photos load from Supabase Storage
+- [x] CSP tested to ensure place photos load from Supabase Storage and Wikimedia
+- [x] CSP tested to ensure Next.js scripts and styles work correctly
+- [x] CSP tested to ensure admin dashboard functions correctly
 - [ ] CSP switched from report-only to enforced mode after verification
-- [ ] Browser network inspection shows only calls to /api/*, not direct backend calls
-- [ ] Backend address is not visible in browser JavaScript or network tab
+- [x] Browser network inspection shows only calls to /api/*, not direct backend calls
+- [x] Backend address is not visible in browser JavaScript or network tab
 - [ ] All existing features (home, detail pages, reviews, login, admin dashboard) work as before
 - [ ] Live updates (Supabase Realtime) continue to work
 - [ ] Photo uploads and display continue to work

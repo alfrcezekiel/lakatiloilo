@@ -50,7 +50,11 @@ paths:
   for auth), because the website shows `message` as it is.
 - Set the status code on purpose with `@HttpCode` (for example 200 with
   a `{ message }` body for DELETE, as the team asked).
-- New methods or headers must be added to `enableCors` in `main.ts`.
+- CORS is off unless `CORS_ORIGIN` is set (`app-setup.ts`): browsers
+  reach the backend only through the website's `/api` proxy since ticket
+  152. New methods must be added to the proxy route's exports
+  (`src/app/api/[...path]/route.ts`) and new request headers to its
+  `REQUEST_HEADERS`, and to `enableCors` in case CORS is ever switched on.
 - Every new endpoint gets a line in the spec's endpoint list.
 
 ## Admin endpoints (admin dashboard, from ticket 107)

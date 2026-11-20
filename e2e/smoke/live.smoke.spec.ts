@@ -4,6 +4,9 @@ import { expect, test } from "@playwright/test";
 // and reads them. It never logs in, never fills in or sends a form, and
 // never clicks anything that saves. Run with `npm run test:smoke`.
 
+// The backend itself, for the checks that call it straight from the test
+// (not from a browser). Browsers reach it only through the website's /api
+// proxy (tickets 151–153), so page checks look for /api/v1/... instead.
 const API = "https://api-lakat-iloilo.vercel.app";
 
 test.describe("Live site (read-only)", () => {
@@ -14,16 +17,37 @@ test.describe("Live site (read-only)", () => {
     await expect(page.locator('a[href^="/destinations/"]').first()).toBeVisible();
   });
 
-  test("a place page loads its reviews from the live API", async ({ page }) => {
+  test("a place page loads its reviews through the website's /api proxy", async ({ page, baseURL }) => {
     await page.goto("/");
     const firstPlace = page.locator('a[href^="/destinations/"]').first();
     const href = await firstPlace.getAttribute("href");
 
-    const reviews = page.waitForResponse((r) => r.url().startsWith(`${API}/v1/reviews`) && r.request().method() === "GET");
+    const reviews = page.waitForResponse(
+      (r) => r.url().startsWith(`${baseURL}/api/v1/reviews`) && r.request().method() === "GET",
+    );
+    // No request from the page may go to the backend's own address.
+    const direct: string[] = [];
+    page.on("request", (r) => {
+      if (r.url().startsWith(API)) direct.push(r.url());
+    });
     await page.goto(href!);
 
     expect((await reviews).status()).toBe(200);
     await expect(page.getByRole("heading", { level: 2, name: "Reviews" })).toBeVisible();
+    expect(direct).toEqual([]);
+  });
+
+  test("the /api proxy answers reads, refuses a write without a login, and forwards only v1", async ({ request }) => {
+    expect((await request.get("/api/v1/destinations")).status()).toBe(200);
+    expect((await request.post("/api/v1/reviews", { data: {} })).status()).toBe(401);
+    expect((await request.get("/api/admin")).status()).toBe(404);
+  });
+
+  test("pages send the enforced Content-Security-Policy (ticket 156)", async ({ request }) => {
+    const res = await request.get("/");
+
+    expect(res.headers()["content-security-policy"]).toContain("default-src 'self'");
+    expect(res.headers()["content-security-policy-report-only"]).toBeUndefined();
   });
 
   test("the login page loads (nothing is typed or sent)", async ({ page }) => {

@@ -23,7 +23,7 @@ searching the built files.
 - [x] All existing features continue to work
 - [x] `.env.example`, `AGENTS.md` and `.claude/rules/frontend.md` describe `API_URL`, not `NEXT_PUBLIC_API_URL`
 - [x] After `npm run build`, a search of `.next/static` finds neither the backend host nor `NEXT_PUBLIC_API_URL`
-- [ ] Works on the live URL
+- [x] Works on the live URL
 
 ## Agent steps
 
@@ -78,3 +78,7 @@ then redeploy. Without `API_URL` on Vercel the proxy answers 500 "Server is
 not configured".
 
 **Team confirmed (2026-11-20):** every box ticked on localhost. "Works on the live URL" stays open until the team checks the live site.
+
+**Team confirmed (2026-11-20, live URL):** the proxy and the report-only CSP work on the live site. All boxes ticked.
+
+**Change (2026-11-20, team request after code review):** step 5 done: backend CORS is off unless `CORS_ORIGIN` is set (`backend/src/app-setup.ts`, `main.ts`, with an API test). Team step, **only after this code is live** (the old backend refuses to start without it; see ticket 157's incident note): delete `CORS_ORIGIN` from the backend's Vercel variables and from `backend/.env`, then redeploy. Note: the address is hidden from browsers, not secret: it is still in git history and in old Vercel deployments, and every write is still protected by the backend's login check.

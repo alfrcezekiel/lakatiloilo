@@ -16,13 +16,19 @@ export function configureApp(app: NestExpressApplication, origins: string[]) {
     response.setHeader('X-Frame-Options', 'DENY');
     next();
   });
-  // Browsers may read (GET), add (POST), replace (PUT, photo credits,
-  // ticket 132), edit (PATCH) and delete (DELETE). The Authorization header carries the traveler's login token.
-  app.enableCors({
-    origin: origins,
-    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
-  });
+  // CORS (which websites may call this API straight from a visitor's
+  // browser). No origins, the normal case since ticket 152 (browsers go
+  // through the website's /api): CORS stays off and no website may. With
+  // origins: browsers on those sites may read (GET), add (POST), replace
+  // (PUT, photo credits, ticket 132), edit (PATCH) and delete (DELETE), and
+  // send the traveler's login token in the Authorization header.
+  if (origins.length > 0) {
+    app.enableCors({
+      origin: origins,
+      methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
+      allowedHeaders: ['Content-Type', 'Authorization'],
+    });
+  }
   // An unknown address answers a plain sentence (unknown-route.filter.ts).
   app.useGlobalFilters(new UnknownRouteFilter());
 }

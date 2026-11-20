@@ -25,7 +25,7 @@ itself over the internet, which is slower and breaks during the build.
 - [x] Server-side calls in `src/lib/api.ts` use `API_URL` directly, not a call to our own site
 - [x] A search of `src/` finds no browser code that names the backend address
 - [x] The e2e fixtures and `vitest.config.mts` no longer need `NEXT_PUBLIC_API_URL`
-- [ ] Works on the live URL
+- [x] Works on the live URL
 
 ## Agent steps
 
@@ -89,3 +89,7 @@ images). Not checked: log in, writes and admin pages (team tests), and
 `npm run test:e2e`.
 
 **Team confirmed (2026-11-20):** every box ticked on localhost. "Works on the live URL" stays open until the team checks the live site.
+
+**Team confirmed (2026-11-20, live URL):** the proxy and the report-only CSP work on the live site. All boxes ticked.
+
+**Change (2026-11-20, team request after code review):** `e2e/smoke/live.smoke.spec.ts` was missed in step 6 and could not pass (found by reading the code): it now waits for the website's `/api/v1/reviews`, checks no page request goes to the backend's address, and checks the proxy's 200/401/404 answers.

@@ -26,7 +26,7 @@ proxy" that attackers could use to reach things we never meant to expose
 - [x] Photo uploads (multipart/form-data) arrive at the backend intact
 - [x] A slow or down backend gives a clear 504 or 502 instead of a hanging page
 - [x] `/api/wikimedia-photo` still works (the static route wins over the catch-all)
-- [ ] Works on the live URL
+- [x] Works on the live URL
 
 ## Agent steps
 
@@ -51,7 +51,8 @@ proxy" that attackers could use to reach things we never meant to expose
    `await request.arrayBuffer()` instead of `request.text()`. Text decoding
    corrupts image uploads. Vercel caps a request body at 4.5 MB, so uploads
    must stay under that (the backend's own limit should match).
-8. **Add a timeout:** `signal: AbortSignal.timeout(15_000)`, and set
+8. **Add a timeout:** `signal: AbortSignal.timeout(60_000)` (as long as the
+   photo uploads in `src/lib/api.ts` allow; 15 s cut slow uploads), and set
    `cache: "no-store"` and `redirect: "manual"` (never follow a backend
    redirect somewhere else).
 9. **Wrap the fetch in try/catch.** A timeout returns `504`
@@ -102,3 +103,7 @@ and `npm run build` pass. Not checked: a real photo upload (team test, needs
 a login) and the live URL. Boxes stay unticked until the team confirms.
 
 **Team confirmed (2026-11-20):** every box ticked on localhost. "Works on the live URL" stays open until the team checks the live site.
+
+**Team confirmed (2026-11-20, live URL):** the proxy and the report-only CSP work on the live site. All boxes ticked.
+
+**Change (2026-11-20, team request after code review):** the proxy waits up to 60 s (15 s could cut off a slow photo upload, which `src/lib/api.ts` gives 60 s), and stops as soon as the browser gives up (`AbortSignal.any` with `request.signal`).
