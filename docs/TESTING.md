@@ -143,7 +143,10 @@ apps already use.
 >     `Access-Control-Allow-Origin: *` on pre-built live pages. All fixed:
 >     nonce-based CSP, every page built per visit, a policy on the backend.
 >     A re-scan of a local production build shows **0 Medium**. See
->     `docs/evaluations/2026-11-20-zap.md`.
+>     `docs/evaluations/2026-11-20-zap.md`. Later the same day: the dev
+>     server's two dev-only items (`'unsafe-eval'`, inline `<style>`) are
+>     lowered to Info in the local plans, only when the policy has
+>     `'unsafe-eval'` (proved narrow). A dev-server scan now shows 0 Medium.
 >   - The team ran the active localhost scan: 3,104 attack requests, no
 >     injection, XSS or path traversal found, and only the CSP alert.
 >   - DOM XSS: ZAP now drives headless Chrome (Ubuntu's Firefox is a snap

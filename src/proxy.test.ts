@@ -72,6 +72,20 @@ describe("Content-Security-Policy", () => {
     expect(enforced!.replace("style-src-attr 'unsafe-inline'", "")).not.toContain("unsafe-inline");
   });
 
+  it("on the dev server, loosens only 'unsafe-eval' and inline <style>; scripts still need the nonce", async () => {
+    vi.stubEnv("NODE_ENV", "development");
+
+    const { enforced } = await policyFor("/");
+
+    // The two things `npm run dev` can't work without (tried 2026-11-20).
+    expect(enforced).toMatch(/script-src 'self' 'nonce-[^']+' 'unsafe-eval'(;|$)/);
+    expect(enforced).toContain("style-src 'self' 'unsafe-inline'");
+    // Everything else stays as strict as the live site.
+    expect(enforced).not.toMatch(/script-src [^;]*'unsafe-inline'/);
+    expect(enforced).toContain("object-src 'none'");
+    expect(enforced).toContain("frame-ancestors 'none'");
+  });
+
   it("gives every page view a different nonce", async () => {
     const first = nonceIn((await policyFor("/")).enforced);
     const second = nonceIn((await policyFor("/")).enforced);

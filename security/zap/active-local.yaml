@@ -85,10 +85,32 @@ jobs:
       maxAlertsPerRule: 10
       scanOnlyInScope: true
 
+  - type: alertFilter
+    alertFilters:
+      # DEV SERVER ONLY (2026-11-20). `npm run dev` needs 'unsafe-eval'
+      # (React's debugging) and inline <style> tags (it delivers all CSS
+      # that way, without a nonce). Tried without them on 2026-11-20: 59-166
+      # blocks per page, no styling, React stopped. The live build has
+      # neither (L6 smoke and baseline-live check it), so on the dev server
+      # these two are lowered to Info, NOT hidden. Narrow on purpose: only
+      # when the scanned policy contains 'unsafe-eval', which only the dev
+      # server's has. On a production build either alert stays Medium.
+      - ruleId: "10055-10"     # CSP: script-src unsafe-eval
+        newRisk: "Info"
+        evidence: ".*'unsafe-eval'.*"
+        evidenceRegex: true
+      - ruleId: "10055-6"      # CSP: style-src unsafe-inline
+        newRisk: "Info"
+        evidence: ".*'unsafe-eval'.*"
+        evidenceRegex: true
   - type: import
     parameters:
       type: url
       fileName: api-urls-local.txt
+  - type: import
+    parameters:
+      type: url
+      fileName: site-urls-local.txt
 
   - type: spider
     parameters:
