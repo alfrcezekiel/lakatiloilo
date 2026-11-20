@@ -6,18 +6,18 @@
 
 **Status:** in progress
 
-- [ ] The backend address is not visible in browser JavaScript (check in DevTools)
-- [ ] The backend address is not visible in the browser network tab (all calls are to /api/*)
-- [ ] The home page loads and displays places correctly
-- [ ] Destination and accommodation detail pages load correctly
-- [ ] Reviews load and display correctly
-- [ ] Writing, editing, and deleting reviews work
-- [ ] Login and signup work
-- [ ] The admin dashboard loads and functions correctly
-- [ ] Supabase Realtime live updates still work
-- [ ] Photo uploads and display still work
-- [ ] The Content-Security-Policy header is present and enforced
-- [ ] Works on the live URL
+- [x] The backend address is not visible in browser JavaScript (check in DevTools)
+- [x] The backend address is not visible in the browser network tab (all calls are to /api/*)
+- [x] The home page loads and displays places correctly
+- [x] Destination and accommodation detail pages load correctly
+- [x] Reviews load and display correctly
+- [x] Writing, editing, and deleting reviews work
+- [x] Login and signup work
+- [x] The admin dashboard loads and functions correctly
+- [x] Supabase Realtime live updates still work
+- [x] Photo uploads and display still work
+- [x] The Content-Security-Policy header is present and enforced
+- [x] Works on the live URL
 
 **Why (plain English):** The last check of the round, on the real site
 travelers use. Tickets 151–156 were each checked on their own; this one
@@ -86,3 +86,33 @@ redeploy the backend.
 
 **Smoke run after the fix (2026-11-20, browser installed):** 6 passed, 1
 failed: the enforced-CSP check, as expected until ticket 156 is pushed.
+
+**Progress (2026-11-20, agent, after commit 28c8bc7 went live):**
+- Step 1: `npm run test:smoke` 7/7 pass on the live site.
+- Step 2: the live header is `content-security-policy` (enforced), with
+  only our Supabase project named.
+- Step 3: 24 JavaScript files from 4 pages: 0 hits for the backend host or
+  `NEXT_PUBLIC_API_URL`; 0 in the HTML.
+- Step 4: `GET /api/v1/destinations` 200, `POST /api/v1/reviews` without
+  login 401, `GET /api/admin` 404.
+- Step 6: home page, 57 images, none broken; an example.com image is
+  blocked ("enforce").
+Still to do: the team tests above (laptop and phone), then delete
+`CORS_ORIGIN` from the backend's Vercel variables and `backend/.env`,
+redeploy the backend, and rerun the smoke tests.
+
+**Progress (2026-11-20, agent):** the team deleted `CORS_ORIGIN` and
+redeployed the backend. Live smoke 7/7 pass. A browser permission check
+(OPTIONS from the website's own origin) gets no `Access-Control-Allow-Origin`:
+CORS is off, as intended. Team question answered: the
+`content-security-policy-report-only` header on `thumb.wikimedia.org` image
+responses is Wikimedia's own header on its files, not ours, and has no
+effect on our pages.
+
+**Team confirmed (2026-11-20, live URL):** tested on the live site; all boxes ticked.
+
+**Team question (2026-11-20):** React error #418 (hydration text mismatch)
+on the live home page. Not reproduced in 15 clean Playwright loads (laptop,
+phone, Manila time, pretend login). Gone in an Incognito window, so it came
+from the tester's browser (an extension or auto-translate changing page
+text before React hydrated), not from the app. No code change.

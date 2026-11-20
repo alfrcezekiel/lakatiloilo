@@ -10,7 +10,7 @@
 - [x] The policy string is the same as in report-only mode
 - [x] The browser blocks resources that violate the policy
 - [x] All legitimate features still work (no regressions from the testing phase)
-- [ ] Works on the live URL
+- [x] Works on the live URL
 
 **Why (plain English):** Until now the CSP only *warned*. Enforced means the
 browser really refuses anything not on the list: a script an attacker
@@ -67,3 +67,5 @@ Content Security Policy" line means something is now blocked: copy it to
 me.
 
 **Team confirmed (2026-11-20, localhost):** the header is now `Content-Security-Policy` (enforced). Reviews, likes and replies in two tabs still work and stay up to date (live updates), and the admin side still works. Every box ticked except "Works on the live URL" (not pushed or tested there yet).
+
+**Team confirmed (2026-11-20, live URL):** tested on the live site; all boxes ticked.

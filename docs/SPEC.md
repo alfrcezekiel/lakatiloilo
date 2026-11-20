@@ -903,12 +903,12 @@ Security hardening round: no login changes. The same Supabase Auth flow continue
 - [x] CSP tested to ensure place photos load from Supabase Storage and Wikimedia
 - [x] CSP tested to ensure Next.js scripts and styles work correctly
 - [x] CSP tested to ensure admin dashboard functions correctly
-- [ ] CSP switched from report-only to enforced mode after verification
+- [x] CSP switched from report-only to enforced mode after verification
 - [x] Browser network inspection shows only calls to /api/*, not direct backend calls
 - [x] Backend address is not visible in browser JavaScript or network tab
-- [ ] All existing features (home, detail pages, reviews, login, admin dashboard) work as before
-- [ ] Live updates (Supabase Realtime) continue to work
-- [ ] Photo uploads and display continue to work
+- [x] All existing features (home, detail pages, reviews, login, admin dashboard) work as before
+- [x] Live updates (Supabase Realtime) continue to work
+- [x] Photo uploads and display continue to work
 
 ## Out of scope
 - Admin extras round: travelers' own deletes going to the Trash (it is for admin deletes only), restoring a single Helpful like or notifications, uploading a new photo just for a category card, reordering photos by dragging (arrow buttons instead), more than 6 photos per place, and a scheduled job to empty the Trash

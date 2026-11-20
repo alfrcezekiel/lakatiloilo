@@ -14,7 +14,7 @@
 - [x] The admin dashboard functions correctly
 - [x] No CSP violations are reported in the browser console for legitimate features
 - [x] If violations occur, the policy is adjusted and tested again
-- [ ] Works on the live URL
+- [x] Works on the live URL
 
 **Why (plain English):** Ticket 154 turned the CSP on in "only warn" mode.
 Before ticket 156 makes the browser really block, we prove nothing the app
@@ -80,3 +80,5 @@ Hard refresh, open DevTools → Console, and keep it open:
    If one does, copy it to me.
 
 **Team confirmed (2026-11-20):** live updates (notifications, reviews, likes, replies), the admin dashboard (adding and editing places, photos, reports, categories, Trash) all work, with no CSP violations in the browser console, on localhost. Every box ticked except "Works on the live URL" (not tested there yet).
+
+**Team confirmed (2026-11-20, live URL):** tested on the live site; all boxes ticked.
