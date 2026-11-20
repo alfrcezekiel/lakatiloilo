@@ -11,6 +11,7 @@
     "test:watch": "vitest",
     "test:e2e": "playwright test --project=local --project=local-phone",
     "test:smoke": "playwright test --project=live",
+    "test:smoke:local": "playwright test --project=smoke-local",
     "test:writes": "playwright test --project=real-writes",
     "perf:smoke": "k6 run -e BASE_URL=http://localhost:5000 performance/k6/scenarios/smoke.js",
     "perf:load": "k6 run -e BASE_URL=http://localhost:5000 --summary-export performance/k6/results/load.json performance/k6/scenarios/load.js",

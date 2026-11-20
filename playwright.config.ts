@@ -17,9 +17,15 @@ try {
 //                         servers (localhost:3000 and :5000). Start them
 //                         first; Playwright never starts a second backend.
 //   npm run test:smoke  → read-only checks on the live URL, after a push.
+//   npm run test:smoke:local → the same read-only checks on the team's
+//                         running dev servers, before a push.
 //   npm run test:writes → REAL writes with the team's test account, on
 //                         localhost (e2e/real-writes/). The team runs it.
-const LOCAL = "http://localhost:3000";
+// BASE_URL points the local projects at another local server, for example
+// a production build (`npm run build`, then `npx next start -p 3100`):
+//   BASE_URL=http://localhost:3100 npm run test:e2e
+// (PowerShell: $env:BASE_URL="http://localhost:3100"; npm run test:e2e)
+const LOCAL = process.env.BASE_URL ?? "http://localhost:3000";
 
 export default defineConfig({
   testDir: "./e2e",
@@ -67,7 +73,16 @@ export default defineConfig({
       // a form (see .claude/rules/testing.md).
       name: "live",
       testMatch: /smoke\/.*\.spec\.ts/,
+      metadata: { api: "https://api-lakat-iloilo.vercel.app" },
       use: { ...devices["Desktop Chrome"], baseURL: "https://lakat-iloilo.vercel.app" },
+    },
+    {
+      // The same read-only smoke checks on the team's running dev servers
+      // (localhost:3000 and the backend on :5000), before a push.
+      name: "smoke-local",
+      testMatch: /smoke\/.*\.spec\.ts/,
+      metadata: { api: "http://localhost:5000" },
+      use: { ...devices["Desktop Chrome"], baseURL: LOCAL },
     },
   ],
 });

@@ -18,7 +18,7 @@ apps already use.
 >   hero's. Place pages now have a meta description in the `<head>` (SEO
 >   100). See
 >   `docs/evaluations/2026-11-18-lighthouse.md`.
-> - **Frontend unit + component** (L1–L2): 71 tests in
+> - **Frontend unit + component** (L1–L2): 96 tests in 13 files (2026-11-20) in
 >   `src/**/*.test.ts(x)`, run with `npm run test` at the root. They use
 >   Vitest 4 with React Testing Library, and MSW as the pretend backend
 >   (`test/mocks/`). The login is always pretend (`vi.mock("@/lib/login")`).
@@ -37,6 +37,32 @@ apps already use.
 >   `Reveal.tsx`: the reviews on a place page jiggled forever when their
 >   top edge was near the bottom of the screen. The fade-in's own slide
 >   kept moving them off the screen and back on.
+>
+>   **Added 2026-11-20:** 12 more runs. `npm run test:e2e` now gives 71
+>   passed and 6 skipped (header checks run on the laptop only).
+>   - `e2e/flows/traveler-journey.spec.ts`: a whole visit in one go
+>     (search → place → log in → back → post a review with ñ → see it).
+>     Login and save are pretend. It also checks that the review was sent
+>     to `/api/v1/reviews` with the login, the trimmed words, and no owner
+>     field.
+>   - `e2e/flows/hidden-backend.spec.ts` (tickets 151–153): the browser
+>     only calls `/api`, never `localhost:5000` or the live backend, and
+>     no page, script or data answer it downloads names the backend. The
+>     `/api` answer carries no backend headers, and `/api` refuses
+>     anything outside `v1/`.
+>   - `e2e/flows/content-security-policy.spec.ts` (ticket 156): every
+>     page has the enforced header (not report-only), with
+>     `frame-ancestors 'none'` and `object-src 'none'`, and so does a
+>     hidden admin page's 404. The app's own pages cause no violation. A
+>     script, an image and a `fetch` to example.com are all blocked with
+>     disposition `enforce`.
+>
+>   Each check was proved able to fail. Switching the CSP to report-only
+>   failed 3 of the 4 CSP tests; the fourth correctly still passes. A
+>   planted address failed the request check and the download check. The
+>   first version of the download check missed it: it read a page's text
+>   after the browser had thrown it away. It now downloads each file again
+>   to read it.
 > - **Database / RLS** (L4): 8 read-only checks in `supabase/checks/`. The
 >   team pastes `00-summary.sql` into the Supabase SQL editor, and every
 >   row should say "✓ safe". The checks were first proved on a throwaway
@@ -56,11 +82,68 @@ apps already use.
 >   `supabase/sql`: it's an event trigger (`ensure_rls`, owned by
 >   `postgres`) that switches RLS on for every new table, probably set up
 >   by a Supabase project setting (see `05` Part C).
+>
+>   **Added 2026-11-20 (not yet run on the hosted project):** 7 more
+>   read-only checks, `08`–`14`. Rows 08–12 are in `00-summary.sql`.
+>   - `08`: private tables a logged-out visitor can read (admins,
+>     notifications, reports, hidden texts…). Part B: columns like
+>     `email` or `token` they can read.
+>   - `09`: write rules that never check who is asking (`auth.uid()` or
+>     `is_admin()`).
+>   - `10`: views that skip RLS (no `security_invoker`).
+>   - `11`: `lakat_api` owning a table, writing directly, or belonging to
+>     a role other than `authenticated`.
+>   - `12`: Realtime sending a table without RLS, or one the app does not
+>     listen to.
+>   - `13`, run on its own: saved rows that break the app's rules (own
+>     Helpful marks, reviews of places that don't exist, photos outside
+>     the writer's folder…). Every count should be 0.
+>   - `14`: speed advice, not a security check. It lists rules that call
+>     `auth.uid()` once per row, and links with no index.
+>
+>   Like 01–07, they were first proved on a throwaway local Postgres:
+>   every check showed 0 on a safe copy and caught one planted mistake of
+>   each kind.
+>
+>   **Re-run on the hosted project after the fixes (2026-11-20): all safe.**
+>   `00-summary.sql` shows all 11 rows `✓ safe` (01–05 and 07–12), and
+>   `13` shows 0 on all 12 rules.
+>
+>   **First run on the hosted project (2026-11-20): no security hole.**
+>   - `08` and `09`: no rows.
+>   - Three findings were the checks' own mistakes, fixed the same day:
+>     - `08` Part B listed `accommodations.email`. That is a hotel's
+>       front-desk email, public on purpose (SPEC: "Email the front
+>       desk"), so it is now excluded.
+>     - `12` listed `place_categories`, `reply_likes` and `review_photos`.
+>       Files 047, 032 and 044 publish them, and all three have RLS, so
+>       the expected list was short.
+>     - `13` counted 66 bad notifications. They were Helpful-on-a-reply
+>       notifications, where `reply_id` is the reply that was liked, so
+>       its writer is the right person to tell (036). The rule now checks
+>       each notification kind separately.
+>   - `14` Part B listed 13 links with no index. Only
+>     `notifications.review_id` and `notifications.reply_id` are worth
+>     one: deleting a review or reply must find its notifications. The
+>     others point at `auth.users` and only matter when an account is
+>     deleted. **Fixed:** `supabase/sql/064-notification-indexes.sql`
+>     adds both indexes. The team ran it on the hosted project on
+>     2026-11-20 and reported that it worked. A re-run of `14` confirms
+>     it: Part A has no rows, and Part B now lists 11 links, all to
+>     `auth.users`. That is accepted: they only matter when an account is
+>     deleted.
 > - **Security scan** (L7): the OWASP ZAP plans are in `security/zap/`.
 >   - The passive scan of the live site ran on 2026-11-17: no High, no Low,
 >     and 1 Medium, the known, parked Content-Security-Policy. Two
 >     confirmed false alarms are recorded with narrow filters. See
 >     `docs/evaluations/2026-11-17-zap.md`.
+>   - **2026-11-20:** new `baseline-local.yaml`. The team's scans found 4
+>     kinds of Medium alert (CSP not set on `/api` and on the backend,
+>     `'unsafe-inline'` scripts and styles, dev-only `'unsafe-eval'`) plus
+>     `Access-Control-Allow-Origin: *` on pre-built live pages. All fixed:
+>     nonce-based CSP, every page built per visit, a policy on the backend.
+>     A re-scan of a local production build shows **0 Medium**. See
+>     `docs/evaluations/2026-11-20-zap.md`.
 >   - The team ran the active localhost scan: 3,104 attack requests, no
 >     injection, XSS or path traversal found, and only the CSP alert.
 >   - DOM XSS: ZAP now drives headless Chrome (Ubuntu's Firefox is a snap
@@ -86,12 +169,35 @@ apps already use.
 >   clean up after themselves. **The team ran them with their test
 >   account on 2026-11-18: 6 of 6 passed in 14 s, and no `[test]` review or
 >   reply was left behind.**
-> - **Live smoke** (L6): 5 read-only tests in `e2e/smoke/`, run with
->   `npm run test:smoke` after a push. All passed on 2026-11-17.
-> - **Backend unit** (L1): 62 tests in `backend/src/**/*.spec.ts`, run with
+> - **Live smoke** (L6): 7 read-only tests in `e2e/smoke/`, run with
+>   `npm run test:smoke` after a push. All passed on 2026-11-17. The same
+>   file runs on the team's dev servers with `npm run test:smoke:local`
+>   (project `smoke-local`: the website on localhost:3000, the backend
+>   checks on localhost:5000). 7 of 7 passed locally on 2026-11-20.
+> - **Recent pushes smoke** (L6, added 2026-11-20): 9 read-only tests in
+>   `e2e/smoke/recent-pushes.smoke.spec.ts` for the latest pushes: no
+>   broken photos, place photos at original size, small WebP review
+>   previews, the `/api/wikimedia-photo` relay (serves a thumbnail with no
+>   cookies, refuses other paths), the enforced CSP blocking nothing of
+>   ours with Supabase live updates still connecting, the full policy on
+>   every page (no `'unsafe-eval'` on live), no backend address in any
+>   downloaded script, and the live site answering from Mumbai (`bom1`).
+>   Live: 16 of 16 smoke tests passed (39.5 s). Local: 8 passed, 1 skipped
+>   (Mumbai is live-only). A planted match made the script check fail, as
+>   it should. The CSP listener now lives in `e2e/helpers/csp.ts`, shared
+>   with `e2e/flows/content-security-policy.spec.ts`.
+>   **The team re-ran both on their own machine on 2026-11-20:**
+>   `test:smoke:local` 15 passed, 1 skipped (Mumbai, live-only) in
+>   32.8 s; `test:smoke` 16 of 16 passed in 38.7 s.
+> - **Backend unit** (L1): 63 tests in `backend/src/**/*.spec.ts`, run with
 >   `npm run test` in `backend/`.
-> - **Backend API** (L3): 194 tests in `backend/test/api/`, run with
->   `npm run test:api` in `backend/`. The app is the real `/v1` API, with a
+> - **Backend API** (L3): 195 tests in `backend/test/api/`, run with
+>   `npm run test:api` in `backend/`.
+> - **Backend test types** (L0): Jest only translates the test files and
+>   skips type-checking them (`isolatedModules` in
+>   `backend/tsconfig.spec.json`), which keeps each file well under the
+>   5-second "slow" mark. Check the test files' types with
+>   `npm run typecheck` in `backend/` (2026-11-20). The app is the real `/v1` API, with a
 >   pretend empty database and a pretend Supabase login check
 >   (`backend/test/fakes/`).
 > - **Performance** (L8): `performance/k6/`. The load test passed (see
@@ -234,7 +340,8 @@ amor-phinma-builder-template/
 │  ├─ a11y/
 │  │  └─ pages.a11y.spec.ts                ← L5 accessibility (axe)
 │  └─ smoke/
-│     └─ live.smoke.spec.ts                ← L6 live URL, read-only
+│     ├─ live.smoke.spec.ts                ← L6 live URL, read-only
+│     └─ recent-pushes.smoke.spec.ts       ← L6 features from the latest pushes
 │
 ├─ supabase/
 │  ├─ sql/                         (existing) numbered changes
@@ -315,6 +422,7 @@ Root `package.json`:
 "test:watch":  "vitest",
 "test:e2e":    "playwright test --project=local",
 "test:smoke":  "playwright test --project=live",
+"test:smoke:local": "playwright test --project=smoke-local",
 "perf:smoke":  "k6 run -e BASE_URL=http://localhost:5000 performance/k6/scenarios/smoke.js",
 "perf:load":   "k6 run -e BASE_URL=http://localhost:5000 --summary-export performance/k6/results/load.json performance/k6/scenarios/load.js",
 "perf:stress": "k6 run -e BASE_URL=http://localhost:5000 --summary-export performance/k6/results/stress.json performance/k6/scenarios/stress.js",
@@ -396,8 +504,10 @@ starts with a comment that says what it does and how to run it.
 | File | What it does | Who runs it |
 |------|--------------|-------------|
 | `baseline-live.yaml` | **Passive**: it crawls the live site, visits the GET routes in `api-urls-live.txt`, and reads every answer. Takes about 30 s–6 min | Anyone, at any time |
+| `baseline-local.yaml` | **Passive**, the same scan on `localhost:3000` and `:5000`, before a push. Never sends a form; log-in and admin calls are out of scope. Run it on a **production build** (`npm run build`, then `npm start`), not `npm run dev`, which adds dev-only CSP alerts. About 1–6 min | Anyone, with the production website and the backend running |
 | `active-local.yaml` | **Active**: it attacks `localhost:3000` and `:5000` only, **with no login**. Log-in, sign-up and admin routes are excluded. 2 threads, stops after 15 min | **The team**, after agreeing to it |
 | `api-urls-live.txt`, `api-urls-local.txt` | 13 public GET routes, plus 2 addresses that must answer 404 (to check that error pages leak nothing) | — |
+| `site-urls-live.txt`, `site-urls-local.txt` | The website's pages, its `/api/v1` proxy (151–153) and the `/api/wikimedia-photo` relay, plus addresses that must answer 404. Added 2026-11-20 | — |
 | `reports/` | The HTML and JSON reports (git-ignored, except `.gitkeep`, which keeps the folder) | — |
 
 Run, from the project folder (Ubuntu):
@@ -414,7 +524,10 @@ app: **Automation** tab → **Load plan** → **Run**. Paths inside a plan
 
 | Alert you will probably see | Means | What to do |
 |-----------------------------|-------|------------|
-| Content Security Policy header not set | No CSP. It is parked in `docs/LATER.md` (see `next.config.ts`) | Expected. Record it as known |
+| Content Security Policy header not set | A page or answer arrived without the policy. The CSP is enforced since ticket 156, so on a page this is a **regression** | Find which address: `src/proxy.ts` sets it, and its `matcher` decides which addresses it runs on |
+| CSP: script-src / style-src unsafe-inline | The policy lets inline scripts or `<style>` tags run. Fixed 2026-11-20: every page view gets a nonce (`src/proxy.ts`) | On a production build: a **regression**. Only `style-src-attr 'unsafe-inline'` (style="…" attributes, which can't run code) is meant to be there |
+| CSP: script-src unsafe-eval | Only on `npm run dev`. The live build must not have it (the L6 smoke checks this) | Scan a production build (`npm run build` + `npm start`); on live: a regression |
+| CSP: Failure to Define Directive with No Fallback | `base-uri`, `form-action` or `frame-ancestors` is missing: they don't fall back to `default-src` | Name each one. The backend's policy (`backend/src/app-setup.ts`) has all three since 2026-11-20 |
 | Strict-Transport-Security missing | The browser isn't told to always use HTTPS | Vercel usually adds this. Check on the API too |
 | Cookie without SameSite / HttpOnly / Secure | A cookie could be read by scripts or sent from other sites | Fix: set the flags where the cookie is made (`src/lib/admin-cookie.ts`) |
 | CORS misconfiguration | Another website could call our API | Check that `CORS_ORIGIN` is unset (no browser needs it since ticket 152), or lists only our own sites |

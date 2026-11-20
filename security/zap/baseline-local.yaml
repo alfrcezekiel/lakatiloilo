@@ -1,0 +1,108 @@
+# OWASP ZAP plan 3: PASSIVE baseline scan of LOCALHOST (the team's dev
+# servers). (Layer 7 in docs/TESTING.md, rules in .claude/rules/testing.md.)
+#
+# The same kind of scan as baseline-live.yaml, before a push: it only
+# visits pages like a visitor (GET requests) and READS the answers:
+# security headers, cookies, CORS, error pages, information leaks. It
+# never fills in or sends a form, never logs in, and never attacks.
+# The local backend reads from the HOSTED database, but GET requests only
+# read, so nothing is saved.
+#
+# SCAN A PRODUCTION BUILD, not `npm run dev` (2026-11-20). The dev server
+# adds 'unsafe-eval' and inline styles to the CSP, which the live site
+# never has, so ZAP would report Medium alerts that aren't real. Stop
+# `npm run dev`, then in the project folder:
+#   npm run build
+#   npm start            (the production website on localhost:3000)
+# Keep `nest start --watch` running in backend/. Afterwards, go back to
+# `npm run dev`.
+#
+# Before you run it: start the production website (npm run build, then
+# npm start) and the backend (`nest start --watch` in backend/). Then, from the project folder:
+#   zap.sh -cmd -port 8099 -autorun "$PWD/security/zap/baseline-local.yaml"
+# Windows PowerShell (the install folder may differ):
+#   & "C:\Program Files\ZAP\Zed Attack Proxy\zap.bat" -cmd -port 8099 -autorun "$PWD\security\zap\baseline-local.yaml"
+# Or in the ZAP app: Automation tab -> Load plan -> Run.
+#
+# Takes about 3-6 minutes. Reports land in security/zap/reports/
+# (git-ignored). Write a short summary in docs/evaluations/YYYY-MM-DD-zap.md.
+
+env:
+  contexts:
+    - name: lakat-local-passive
+      urls:
+        - http://localhost:3000
+        - http://localhost:5000
+      includePaths:
+        - "http://localhost:3000.*"
+        - "http://localhost:5000.*"
+      excludePaths:
+        - ".*supabase\\.co.*"                      # Supabase's servers are not ours to scan
+        - ".*/logout.*"
+        - ".*/_next/static/.*"                     # built JavaScript and CSS files: only noise
+        # Log-in, sign-up and admin calls, on the backend and through the
+        # website's /api proxy (tickets 151-152): never touched by a scan.
+        - "http://localhost:5000/v1/(auth|admin)/.*"
+        - "http://localhost:3000/api/v1/(auth|admin)/.*"
+        # The dev server's own addresses, which the live site does not have.
+        - ".*/_next/(webpack-)?hmr.*"
+        - ".*/__nextjs_font/.*"
+  parameters:
+    failOnError: true
+    failOnWarning: false
+    progressToStdout: true
+
+jobs:
+  - type: passiveScan-config
+    parameters:
+      maxAlertsPerRule: 10
+      scanOnlyInScope: true
+
+  # The same confirmed false alarms as baseline-live.yaml
+  # (docs/evaluations/2026-11-17-zap.md), narrowed to localhost.
+  - type: alertFilter
+    alertFilters:
+      # Sub Resource Integrity on <link rel="preload" as="image">: browsers
+      # ignore integrity on images.
+      - ruleId: 90003
+        newRisk: "False Positive"
+        evidence: '.*as="image".*'
+        evidenceRegex: true
+
+  # Backend routes the spider cannot find by following links (GET only).
+  - type: import
+    parameters:
+      type: url
+      fileName: api-urls-local.txt
+  # The website's pages, its /api proxy and the photo relay, including
+  # addresses that must answer 404 (to check error pages leak nothing).
+  - type: import
+    parameters:
+      type: url
+      fileName: site-urls-local.txt
+
+  # Follow links like a visitor. It reads forms but never fills them in
+  # or sends them (processForm and postForm off).
+  - type: spider
+    parameters:
+      context: lakat-local-passive
+      maxDuration: 3
+      threadCount: 2
+      processForm: false
+      postForm: false
+
+  - type: passiveScan-wait
+    parameters:
+      maxDuration: 5
+
+  - type: report
+    parameters:
+      template: traditional-html
+      reportDir: reports
+      reportFile: baseline-local
+      reportTitle: Lakat Iloilo, passive scan of localhost
+  - type: report
+    parameters:
+      template: traditional-json
+      reportDir: reports
+      reportFile: baseline-local

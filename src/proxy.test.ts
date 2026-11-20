@@ -16,8 +16,12 @@ const policyFor = async (path: string) => {
   return {
     enforced: response.headers.get("content-security-policy"),
     reportOnly: response.headers.get("content-security-policy-report-only"),
+    // What Next.js receives, to stamp the nonce on its own scripts.
+    toNext: response.headers.get("x-middleware-request-content-security-policy"),
+    nonceToNext: response.headers.get("x-middleware-request-x-nonce"),
   };
 };
+const nonceIn = (policy: string | null) => /script-src [^;]*'nonce-([A-Za-z0-9+/=]+)'/.exec(policy ?? "")?.[1];
 
 describe("Content-Security-Policy", () => {
   it("is enforced on a traveler page, not only reported", async () => {
@@ -51,6 +55,35 @@ describe("Content-Security-Policy", () => {
     const { enforced } = await policyFor("/");
 
     expect(enforced).not.toContain("unsafe-eval");
+  });
+
+  it("lets only scripts and styles that carry this page view's nonce run, never any inline script (ZAP 2026-11-20)", async () => {
+    vi.stubEnv("NODE_ENV", "production");
+
+    const { enforced } = await policyFor("/");
+
+    const nonce = nonceIn(enforced);
+    expect(nonce, "no nonce in script-src").toBeDefined();
+    expect(nonce!.length).toBeGreaterThanOrEqual(22);
+    expect(enforced).toMatch(new RegExp(`script-src 'self' 'nonce-${nonce!.replace(/[+/=]/g, "\\$&")}'(;|$)`));
+    expect(enforced).toContain(`style-src 'self' 'nonce-${nonce}'`);
+    // Only style="..." attributes may be inline; they cannot run code.
+    expect(enforced).toContain("style-src-attr 'unsafe-inline'");
+    expect(enforced!.replace("style-src-attr 'unsafe-inline'", "")).not.toContain("unsafe-inline");
+  });
+
+  it("gives every page view a different nonce", async () => {
+    const first = nonceIn((await policyFor("/")).enforced);
+    const second = nonceIn((await policyFor("/")).enforced);
+
+    expect(first).not.toBe(second);
+  });
+
+  it("hands Next.js the same policy and nonce, so its own scripts carry the code", async () => {
+    const { enforced, toNext, nonceToNext } = await policyFor("/login");
+
+    expect(toNext).toBe(enforced);
+    expect(nonceToNext).toBe(nonceIn(enforced));
   });
 
   it("is also set on the admin not-found answer for a visitor without a login", async () => {

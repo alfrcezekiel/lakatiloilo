@@ -2,14 +2,21 @@ import { expect, test } from "@playwright/test";
 
 // After a push: is the live site up and working? READ-ONLY. It opens pages
 // and reads them. It never logs in, never fills in or sends a form, and
-// never clicks anything that saves. Run with `npm run test:smoke`.
+// never clicks anything that saves. Run with `npm run test:smoke` (live
+// site) or `npm run test:smoke:local` (the team's dev servers).
 
 // The backend itself, for the checks that call it straight from the test
 // (not from a browser). Browsers reach it only through the website's /api
 // proxy (tickets 151–153), so page checks look for /api/v1/... instead.
-const API = "https://api-lakat-iloilo.vercel.app";
+// The project in playwright.config.ts says which one: the live backend, or
+// localhost:5000 for smoke-local.
+let API = "";
 
 test.describe("Live site (read-only)", () => {
+  test.beforeEach(() => {
+    API = String(test.info().project.metadata.api);
+  });
+
   test("the home page loads with places to visit", async ({ page }) => {
     await page.goto("/");
 

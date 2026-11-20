@@ -16,13 +16,19 @@ describe('Public reads, headers and CORS (API)', () => {
   afterAll(async () => app.close());
 
   describe('security headers on every answer', () => {
-    it.each(['/v1/destinations', '/v1/nowhere'])('%s carries nosniff and DENY, and no X-Powered-By', async (path) => {
-      const res = await request(app.getHttpServer()).get(path);
+    it.each(['/', '/v1/destinations', '/v1/nowhere'])(
+      '%s carries nosniff, DENY and a policy that allows nothing, and no X-Powered-By',
+      async (path) => {
+        const res = await request(app.getHttpServer()).get(path);
 
-      expect(res.headers['x-content-type-options']).toBe('nosniff');
-      expect(res.headers['x-frame-options']).toBe('DENY');
-      expect(res.headers['x-powered-by']).toBeUndefined();
-    });
+        expect(res.headers['x-content-type-options']).toBe('nosniff');
+        expect(res.headers['x-frame-options']).toBe('DENY');
+        expect(res.headers['content-security-policy']).toBe(
+          "default-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'",
+        );
+        expect(res.headers['x-powered-by']).toBeUndefined();
+      },
+    );
   });
 
   describe('CORS', () => {

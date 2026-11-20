@@ -86,8 +86,23 @@ async function isAdmin(accessToken: string) {
 // address: add only that host below, with a comment saying what needs it.
 // Emergency switch back to "only warn": set CSP_HEADER to
 // "Content-Security-Policy-Report-Only" and push.
-//   - 'unsafe-inline' scripts: Next.js puts small inline scripts in each page.
-//   - 'unsafe-eval' in development only: `npm run dev` needs it, the live site not.
+//   - Scripts: a NONCE, not 'unsafe-inline' (ZAP baseline 2026-11-20). A
+//     nonce is a random one-time code, new for every page view. The proxy
+//     puts it in the policy and hands it to Next.js (the x-nonce and
+//     Content-Security-Policy request headers), and Next.js stamps it on
+//     each of its own inline scripts. A script an attacker sneaks into the
+//     page can't know the code, so the browser refuses it, inline event
+//     handlers (onerror="...") included. Needs every page to be built per
+//     visit (src/app/layout.tsx), because a pre-built page can't carry a
+//     fresh code.
+//   - Styles: a nonce for <style> tags too. Only style="..." attributes
+//     (style-src-attr) stay 'unsafe-inline': React and the motion library
+//     write a few of them into the HTML (opacity, position). An attribute
+//     can only change how something looks, never run code.
+//   - Development only (`npm run dev`, never the live site): 'unsafe-eval'
+//     for React's debugging, and 'unsafe-inline' styles, because the dev
+//     server injects CSS without a nonce. Scan a production build
+//     (`npm run build` + `npm start`) to see what the live site sends.
 //   - blob: images: the review and admin photo pickers preview a photo before upload.
 //   - Supabase: only OUR project (from NEXT_PUBLIC_SUPABASE_URL), not every
 //     *.supabase.co site (code review 2026-11-20): https for Storage photos
@@ -104,13 +119,20 @@ function supabaseOrigin() {
   }
 }
 
-function contentSecurityPolicy() {
+// A fresh random code for one page view (16 bytes, base64).
+function newNonce() {
+  return btoa(String.fromCharCode(...crypto.getRandomValues(new Uint8Array(16))));
+}
+
+export function contentSecurityPolicy(nonce: string) {
+  const dev = process.env.NODE_ENV === "development";
   const supabase = supabaseOrigin();
   const realtime = supabase.replace(/^https:/, "wss:");
   return [
     "default-src 'self'",
-    `script-src 'self' 'unsafe-inline'${process.env.NODE_ENV === "development" ? " 'unsafe-eval'" : ""}`,
-    "style-src 'self' 'unsafe-inline'",
+    `script-src 'self' 'nonce-${nonce}'${dev ? " 'unsafe-eval'" : ""}`,
+    `style-src 'self' ${dev ? "'unsafe-inline'" : `'nonce-${nonce}'`}`,
+    "style-src-attr 'unsafe-inline'",
     // Place photos come from Supabase Storage and Wikimedia (thumb. serves the
     // resized copies); the hero and category cards use Unsplash photos.
     `img-src 'self' data: blob: ${supabase} https://upload.wikimedia.org https://thumb.wikimedia.org https://images.unsplash.com`,
@@ -128,28 +150,41 @@ function contentSecurityPolicy() {
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
+  const nonce = newNonce();
+  const policy = contentSecurityPolicy(nonce);
+  // Next.js reads the nonce from the request's own policy header and puts
+  // it on its scripts; x-nonce is for any page code that needs it.
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set("x-nonce", nonce);
+  requestHeaders.set(CSP_HEADER, policy);
+
   const isAdminPage =
     (pathname === "/admin" || pathname.startsWith("/admin/")) && pathname !== "/admin/login";
   // Every answer gets the policy, including the admin "not found" rewrite.
-  const response = isAdminPage ? await handleAdmin(request) : NextResponse.next();
-  response.headers.set(CSP_HEADER, contentSecurityPolicy());
+  const response = isAdminPage ? await handleAdmin(request, requestHeaders) : NextResponse.next({ request: { headers: requestHeaders } });
+  response.headers.set(CSP_HEADER, policy);
   return response;
 }
 
-async function handleAdmin(request: NextRequest) {
+async function handleAdmin(request: NextRequest, headers: Headers) {
+  const next = () => NextResponse.next({ request: { headers } });
   const token = request.cookies.get(ADMIN_COOKIE)?.value;
   // Moving between pages inside the site, or preloading one: only the
   // page's code, no data (see above). Only with the admin cookie, which
   // real admin clicks always carry and travelers never have (code review
   // 2026-11-09: without it, anyone adding the header got 200, not 404).
   if (token && (request.headers.get("rsc") === "1" || request.headers.has("next-router-prefetch"))) {
-    return NextResponse.next();
+    return next();
   }
-  if (token && (await isAdmin(token))) return NextResponse.next();
-  return NextResponse.rewrite(new URL(NOT_FOUND, request.url));
+  if (token && (await isAdmin(token))) return next();
+  return NextResponse.rewrite(new URL(NOT_FOUND, request.url), { request: { headers } });
 }
 
-// Every page, but not /api (JSON, not pages), Next.js's own files or the icon.
+// Every page, but not the JSON and photo routes (/api/v1/..., the backend
+// proxy, and /api/wikimedia-photo), Next.js's own files or the icon.
+// Any other /api address is the site's "not found" PAGE, so it gets the
+// policy too (ZAP baseline 2026-11-20: the old "(?!api" skipped every
+// address starting with "api", and /api showed that page with no policy).
 export const config = {
-  matcher: ["/((?!api|_next/static|_next/image|favicon.ico).*)"],
+  matcher: ["/((?!api/v1/|api/wikimedia-photo|_next/static|_next/image|favicon.ico).*)"],
 };

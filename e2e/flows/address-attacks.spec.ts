@@ -97,7 +97,7 @@ test.describe("After log-in, ?next= never leaves the site (open redirect)", () =
       await page.waitForTimeout(500);
 
       expect(leftTheSite, `after log-in the browser tried to open ${leftTheSite.join(", ")}`).toEqual([]);
-      expect(new URL(page.url()).host).toBe("localhost:3000");
+      expect(new URL(page.url()).host).toBe(new URL(test.info().project.use.baseURL!).host);
       await expectNoInjection(page, "the page after log-in");
     });
   }

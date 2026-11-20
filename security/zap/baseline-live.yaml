@@ -28,6 +28,10 @@ env:
         - ".*supabase\\.co.*"        # Supabase's servers are not ours to scan
         - ".*/logout.*"
         - ".*/_next/static/.*"       # built JavaScript and CSS files: only noise
+        # Log-in, sign-up and admin calls through the website's /api proxy
+        # (tickets 151-152): never touched by a scan.
+        - "https://lakat-iloilo\\.vercel\\.app/api/v1/(auth|admin)/.*"
+        - "https://api-lakat-iloilo\\.vercel\\.app/v1/(auth|admin)/.*"
   parameters:
     failOnError: true
     failOnWarning: false
@@ -66,6 +70,12 @@ jobs:
     parameters:
       type: url
       fileName: api-urls-live.txt
+  # The website's pages, its /api proxy (151-153) and the photo relay
+  # (58ddb0a), including addresses that must answer 404.
+  - type: import
+    parameters:
+      type: url
+      fileName: site-urls-live.txt
 
   # Follow the links on the website, like a visitor clicking around. Two
   # threads and three minutes keep it gentle on Vercel.
@@ -74,6 +84,9 @@ jobs:
       context: lakat-live
       maxDuration: 3
       threadCount: 2
+      # Read forms, never fill them in or send them.
+      processForm: false
+      postForm: false
 
   - type: passiveScan-wait
     parameters:
@@ -93,5 +106,7 @@ jobs:
 
 # A CONFIRMED false alarm can be hidden with an alertFilter job here, with
 # a comment saying why (see docs/TESTING.md). Never hide an alert just
-# because it is inconvenient. Content-Security-Policy is a real, parked
-# item (docs/LATER.md), so it stays in the report.
+# because it is inconvenient. The Content-Security-Policy is ENFORCED since
+# ticket 156, so "CSP header not set" is now a real regression, never a
+# known item. "CSP: unsafe-inline" stays in the report: it is a real,
+# accepted trade-off (docs/evaluations), not a false alarm.

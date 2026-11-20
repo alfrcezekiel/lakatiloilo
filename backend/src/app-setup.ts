@@ -9,11 +9,23 @@ import { UnknownRouteFilter } from './unknown-route.filter';
 export function configureApp(app: NestExpressApplication, origins: string[]) {
   // Security headers on every answer (evaluation B5, 2026-11-04): don't
   // announce "X-Powered-By: Express", never let a browser guess a file's
-  // type, and never let another site show an answer inside a frame.
+  // type, never let another site show an answer inside a frame, and let a
+  // browser run nothing from an answer (CSP).
   app.disable('x-powered-by');
   app.use((_request: unknown, response: { setHeader: (name: string, value: string) => void }, next: () => void) => {
     response.setHeader('X-Content-Type-Options', 'nosniff');
     response.setHeader('X-Frame-Options', 'DENY');
+    // A Content-Security-Policy that allows nothing (ZAP baseline,
+    // 2026-11-20: "CSP header not set" on the backend's home page). The
+    // backend only answers JSON or a plain sentence, never a page with
+    // scripts, styles or photos, so a browser that ever opens one of its
+    // answers may load and run nothing, and no site may frame it.
+    response.setHeader(
+      'Content-Security-Policy',
+      // base-uri, form-action and frame-ancestors don't fall back to
+      // default-src, so each is named (ZAP 2026-11-20).
+      "default-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'",
+    );
     next();
   });
   // CORS (which websites may call this API straight from a visitor's

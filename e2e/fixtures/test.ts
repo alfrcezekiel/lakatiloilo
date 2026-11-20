@@ -49,7 +49,7 @@ async function answerAsPretendTraveler(page: Page) {
   // token (so the backend treats it as logged out and never asks Supabase
   // about a made-up token). Registered first: Playwright tries the routes
   // added later first, so the specific answers below win.
-  await page.route("http://localhost:3000/api/v1/**", (route) => {
+  await page.route("**/api/v1/**", (route) => {
     const headers = { ...route.request().headers() };
     delete headers.authorization;
     return route.continue({ headers });

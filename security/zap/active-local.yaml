@@ -18,8 +18,15 @@
 #   - Afterwards, check in Supabase (Table Editor) that no new reviews,
 #     replies or reports appeared.
 #
-# Before you run it: start the team's dev servers (npm run dev, and
-# `nest start --watch` in backend/), then from the project folder:
+# SCAN A PRODUCTION BUILD, not `npm run dev` (2026-11-20): `npm run build`
+# then `npm start` instead of `npm run dev`. The dev server adds
+# 'unsafe-eval' and inline styles to the CSP, which the live site never
+# has, and it compiles each page the first time it opens, which made the
+# DOM XSS rule run out of time on 2026-11-18.
+#
+# Before you run it: start the production website (npm run build, then
+# npm start) and the backend (`nest start --watch` in backend/), then from
+# the project folder:
 #   zap.sh -cmd -port 8099 -config rules.domxss.browserid=chrome-headless -autorun "$PWD/security/zap/active-local.yaml"
 # Windows PowerShell:
 #   & "C:\Program Files\ZAP\Zed Attack Proxy\zap.bat" -cmd -port 8099 -config rules.domxss.browserid=chrome-headless -autorun "$PWD\security\zap\active-local.yaml"
@@ -49,6 +56,15 @@ env:
         - ".*supabase\\.co.*"
         - "http://localhost:5000/v1/auth/.*"   # log-in, sign-up, log-out: never attack
         - "http://localhost:5000/v1/admin/.*"  # admin routes
+        # The same calls through the website's /api proxy (tickets 151-152,
+        # added 2026-11-20): without these, the attack could reach log-in,
+        # sign-up and admin by the website's side door.
+        - "http://localhost:3000/api/v1/(auth|admin)/.*"
+        # The photo relay fetches from Wikimedia's servers: attacking it
+        # would send our attack traffic on to a site we do not own. Its
+        # refusals are tested in src/app/api/wikimedia-photo/route.test.ts
+        # and e2e/smoke/recent-pushes.smoke.spec.ts.
+        - "http://localhost:3000/api/wikimedia-photo.*"
         - "http://localhost:3000/admin.*"
         - "http://localhost:3000/(login|reset-password|forgot-password).*"
         - ".*/logout.*"
