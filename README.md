@@ -1,6 +1,60 @@
-# PHINMA AI Builder — team template
+# Lakat Iloilo: A Centralized Geo-Tourism Discovery Platform for Tourist Destinations, Accommodations, Local Cuisines, Interactive Mapping and Travel Guidance in Iloilo City and Iloilo Province
 
 **Your live URL:** https://lakat-iloilo.vercel.app/
+
+## About Lakat Iloilo
+
+**Lakat Iloilo** is a centralized geo-tourism platform for **Iloilo City
+and Iloilo Province**. Information about where to go and where to stay
+in Iloilo is scattered across Facebook pages, Google results and random
+websites. Lakat Iloilo puts it in one place: travelers can discover
+mountains, food spots, heritage sites, festivals, parks and places to
+stay — each with its location, photos and honest reviews from other
+travelers — without spending hours searching.
+
+*"Lakat"* means "walk" or "travel" in Hiligaynon.
+
+![Lakat Iloilo home page: the "Lakat na, Iloilo." hero with a search bar, a City/Province toggle, category chips, and Featured and Trending place cards](docs/images/home-page.webp)
+
+### Key features
+
+- **One place for every destination** — mountains and hiking spots,
+  foods and dine-ins, walking areas, festivals, nature and parks, and
+  heritage sites, plus hotels and condominiums.
+- **City or Province** — a toggle that narrows every list to Iloilo City
+  or the rest of Iloilo Province.
+- **Category cards and chips** — click a category to jump straight to
+  that kind of place.
+- **Live search suggestions** — type a place name and suggestions appear
+  as you type, filtered by the chosen category and area.
+- **Location details** — every place has its address and map
+  coordinates, a short description and up to six photos, each with the
+  photographer credited.
+- **Ratings and reviews** — travelers with an account rate places from
+  1 to 5 stars, write a review and add up to four photos. Anyone can read
+  reviews and see each place's average rating.
+- **Traveler types** — every reviewer says whether they are a local, a
+  visitor from the Philippines or a foreign tourist, so readers know
+  whose experience they are reading.
+- **Community conversation** — reply to reviews, answer replies in
+  threads, mark reviews and replies "Helpful", and report anything
+  inappropriate.
+- **Traveler profiles and notifications** — every reviewer has a public
+  profile with their reviews, and a bell tells you when someone replies
+  to you.
+- **Live updates** — pages refresh themselves within seconds when a
+  place, review or reply changes, with no reload needed.
+- **Admin dashboard** — the Lakat Iloilo team moderates reported
+  reviews, manages places, categories and photos, and can restore
+  anything deleted from a 30-day Trash.
+- **Secure by default** — Row Level Security on every database table,
+  the backend address kept private on the server, and an enforced
+  Content-Security-Policy.
+
+### Built with
+
+Next.js (App Router) + TypeScript, Tailwind CSS, a NestJS backend,
+Supabase (database, login and photo storage) and Vercel hosting.
 
 This is your team's starting point. It is already a working Next.js app
 that deploys to Vercel. You will delete the starter page and build your

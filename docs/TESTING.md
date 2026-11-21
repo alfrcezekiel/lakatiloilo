@@ -292,7 +292,7 @@ in JavaScript).
 ## How to structure the test directories
 
 ```
-amor-phinma-builder-template/
+lakatiloilo/
 ├─ vitest.config.mts               frontend unit + component runner
 ├─ playwright.config.ts            E2E, a11y and live smoke runner
 │
