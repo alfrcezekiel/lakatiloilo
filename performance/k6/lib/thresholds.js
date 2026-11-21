@@ -38,3 +38,17 @@ export const SITE_THRESHOLDS = {
   'http_req_duration{kind:api}': ['p(95)<800'],
   'checks{security:yes}': ['rate==1'],
 };
+
+// Website stress and spike (site-stress.js, site-spike.js): the heavy limits
+// above, judged for pages and /api separately. The security checks still
+// must pass 100 %: under heavy load a page may be slow or fail, but it may
+// never come back without its policy or naming the backend. (Security is
+// only checked on answers that came back 200; failures count in
+// http_req_failed instead.)
+export const SITE_HEAVY_THRESHOLDS = {
+  http_req_failed: HEAVY_THRESHOLDS.http_req_failed,
+  checks: HEAVY_THRESHOLDS.checks,
+  'http_req_duration{kind:page}': ['p(95)<1500'],
+  'http_req_duration{kind:api}': ['p(95)<1500'],
+  'checks{security:yes}': ['rate==1'],
+};

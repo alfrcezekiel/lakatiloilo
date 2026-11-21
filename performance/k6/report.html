@@ -1,0 +1,93 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Lakat Iloilo k6 Report</title><style>:root{--bg:#f6f8f8;--card:#fff;--ink:#14302f;--muted:#55706e;--line:#d7e2e1;--brand:#0f6b66;--ok:#1a7f45;--okbg:#e3f4ea;--bad:#b3261e;--badbg:#fbe7e5;--warn:#8a5a00;--warnbg:#fff3d6;--head:#eef4f3}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0e1716;--card:#15211f;--ink:#e3eeec;--muted:#9db3b0;--line:#2a3b39;--brand:#5cc8bf;--ok:#6fd49a;--okbg:#173a27;--bad:#ff8a80;--badbg:#3d1c1a;--warn:#f5c466;--warnbg:#3a2e12;--head:#1b2a28}}
+:root[data-theme="dark"]{--bg:#0e1716;--card:#15211f;--ink:#e3eeec;--muted:#9db3b0;--line:#2a3b39;--brand:#5cc8bf;--ok:#6fd49a;--okbg:#173a27;--bad:#ff8a80;--badbg:#3d1c1a;--warn:#f5c466;--warnbg:#3a2e12;--head:#1b2a28}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{max-width:1100px;margin:0 auto;padding:32px 16px 64px}
+h1{font-size:1.7rem;margin:0 0 4px}h2{font-size:1.2rem;margin:36px 0 10px}h3{font-size:1rem;margin:20px 0 8px}
+.sub{color:var(--muted);margin:0 0 20px}
+.verdict{background:var(--card);border:1px solid var(--line);border-left:5px solid var(--ok);border-radius:10px;padding:16px 18px}
+.verdict.mixed{border-left-color:var(--warn)}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin:18px 0}
+.tile{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px 14px}
+.tile b{display:block;font-size:1.45rem;font-variant-numeric:tabular-nums}.tile span{color:var(--muted);font-size:.85rem}
+.wrap{overflow-x:auto;background:var(--card);border:1px solid var(--line);border-radius:10px}
+table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums;font-size:.9rem}
+th,td{padding:8px 10px;text-align:left;border-bottom:1px solid var(--line);white-space:nowrap}
+th{background:var(--head);font-weight:600}tr:last-child td{border-bottom:0}td.n,th.n{text-align:right}
+.ok{color:var(--ok);font-weight:600}.bad{color:var(--bad);font-weight:600}
+.pill{display:inline-block;padding:1px 8px;border-radius:99px;font-size:.8rem;font-weight:600}
+.pill.ok{background:var(--okbg)}.pill.bad{background:var(--badbg)}.pill.warn{background:var(--warnbg);color:var(--warn)}
+.bar{height:8px;background:var(--line);border-radius:4px;min-width:90px;position:relative}
+.bar i{position:absolute;inset:0 auto 0 0;background:var(--brand);border-radius:4px}
+ul{padding-left:20px}li{margin:4px 0}code{font-size:.85em;background:var(--head);padding:1px 5px;border-radius:4px}
+.note{color:var(--muted);font-size:.85rem}footer{margin-top:40px;color:var(--muted);font-size:.85rem}
+a{color:var(--brand)}
+</style></head><body><main>
+<h1>Performance and load (k6): 2026-11-21</h1>
+<p class="sub">Lakat Iloilo · Grafana k6 v2.4.0, run by the team from their Ubuntu laptop · public GET requests only, no logins, no writes · every request also reached the hosted Supabase database</p>
+
+<div class="verdict"><b>Verdict: passed, everywhere.</b> All 14 runs of the team's full test today (smoke, load, stress, spike and soak, on localhost and on the live URLs) met every threshold. There were <b>0 errors in 123,825 requests</b>, with up to 150 travelers at once. Every security check passed on every website answer: an enforced CSP with a fresh nonce, and the backend's address and headers hidden. Nothing needs fixing.</div>
+
+<div class="tiles">
+<div class="tile"><b>14 / 14</b><span>runs passed (team, today)</span></div>
+<div class="tile"><b>0</b><span>errors in 123,825 requests</span></div>
+<div class="tile"><b>150</b><span>travelers at once, the most tested</span></div>
+<div class="tile"><b>284 ms</b><span>live pages p(95) under stress</span></div>
+<div class="tile"><b>268,934</b><span>security checks, 0 failed</span></div>
+</div>
+
+<h2>Smoke tests (1 traveler, from the pasted summaries)</h2>
+<div class="wrap"><table><thead><tr><th>Test</th><th>Target</th><th>Length</th><th class="n">p(95)</th><th class="n">Limit</th><th class="n">Requests</th><th class="n">Errors</th><th>Result</th></tr></thead><tbody>
+<tr><td>Backend smoke</td><td><code>localhost:5000</code></td><td>30 s</td><td class="n">629 ms</td><td class="n">800 ms</td><td class="n">15</td><td class="n">0</td><td><span class="pill ok">✓ 3/3</span></td></tr>
+<tr><td>Website smoke</td><td><code>localhost:3000</code></td><td>40 s</td><td class="n">pages 718 ms · <code>/api</code> 343 ms</td><td class="n">800 ms</td><td class="n">23</td><td class="n">0</td><td><span class="pill ok">✓ 5/5</span></td></tr>
+<tr><td>Live backend smoke</td><td><code>api-lakat-iloilo.vercel.app</code></td><td>30 s</td><td class="n">692 ms</td><td class="n">800 ms</td><td class="n">15</td><td class="n">0</td><td><span class="pill ok">✓ 3/3</span></td></tr>
+</tbody></table></div>
+
+<h2>Backend direct (<code>perf:…</code>, <code>perf:live:…</code>)</h2>
+<div class="wrap"><table><thead><tr><th>Test</th><th>Target</th><th>Travelers</th><th>Length</th><th class="n">p(95)</th><th>of limit</th><th class="n">Limit</th><th class="n">Slowest</th><th class="n">Requests</th><th class="n">Errors</th><th>Thresholds</th></tr></thead><tbody>
+<tr><td>Backend load</td><td><code>localhost:5000</code></td><td>ramp to 20</td><td>7 min</td><td class="n">293 ms</td><td><div class="bar" title="293 ms of 800 ms"><i style="width:36.6%"></i></div></td><td class="n">800 ms</td><td class="n">1,388 ms</td><td class="n">3,248</td><td class="n">0</td><td><span class="pill ok">✓ 3/3</span></td></tr>
+<tr><td>Backend stress</td><td><code>localhost:5000</code></td><td>up to 150</td><td>9 min</td><td class="n">308 ms</td><td><div class="bar" title="308 ms of 1500 ms"><i style="width:20.5%"></i></div></td><td class="n">1,500 ms</td><td class="n">1,965 ms</td><td class="n">18,201</td><td class="n">0</td><td><span class="pill ok">✓ 3/3</span></td></tr>
+<tr><td>Backend spike</td><td><code>localhost:5000</code></td><td>jump to 100</td><td>4.3 min</td><td class="n">304 ms</td><td><div class="bar" title="304 ms of 1500 ms"><i style="width:20.3%"></i></div></td><td class="n">1,500 ms</td><td class="n">929 ms</td><td class="n">3,583</td><td class="n">0</td><td><span class="pill ok">✓ 3/3</span></td></tr>
+<tr><td>Backend soak</td><td><code>localhost:5000</code></td><td>20</td><td>34 min</td><td class="n">309 ms</td><td><div class="bar" title="309 ms of 800 ms"><i style="width:38.6%"></i></div></td><td class="n">800 ms</td><td class="n">1,555 ms</td><td class="n">17,140</td><td class="n">0</td><td><span class="pill ok">✓ 3/3</span></td></tr>
+<tr><td>Live backend load</td><td><code>api-lakat-iloilo.vercel.app</code></td><td>ramp to 20</td><td>7 min</td><td class="n">180 ms</td><td><div class="bar" title="180 ms of 800 ms"><i style="width:22.5%"></i></div></td><td class="n">800 ms</td><td class="n">26,338 ms</td><td class="n">3,397</td><td class="n">0</td><td><span class="pill ok">✓ 3/3</span></td></tr>
+</tbody></table></div>
+<p class="note">The local backend load (14:22) ran earlier today and was not in the team's pasted results. Its numbers come from <code>results/load.json</code>.</p>
+
+<h2>Website pages and the <code>/api</code> proxy (<code>perf:site:…</code>, <code>perf:live:site:…</code>)</h2>
+<div class="wrap"><table><thead><tr><th>Test</th><th>Target</th><th>Travelers</th><th>Length</th><th class="n">Pages p(95)</th><th>of limit</th><th class="n"><code>/api</code> p(95)</th><th class="n">Limit</th><th class="n">Slowest</th><th class="n">Requests</th><th class="n">Errors</th><th class="n">Security checks</th><th>Thresholds</th></tr></thead><tbody>
+<tr><td>Website load <span class="note">(16:31, dev server)</span></td><td><code>localhost:3000</code></td><td>ramp to 20</td><td>7 min</td><td class="n">764 ms</td><td><div class="bar" title="764 ms of 800 ms"><i style="width:95.5%"></i></div></td><td class="n">419 ms</td><td class="n">800 ms</td><td class="n">1,780 ms</td><td class="n">3,090</td><td class="n">0</td><td class="n">10,156 / 10,156</td><td><span class="pill ok">✓ 5/5</span></td></tr>
+<tr><td>Website stress</td><td><code>localhost:3000</code></td><td>up to 150</td><td>9 min</td><td class="n">574 ms</td><td><div class="bar" title="574 ms of 1500 ms"><i style="width:38.3%"></i></div></td><td class="n">412 ms</td><td class="n">1,500 ms</td><td class="n">1,110 ms</td><td class="n">17,861</td><td class="n">0</td><td class="n">58,882 / 58,882</td><td><span class="pill ok">✓ 5/5</span></td></tr>
+<tr><td>Website spike</td><td><code>localhost:3000</code></td><td>jump to 100</td><td>4.3 min</td><td class="n">423 ms</td><td><div class="bar" title="423 ms of 1500 ms"><i style="width:28.2%"></i></div></td><td class="n">311 ms</td><td class="n">1,500 ms</td><td class="n">1,022 ms</td><td class="n">3,509</td><td class="n">0</td><td class="n">11,378 / 11,378</td><td><span class="pill ok">✓ 5/5</span></td></tr>
+<tr><td>Website soak</td><td><code>localhost:3000</code></td><td>20</td><td>34 min</td><td class="n">421 ms</td><td><div class="bar" title="421 ms of 800 ms"><i style="width:52.6%"></i></div></td><td class="n">310 ms</td><td class="n">800 ms</td><td class="n">7,004 ms</td><td class="n">16,969</td><td class="n">0</td><td class="n">55,862 / 55,862</td><td><span class="pill ok">✓ 5/5</span></td></tr>
+<tr><td>Live website load</td><td><code>lakat-iloilo.vercel.app</code></td><td>ramp to 20</td><td>7 min</td><td class="n">375 ms</td><td><div class="bar" title="375 ms of 800 ms"><i style="width:46.9%"></i></div></td><td class="n">299 ms</td><td class="n">800 ms</td><td class="n">1,668 ms</td><td class="n">3,271</td><td class="n">0</td><td class="n">10,870 / 10,870</td><td><span class="pill ok">✓ 5/5</span></td></tr>
+<tr><td>Live website stress</td><td><code>lakat-iloilo.vercel.app</code></td><td>up to 150</td><td>9 min</td><td class="n">284 ms</td><td><div class="bar" title="284 ms of 1500 ms"><i style="width:18.9%"></i></div></td><td class="n">210 ms</td><td class="n">1,500 ms</td><td class="n">1,006 ms</td><td class="n">18,632</td><td class="n">0</td><td class="n">61,612 / 61,612</td><td><span class="pill ok">✓ 5/5</span></td></tr>
+<tr><td>Live website spike</td><td><code>lakat-iloilo.vercel.app</code></td><td>jump to 100</td><td>4.3 min</td><td class="n">276 ms</td><td><div class="bar" title="276 ms of 1500 ms"><i style="width:18.4%"></i></div></td><td class="n">198 ms</td><td class="n">1,500 ms</td><td class="n">955 ms</td><td class="n">3,620</td><td class="n">0</td><td class="n">11,856 / 11,856</td><td><span class="pill ok">✓ 5/5</span></td></tr>
+<tr><td>Live website soak</td><td><code>lakat-iloilo.vercel.app</code></td><td>20</td><td>34 min</td><td class="n">295 ms</td><td><div class="bar" title="295 ms of 800 ms"><i style="width:36.9%"></i></div></td><td class="n">213 ms</td><td class="n">800 ms</td><td class="n">768 ms</td><td class="n">17,589</td><td class="n">0</td><td class="n">58,474 / 58,474</td><td><span class="pill ok">✓ 5/5</span></td></tr>
+</tbody></table></div>
+<p class="note">The website thresholds are: all checks over 99 % (95 % in stress and spike), <b>security checks exactly 100 %</b>, and pages and <code>/api</code> judged separately against the limit, so a slow page can't hide behind fast data calls. The warm-up visits in <code>setup()</code> are not counted.</p>
+
+<h2>What it means for a traveler on demo day</h2>
+<ul>
+<li>Even if 150 people open the site at once, or 100 arrive in one burst after a post is shared, every page and data answer arrives. On the live site, 95 % of them arrive in under 0.3 s.</li>
+<li>After 30 minutes of steady use nothing got slower: the soaks' p(95) matches the short tests, so nothing leaks or piles up.</li>
+<li>The security headers did not slip once under load.</li>
+</ul>
+
+<h2>Findings</h2>
+<ul>
+<li><b>The live site is faster than localhost</b> (pages 284 ms against 574 ms under stress). The live website, backend and database all run in Mumbai. On the laptop, the local website and backend reach that database from the Philippines.</li>
+<li><b>Two slow single requests, not a pattern:</b> one live backend answer took 26.3 s (live backend load), and one local <code>/api</code> answer took 7.0 s (website soak). Each was one request out of thousands, and p(95) and the error rate did not move. The likely cause is a Vercel function starting fresh, or a network hiccup. The summaries don't record which route it was. If it happens again, run that test with <code>--out json=…</code> to find out.</li>
+<li><b>Website answers are heavier than data answers:</b> about 28 KB each in website stress (500 MB over 17,861 requests), against about 9 KB for a backend answer. That is the page HTML, built per visit for the nonce CSP. It is not a problem at this size.</li>
+<li><b>The first visit after a deploy is slower</b> (home took 0.85 s cold, then 0.3 s). That is why <code>setup()</code> warms each page before the travelers start. The limit stays at 800 ms.</li>
+</ul>
+
+<h2>Not checked</h2>
+<ul>
+<li>More than 150 travelers. No test went past that, so the app's breaking point is not known yet.</li>
+<li>Live stress, spike and soak on the backend's own URL. The live website tests already reach it through <code>/api</code>.</li>
+<li>Page speed as a traveler sees it in the browser. That is Lighthouse's job: see <a href="../lighthouse/report.html">the Lighthouse report</a>.</li>
+</ul>
+
+<footer>Data comes from <code>performance/k6/results/*.json</code> (git-ignored) and the team's pasted summaries. The written report is <code>docs/evaluations/2026-11-21-k6.md</code>.</footer>
+</main></body></html>

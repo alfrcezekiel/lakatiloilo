@@ -1,0 +1,124 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Lakat Iloilo Lighthouse Report</title><style>:root{--bg:#f6f8f8;--card:#fff;--ink:#14302f;--muted:#55706e;--line:#d7e2e1;--brand:#0f6b66;--ok:#1a7f45;--okbg:#e3f4ea;--bad:#b3261e;--badbg:#fbe7e5;--warn:#8a5a00;--warnbg:#fff3d6;--head:#eef4f3}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0e1716;--card:#15211f;--ink:#e3eeec;--muted:#9db3b0;--line:#2a3b39;--brand:#5cc8bf;--ok:#6fd49a;--okbg:#173a27;--bad:#ff8a80;--badbg:#3d1c1a;--warn:#f5c466;--warnbg:#3a2e12;--head:#1b2a28}}
+:root[data-theme="dark"]{--bg:#0e1716;--card:#15211f;--ink:#e3eeec;--muted:#9db3b0;--line:#2a3b39;--brand:#5cc8bf;--ok:#6fd49a;--okbg:#173a27;--bad:#ff8a80;--badbg:#3d1c1a;--warn:#f5c466;--warnbg:#3a2e12;--head:#1b2a28}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{max-width:1100px;margin:0 auto;padding:32px 16px 64px}
+h1{font-size:1.7rem;margin:0 0 4px}h2{font-size:1.2rem;margin:36px 0 10px}h3{font-size:1rem;margin:20px 0 8px}
+.sub{color:var(--muted);margin:0 0 20px}
+.verdict{background:var(--card);border:1px solid var(--line);border-left:5px solid var(--ok);border-radius:10px;padding:16px 18px}
+.verdict.mixed{border-left-color:var(--warn)}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin:18px 0}
+.tile{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px 14px}
+.tile b{display:block;font-size:1.45rem;font-variant-numeric:tabular-nums}.tile span{color:var(--muted);font-size:.85rem}
+.wrap{overflow-x:auto;background:var(--card);border:1px solid var(--line);border-radius:10px}
+table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums;font-size:.9rem}
+th,td{padding:8px 10px;text-align:left;border-bottom:1px solid var(--line);white-space:nowrap}
+th{background:var(--head);font-weight:600}tr:last-child td{border-bottom:0}td.n,th.n{text-align:right}
+.ok{color:var(--ok);font-weight:600}.bad{color:var(--bad);font-weight:600}
+.pill{display:inline-block;padding:1px 8px;border-radius:99px;font-size:.8rem;font-weight:600}
+.pill.ok{background:var(--okbg)}.pill.bad{background:var(--badbg)}.pill.warn{background:var(--warnbg);color:var(--warn)}
+.bar{height:8px;background:var(--line);border-radius:4px;min-width:90px;position:relative}
+.bar i{position:absolute;inset:0 auto 0 0;background:var(--brand);border-radius:4px}
+ul{padding-left:20px}li{margin:4px 0}code{font-size:.85em;background:var(--head);padding:1px 5px;border-radius:4px}
+.note{color:var(--muted);font-size:.85rem}footer{margin-top:40px;color:var(--muted);font-size:.85rem}
+a{color:var(--brand)}
+</style></head><body><main>
+<h1>Page quality (Lighthouse): live site, 2026-11-21</h1>
+<p class="sub">Lakat Iloilo · Lighthouse 13.6.0 with headless Google Chrome · <code>https://lakat-iloilo.vercel.app</code> · pass marks are Google's "good" limits, unchanged (<code>budgets.mjs</code>)</p>
+
+<div class="verdict mixed"><b>Verdict: 19 of 21 phone budgets met (final run, on the charger). Security passed on every page.</b> On a phone every score is 95–100. Two vitals are a little over: home's TBT (how long the page is too busy to respond to a tap), <b>246 ms against 200 ms</b>, and the place page's LCP (how long its biggest picture takes to appear), <b>2.60 s against 2.5 s</b>. Both come from the JavaScript the phone has to run. On a laptop every page is fast. Every page enforces its CSP with a nonce, causes no CSP error and sends no request to the backend's address. Accessibility is 100 everywhere.</div>
+
+<div class="tiles">
+<div class="tile"><b>95–100</b><span>phone Performance, every page</span></div>
+<div class="tile"><b>100</b><span>Accessibility, every page and device</span></div>
+<div class="tile"><b>246 ms</b><span>home TBT on a phone ✗ (limit 200 ms)</span></div>
+<div class="tile"><b>2.60 s</b><span>place LCP on a phone ✗ (limit 2.5 s)</span></div>
+<div class="tile"><b>18 / 18</b><span>security checks passed</span></div>
+</div>
+
+<h2>Phone: the team's final run, on the charger (CPU score 2,869–3,015)</h2>
+<div class="wrap"><table><thead><tr><th>Page</th><th class="n">Perf.</th><th class="n">A11y</th><th class="n">Best pr.</th><th class="n">SEO</th><th class="n">LCP ≤ 2.5 s</th><th class="n">CLS ≤ 0.1</th><th class="n">TBT ≤ 200 ms</th><th class="n">FCP</th><th class="n">Speed Index</th><th>Security</th></tr></thead><tbody>
+<tr><td>Home <code>/</code></td><td class="n"><span class="pill ok">95</span></td><td class="n"><span class="pill ok">100</span></td><td class="n"><span class="pill ok">100</span></td><td class="n"><span class="pill ok">100</span></td><td class="n"><span class="ok">940 ms ✓</span></td><td class="n"><span class="ok">0.000 ✓</span></td><td class="n"><span class="bad">246 ms ✗</span></td><td class="n">940 ms</td><td class="n">2,794 ms</td><td><span class="pill ok">✓ ✓ ✓</span></td></tr>
+<tr><td>Place <code>/destinations/:id</code></td><td class="n"><span class="pill ok">96</span></td><td class="n"><span class="pill ok">100</span></td><td class="n"><span class="pill ok">100</span></td><td class="n"><span class="pill ok">100</span></td><td class="n"><span class="bad">2,599 ms ✗</span></td><td class="n"><span class="ok">0.000 ✓</span></td><td class="n"><span class="ok">100 ms ✓</span></td><td class="n">799 ms</td><td class="n">2,382 ms</td><td><span class="pill ok">✓ ✓ ✓</span></td></tr>
+<tr><td>Log in <code>/login</code></td><td class="n"><span class="pill ok">100</span></td><td class="n"><span class="pill ok">100</span></td><td class="n"><span class="pill ok">100</span></td><td class="n"><span class="pill ok">100</span></td><td class="n"><span class="ok">952 ms ✓</span></td><td class="n"><span class="ok">0.031 ✓</span></td><td class="n"><span class="ok">24 ms ✓</span></td><td class="n">952 ms</td><td class="n">952 ms</td><td><span class="pill ok">✓ ✓ ✓</span></td></tr>
+</tbody></table></div>
+
+<h2>Laptop (the agent's run, earlier today)</h2>
+<div class="wrap"><table><thead><tr><th>Page</th><th class="n">Perf.</th><th class="n">A11y</th><th class="n">Best pr.</th><th class="n">SEO</th><th class="n">LCP ≤ 2.5 s</th><th class="n">CLS ≤ 0.1</th><th class="n">TBT ≤ 200 ms</th><th class="n">FCP</th><th class="n">Speed Index</th><th>Security</th></tr></thead><tbody>
+<tr><td>Home <code>/</code></td><td class="n"><span class="pill ok">99</span></td><td class="n"><span class="pill ok">100</span></td><td class="n"><span class="pill bad">77</span></td><td class="n"><span class="pill ok">100</span></td><td class="n"><span class="ok">332 ms ✓</span></td><td class="n"><span class="ok">0.000 ✓</span></td><td class="n"><span class="ok">70 ms ✓</span></td><td class="n">332 ms</td><td class="n">999 ms</td><td><span class="pill ok">✓ ✓ ✓</span></td></tr>
+<tr><td>Place <code>/destinations/:id</code></td><td class="n"><span class="pill ok">100</span></td><td class="n"><span class="pill ok">100</span></td><td class="n"><span class="pill ok">100</span></td><td class="n"><span class="pill ok">100</span></td><td class="n"><span class="ok">700 ms ✓</span></td><td class="n"><span class="ok">0.000 ✓</span></td><td class="n"><span class="ok">1 ms ✓</span></td><td class="n">268 ms</td><td class="n">738 ms</td><td><span class="pill ok">✓ ✓ ✓</span></td></tr>
+<tr><td>Log in <code>/login</code></td><td class="n"><span class="pill ok">100</span></td><td class="n"><span class="pill ok">100</span></td><td class="n"><span class="pill ok">100</span></td><td class="n"><span class="pill ok">100</span></td><td class="n"><span class="ok">315 ms ✓</span></td><td class="n"><span class="ok">0.007 ✓</span></td><td class="n"><span class="ok">5 ms ✓</span></td><td class="n">315 ms</td><td class="n">555 ms</td><td><span class="pill ok">✓ ✓ ✓</span></td></tr>
+</tbody></table></div>
+<p class="note">Home's Best Practices is 77 on a laptop because of "Uses third-party cookies": Wikimedia sets cookies on its photos. Wikimedia sets them, not our code, so it is not ours to fix.</p>
+
+<h2>Security checks (new today, every page and device)</h2>
+<div class="wrap"><table><thead><tr><th>Check</th><th>How Lighthouse sees it</th><th>Result</th></tr></thead><tbody>
+<tr><td>CSP enforced, scripts need a nonce</td><td>the <code>csp-xss</code> audit reads the real header</td><td><span class="pill ok">✓ 6 / 6</span></td></tr>
+<tr><td>No CSP violation in the console</td><td>no "Content Security Policy" error in <code>errors-in-console</code></td><td><span class="pill ok">✓ 6 / 6</span></td></tr>
+<tr><td>No request to the backend's address</td><td>no <code>localhost:5000</code>, <code>127.0.0.1:5000</code> or <code>api-lakat-iloilo</code> in <code>network-requests</code></td><td><span class="pill ok">✓ 6 / 6</span></td></tr>
+</tbody></table></div>
+<p class="note">Lighthouse still rates "Host allowlists can frequently be bypassed" as High, because the policy lists <code>'self'</code> next to the nonce and has no <code>'strict-dynamic'</code>. That is an idea for further hardening, not a hole: an injected script still needs the nonce.</p>
+
+<h2>Phone results through the day</h2>
+<div class="wrap"><table><thead><tr><th>Run</th><th>CPU score</th><th class="n">Home TBT</th><th class="n">Place LCP</th></tr></thead><tbody>
+<tr><td>Agent, on battery</td><td>1,560–1,650</td><td class="n"><span class="bad">841 / 675 ms ✗</span></td><td class="n"><span class="bad">3.40 ✗</span> / <span class="ok">2.01 s ✓</span></td></tr>
+<tr><td>Agent, on the charger</td><td>2,630–2,770</td><td class="n"><span class="bad">325 / 237 ms ✗</span></td><td class="n"><span class="bad">2.60 / 3.36 / 3.22 s ✗</span></td></tr>
+<tr><td>Team, on the charger</td><td>—</td><td class="n"><span class="bad">284 ms ✗</span></td><td class="n"><span class="bad">2.75 s ✗</span></td></tr>
+<tr><td><b>Team, after the k6 tests</b></td><td>3,235</td><td class="n"><span class="ok">186 ms ✓</span></td><td class="n"><span class="bad">2.60 s ✗</span></td></tr>
+<tr><td>Team, evening, <b>on battery</b></td><td>1,542</td><td class="n"><span class="bad">580 ms ✗</span></td><td class="n"><span class="ok">2.45 s ✓</span> (TBT <span class="bad">402 ms ✗</span>)</td></tr>
+<tr><td><b>Team, final, on the charger</b></td><td>2,869–3,015</td><td class="n"><span class="bad">246 ms ✗</span></td><td class="n"><span class="bad">2.60 s ✗</span></td></tr>
+<tr><td>Agent, real throttling (<code>throttlingMethod: "devtools"</code>)</td><td>—</td><td class="n">—</td><td class="n"><span class="ok">1.96 s ✓</span></td></tr>
+</tbody></table></div>
+<p class="note">Lighthouse imitates a phone by slowing <i>this laptop's</i> CPU 4×. On battery the laptop runs at about 1.7 GHz, so the pretend phone becomes twice as slow as a real mid-range phone. The runner now prints a warning when the CPU score is under 2,000.</p>
+
+<h2>Home TBT on a phone: a small, real miss</h2>
+<p>Today's five runs on the charger gave home TBT of 325, 237, 284, 186 and 246 ms, so <b>4 of 5 are over the limit by 40–125 ms</b>. This is not noise. The busy time is one script, the React and Next.js framework chunk (<code>04by0qkjl0sry.js</code>): 615 ms of script work while React brings the page to life, including one 297 ms long task. The fix is to give home less to bring to life (fewer or lighter parts that run in the browser). That is a change across the page, so it is its own ticket.</p>
+
+<h2>The evening run on battery: not a regression</h2>
+<p>The team ran <code>npm run perf:lighthouse:mobile</code> again in the evening with the laptop <b>on battery</b> (CPU score 1,542, against 3,235 in the run before). With no code changed:</p>
+<div class="wrap"><table><thead><tr><th>Page · phone</th><th class="n">Perf.</th><th class="n">LCP</th><th class="n">TBT</th><th class="n">On the charger, earlier</th></tr></thead><tbody>
+<tr><td>Home</td><td class="n"><span class="pill bad">85</span></td><td class="n"><span class="ok">1,177 ms ✓</span></td><td class="n"><span class="bad">580 ms ✗</span></td><td class="n">97 · TBT <span class="ok">186 ms ✓</span></td></tr>
+<tr><td>Place</td><td class="n"><span class="pill bad">88</span></td><td class="n"><span class="ok">2,454 ms ✓</span></td><td class="n"><span class="bad">402 ms ✗</span></td><td class="n">97 · TBT <span class="ok">78 ms ✓</span></td></tr>
+<tr><td>Log in</td><td class="n"><span class="pill ok">100</span></td><td class="n"><span class="ok">957 ms ✓</span></td><td class="n"><span class="ok">87 ms ✓</span></td><td class="n">100 · TBT <span class="ok">25 ms ✓</span></td></tr>
+</tbody></table></div>
+<ul>
+<li><b>Cause:</b> the battery halves the laptop's CPU speed, and Lighthouse builds its pretend phone from that CPU (slowed 4×). Home's busy time is the React and Next.js framework script (<code>04by0qkjl0sry.js</code>): 1.27 s of script work, with one 617 ms long task. Half speed doubles that.</li>
+<li><b>Place LCP 2.45 s ✓</b> this time, but it varies between about 2.45 and 3.4 s, so the open item below stays open.</li>
+<li><b><code>-e LIVE_OK=yes</code></b> is a k6 option. Lighthouse needs no agreement flag, so the option was ignored.</li>
+<li><b>Runner change:</b> the battery warning used to print only at the very end. Now each phone page shows <code>⚠ CPU score … on battery?</code> under its heading, and an unknown option prints <code>ℹ Ignored: …</code>. The budget still counts.</li>
+</ul>
+
+<h2>Place page LCP on a phone: 0.1 s over</h2>
+<p>The LCP element is the header's splash art (<code>splash-desktop-960x540.webp</code>, 28 KB). On the real page load (measured live) it is ready in about 0.7 s:</p>
+<div class="wrap"><table><thead><tr><th>Part</th><th class="n">Time</th><th>Plain words</th></tr></thead><tbody>
+<tr><td>Time to first byte</td><td class="n">137 ms</td><td>the website starts answering</td></tr>
+<tr><td>Resource load delay</td><td class="n">324 ms</td><td>the browser finds the photo in the HTML</td></tr>
+<tr><td>Resource load duration</td><td class="n">71 ms</td><td>the photo downloads (at <b>High</b> priority now)</td></tr>
+<tr><td>Element render delay</td><td class="n">165 ms</td><td>the photo is drawn</td></tr>
+</tbody></table></div>
+<p>The 2.6 s comes from Lighthouse's <b>simulated</b> slow-4G phone (1.6 Mbit/s). There, the 28 KB photo shares the connection with the page's <b>18 scripts (340 KB)</b>, whatever order they start in.</p>
+
+<h3>What was tried</h3>
+<div class="wrap"><table><thead><tr><th>#</th><th>Idea</th><th>Before</th><th>After</th><th>Kept?</th></tr></thead><tbody>
+<tr><td>0</td><td>A smaller photo (2026-11-18)</td><td colspan="2">ruled out: it is already 28 KB</td><td>—</td></tr>
+<tr><td>1</td><td><code>fetchpriority="high"</code> on the hero (<code>PlacePhoto.tsx</code>, tested)</td><td class="n">3.71 / 3.72 s</td><td class="n">3.81 / 3.77 s</td><td><span class="pill warn">kept, good practice</span></td></tr>
+<tr><td>2</td><td>Remove the loading skeleton</td><td class="n">3.78 / 3.77 s</td><td class="n">4.08 / 4.07 s</td><td><span class="pill bad">no, worse</span></td></tr>
+<tr><td>3</td><td>Preload the splash art in the <code>&lt;head&gt;</code> (React <code>preload()</code>)</td><td class="n">3.94 / 3.92 s</td><td class="n">3.94 / 3.95 s</td><td><span class="pill bad">no change</span></td></tr>
+</tbody></table></div>
+<p class="note">Tries 1–3 were measured on a local production build, two runs each, under the same conditions. Local LCP is higher than live because the local website's backend calls reach the database in Mumbai.</p>
+<p>On the final charger run the real page load had the photo ready in about 0.33 s (first byte 40 ms, load delay 185 ms, download 70 ms, render 38 ms). The miss is only in the simulated slow-4G phone.</p>
+<p><b>Stopped after these tries, as the team rule asks.</b> The only lever left is <b>less JavaScript on the place page</b>: finding what each script is, and whether some can load later. That is a change across the page, so it would be its own ticket, for the team to decide. The 2.5 s budget stays.</p>
+
+<h2>Next step</h2>
+<p><b>Both misses have the same root cause: the JavaScript the phone has to download and run.</b> Ticket 158, "lighter pages on a phone" (<code>docs/tickets/158-lighter-pages-on-a-phone.md</code>), covers both. It should start by measuring what is in each script chunk, then move the parts that are not needed straight away to load later. The budgets stay at Google's limits.</p>
+
+<h2>Not checked</h2>
+<ul>
+<li>The laptop runs were not repeated after the team's k6 tests. They passed earlier today, and nothing in the code has changed since.</li>
+<li>Accommodation pages. They use the same header as destination pages, so they are likely the same.</li>
+<li>Real phones. Lighthouse imitates one.</li>
+</ul>
+
+<footer>Full reports: <code>performance/lighthouse/reports/&lt;page&gt;-&lt;device&gt;.html</code> (git-ignored, open them in a browser). The phone files there hold the team's final run on the charger, matching the table above. Written report: <code>docs/evaluations/2026-11-21-lighthouse.md</code>. k6: <a href="../k6/report.html">the k6 report</a>.</footer>
+</main></body></html>

@@ -4,8 +4,18 @@ How we check the quality of the Lakat Iloilo tourism platform, layer by
 layer, using the tools that teams building Next.js, NestJS and Supabase
 apps already use.
 
-> **Status (2026-11-17):** these layers are built and passing:
+> **Status (2026-11-21):** these layers are built and passing:
 >
+> - **Every k6 test, local and live** (L8, team run, 2026-11-21): all 14
+>   runs passed (backend smoke, stress, spike, soak; website smoke,
+>   stress, spike, soak; live backend smoke and load; live website load,
+>   stress, spike, soak), 0 errors in 123,825 requests, up to 150
+>   travelers. Live pages p(95) 0.28 s under stress. Every security check
+>   passed. Lighthouse on a phone: home now passes (TBT 186 ms); the
+>   place page's LCP is still 2.60 s ✗ (simulated slow 4G). A head
+>   preload was tried and made no difference, so the open lever is less
+>   JavaScript on that page, as its own ticket. See
+>   `docs/evaluations/2026-11-21-k6.md` and `2026-11-21-lighthouse.md`.
 > - **Performance through the website** (L8, k6, 2026-11-21): `npm run perf:site:smoke`
 >   checks the pages and the `/api` proxy (tickets 151–156) on every answer:
 >   enforced CSP with a fresh nonce, and the backend's address and headers
@@ -681,19 +691,47 @@ groups them by route instead of listing every place id separately.
 
 ### Running
 
-```bash
-npm run perf:smoke
-```
+Every k6 test has an `npm run` command (added 2026-11-21). They work the
+same in PowerShell and Git Bash. Run the smoke for a target before anything
+bigger on it.
+
+| Test | Backend direct (port 5000) | Website: pages + `/api` | Live backend | Live website | Takes |
+|------|----------------------------|-------------------------|--------------|--------------|-------|
+| Smoke (1 traveler) | `perf:smoke` | `perf:site:smoke` | `perf:live:smoke` | `perf:live:site:smoke` | 30–45 s |
+| Load (20) | `perf:load` | `perf:site:load` | `perf:live:load` | `perf:live:site:load` | 7 min |
+| Stress (to 150) | `perf:stress` | `perf:site:stress` | `perf:live:stress` 🔒 | `perf:live:site:stress` 🔒 | 10 min |
+| Spike (to 100) | `perf:spike` | `perf:site:spike` | `perf:live:spike` 🔒 | `perf:live:site:spike` 🔒 | 4.5 min |
+| Soak (20 for 1 h) | `perf:soak` | `perf:site:soak` | `perf:live:soak` 🔒 | `perf:live:site:soak` 🔒 | 64 min |
 
 ```bash
-npm run perf:load
+npm run perf:site:smoke
 ```
 
-Against the live API (smoke and load only, unless the team agreed):
+- **Backend direct** measures the NestJS API alone. **Website** measures
+  what a traveler really waits for (website → `/api` proxy → backend →
+  database) and checks the CSP and the hidden backend on every answer.
+- **Website on localhost: use a production build.** Stop `npm run dev`,
+  then `npm run build` and `npm start` (port 3000). On `npm run dev` the
+  pages are slower than the real site: the site smoke on 2026-11-21 gave
+  pages 805 ms ✗ on the dev server and 702 ms ✓ on a production build,
+  same code, same laptop.
+- **🔒 Live heavy tests are locked.** They stop before the first request
+  unless you add the agreement flag at the end. Only after the whole team
+  has agreed, at a quiet time:
 
-```bash
-k6 run -e BASE_URL=https://api-lakat-iloilo.vercel.app performance/k6/scenarios/load.js
-```
+  ```bash
+  npm run perf:live:site:stress -- -e LIVE_OK=yes
+  ```
+
+  Before a live stress, spike or soak, know what it does: it is real
+  traffic on Vercel (it counts toward the project's usage), on the
+  backend and on the hosted database (a 20-connection pool). Vercel's
+  firewall may also start blocking one laptop that sends 100+ travelers'
+  worth of requests, which shows as errors that are not the app's fault.
+  Smoke and load on the live URLs need no flag, but the team still starts
+  them.
+- Results land in `performance/k6/results/` (git-ignored); live runs are
+  named `live-*.json`.
 
 Before you run anything, the team's backend must already be running on
 port 5000. Don't start a second one. During a soak, keep the backend's
@@ -787,6 +825,19 @@ npm run perf:lighthouse
   `npm run perf:lighthouse -- BASE_URL=http://localhost:3000`.
   Accessibility, best practices and SEO are fine to check anywhere.
 - Uses the installed Google Chrome. Takes about 2–4 minutes.
+- **Shortcuts** (added 2026-11-21). Extra settings still go after `--`,
+  for example `npm run perf:lighthouse:mobile -- PAGES=place`:
+
+  | Command | Checks |
+  |---------|--------|
+  | `npm run perf:lighthouse` | live site, phone and laptop, home + place + log in |
+  | `npm run perf:lighthouse:mobile` | live site, phone only |
+  | `npm run perf:lighthouse:desktop` | live site, laptop only |
+  | `npm run perf:lighthouse:local` | `localhost:3000`, phone and laptop (a production build: `npm run build` + `npm start`) |
+  | `npm run perf:lighthouse:focus` | the evidence behind chosen audits (`focus.mjs`) |
+
+- **Plug in the charger.** On battery the phone numbers come out 2–3×
+  worse; the runner warns when the laptop's CPU score is under 2,000.
 - Results: each check prints ✓ or ✗ against `budgets.mjs`, and lists the
   checks that pulled an accessibility, best-practices or SEO score down.
   The HTML reports are in `performance/lighthouse/reports/` (open them in

@@ -30,7 +30,7 @@ rules apply whenever test files are written or changed.
 | End-to-end, a11y | `e2e/flows/`, `e2e/a11y/` | Playwright |
 | Live smoke | `e2e/smoke/` | Playwright, `live` project |
 | Security scan | `security/zap/*.yaml` (Automation Framework plans) | OWASP ZAP desktop app |
-| Performance & load | `performance/k6/scenarios/{smoke,load,stress,spike,soak}.js` (backend), `site-{smoke,load}.js` (website pages + `/api` proxy), shared code in `performance/k6/lib/` | Grafana k6 (local program) |
+| Performance & load | `performance/k6/scenarios/{smoke,load,stress,spike,soak}.js` (backend), `site-{smoke,load,stress,spike,soak}.js` (website pages + `/api` proxy); every one has an `npm run perf:…` command, `perf:live:…` for the live URLs, shared code in `performance/k6/lib/` | Grafana k6 (local program) |
 | Page quality (Core Web Vitals, accessibility, best practices, SEO) | `performance/lighthouse/run.mjs`, pass marks in `budgets.mjs` | Lighthouse (npm), with the installed Google Chrome |
 
 - Shared data goes in `fixtures/`, pretend services in `fakes/` or

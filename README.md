@@ -158,27 +158,39 @@ Project rules live in `.claude/rules/`: team habits always apply, and
 the backend, frontend, database and testing rules apply when those files
 are worked on.
 
-## Testing (proposed)
+## Testing
 
 We test in layers, like a pyramid. The bottom has many small, fast
 tests, and the top has a few slow ones that check the whole app. The
-full plan is in [`docs/TESTING.md`](docs/TESTING.md). None of these
-tools is installed yet. The team agrees first, then installs them. They
-are all free, and none needs Docker.
+full plan, and how to run each layer, is in
+[`docs/TESTING.md`](docs/TESTING.md). Every tool is free, and none needs
+Docker. Results are written up in [`docs/evaluations/`](docs/evaluations/).
 
 | # | Layer | Checks that… | Tool |
 |---|-------|--------------|------|
-| 0 | Static | the code has no type or lint errors | TypeScript, ESLint (in place) |
+| 0 | Static | the code has no type or lint errors | TypeScript, ESLint |
 | 1 | Unit | one function gives the right answer | Vitest, Jest |
-| 2 | Component | a screen shows the right thing and works with a keyboard | Vitest + React Testing Library |
+| 2 | Component | a screen shows the right thing and works with a keyboard | Vitest + React Testing Library + MSW |
 | 3 | API | the backend refuses the wrong people with the right code | Jest + supertest |
 | 4 | Database | every table has Row Level Security | SQL checks in Supabase |
 | 5 | End-to-end | a traveler can finish a whole task in a browser | Playwright + axe |
 | 6 | Live smoke | the live URL is up after a push | Playwright |
-| 7 | Security | there are no well-known weaknesses (headers, cookies, injection) | OWASP ZAP |
+| 7 | Security | there are no well-known weaknesses (headers, cookies, injection) | OWASP ZAP desktop app |
 | 8 | Performance | the app stays fast with many travelers: **load, stress, spike, soak** | Grafana k6 |
+| 8 | Page quality | pages appear fast on a phone, and are accessible and findable | Lighthouse |
 
-Once the tools are installed:
+**Latest results (2026-11-21):** every k6 test passed, locally and on
+the live site: 0 errors in 123,825 requests with up to 150 travelers at
+once, and the CSP and hidden backend checks passed on every answer.
+Lighthouse on a phone (on the charger) scores 95–100 on every page, with
+accessibility 100 everywhere. Two small misses are still open, both
+caused by how much JavaScript the phone has to run: home's TBT (246 ms,
+limit 200 ms) and the place page's LCP (2.6 s, limit 2.5 s). Ticket
+158 covers both. Reports to open in a browser:
+[`performance/k6/report.html`](performance/k6/report.html) and
+[`performance/lighthouse/report.html`](performance/lighthouse/report.html).
+
+The everyday commands:
 
 ```bash
 npm run test
@@ -192,10 +204,41 @@ npm run test:e2e
 npm run perf:smoke
 ```
 
+```bash
+npm run perf:site:smoke
+```
+
+```bash
+npm run perf:lighthouse:mobile
+```
+
+The performance commands come in four groups, each with `smoke`,
+`load`, `stress`, `spike` and `soak`:
+
+| Group | Target |
+|-------|--------|
+| `perf:…` | the local backend (`localhost:5000`) |
+| `perf:site:…` | the local website and its `/api` (`localhost:3000`, on `npm run build` + `npm start`) |
+| `perf:live:…` | the live backend |
+| `perf:live:site:…` | the live website |
+
+Run a smoke before anything bigger. Live stress, spike and soak refuse
+to start unless the whole team agrees and adds `-- -e LIVE_OK=yes`.
+Lighthouse also has `perf:lighthouse:desktop`, `perf:lighthouse:local`
+and `perf:lighthouse:focus`. Lighthouse needs no `-e LIVE_OK=yes`: it
+only opens pages, like one visitor.
+
+**Run phone tests with the laptop on the charger.** Lighthouse builds
+its pretend phone from your laptop's CPU, so on battery phone TBT and
+Performance come out 2–3 times worse (home TBT 580 ms on battery, 186
+ms on the charger, same code). Each phone page then shows
+`⚠ CPU score … on battery?` under its heading: plug in and run again
+before judging.
+
 **Before any security or performance test, know this:** your local
 backend uses the *real* hosted database. So ZAP's attack scan runs on
-localhost only. k6 only reads public pages, and its heavy tests (stress,
-spike, soak) run on localhost unless the whole team agrees otherwise.
+localhost only, k6 only reads public pages, and every load test is real
+traffic. The team starts those tests, not the agent.
 
 ## The rules
 
@@ -219,7 +262,7 @@ CLAUDE.md                 the rules the agent follows
 AGENTS.md                 the same rules for any AI coding agent
 ```
 
-Planned test folders (created when the team sets up testing):
+Test folders:
 
 ```
 src/**/*.test.tsx         unit + component tests, next to the code
@@ -229,7 +272,8 @@ backend/test/api/         backend API tests
 e2e/                      Playwright: flows, accessibility, live smoke
 supabase/checks/          read-only RLS checks
 security/zap/             OWASP ZAP scan plans
-performance/k6/           Grafana k6: smoke, load, stress, spike, soak
+performance/k6/           Grafana k6: backend and website, smoke to soak
+performance/lighthouse/   Lighthouse: page quality and budgets
 ```
 
 ## When something breaks

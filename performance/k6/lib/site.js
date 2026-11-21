@@ -104,6 +104,9 @@ export function checkPage(res) {
   const fresh = nonce !== null && nonce !== lastNonce;
   lastNonce = nonce;
   check(res, { 'page answers 200': (r) => r.status === 200 }, { kind: 'page' });
+  // A failed answer is counted in http_req_failed; only judge security on
+  // real pages, so a timeout under stress is not reported as a CSP problem.
+  if (res.status !== 200) return;
   check(res, {
     'page CSP is enforced, not report-only': () => Boolean(policy) && !res.headers['Content-Security-Policy-Report-Only'],
     'page CSP blocks framing and plugins': () => /frame-ancestors 'none'/.test(policy) && /object-src 'none'/.test(policy),
@@ -119,6 +122,7 @@ export function checkApi(res) {
     'api answers 200': (r) => r.status === 200,
     'api answers JSON': (r) => (r.headers['Content-Type'] || '').includes('application/json'),
   }, { kind: 'api' });
+  if (res.status !== 200) return;
   check(res, {
     'api passes back no backend headers': (r) => BACKEND_HEADERS.every((h) => r.headers[h] === undefined),
     'api never names the backend': (r) => !namesBackend(r.body) && !namesBackend(JSON.stringify(r.headers)),

@@ -72,6 +72,7 @@ export function Reveal({
     let shown = false; // visible, or on its way in
     let arriving = false; // the page-load fade or a slide is still playing
     let arrived: ReturnType<typeof setTimeout> | undefined;
+    let hideFrame = 0;
 
     // Is the CSS fade from page load still playing on screen?
     const box = element.getBoundingClientRect();
@@ -89,11 +90,19 @@ export function Reveal({
         { once: true },
       );
     } else {
-      stopCss();
       // Below or above the screen: hide it until it scrolls into view.
-      if (box.top >= window.innerHeight || box.bottom <= 0) {
-        animate(element, { opacity: 0 }, { duration: 0 });
-      }
+      const offScreen = box.top >= window.innerHeight || box.bottom <= 0;
+      // The style changes wait for the next frame (ticket 158). When the
+      // places arrive, about 50 of these start together. Changing a style
+      // here, between one block's measuring and the next, made the browser
+      // lay out the whole page again for every block, which kept a phone
+      // busy (Lighthouse TBT). Now every block measures first, and all the
+      // changes happen together in one frame, before anything is drawn.
+      hideFrame = requestAnimationFrame(() => {
+        if (shown) return; // it already came into view
+        stopCss();
+        if (offScreen) animate(element, { opacity: 0 }, { duration: 0 });
+      });
     }
 
     const fadeOut = () => {
@@ -133,6 +142,7 @@ export function Reveal({
     return () => {
       stop();
       clearTimeout(arrived);
+      cancelAnimationFrame(hideFrame);
       // Leave it visible if this component goes away mid-animation.
       element.style.animation = "";
       animate(element, { opacity: 1, y: 0 }, { duration: 0 });

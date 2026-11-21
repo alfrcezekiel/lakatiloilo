@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { createClient } from "@/lib/supabase/client";
 
 // Live updates round (ticket 89): Supabase Realtime as a doorbell.
 //
@@ -83,22 +82,12 @@ export function useTableChanges(
   const listenList = JSON.stringify(tables);
 
   useEffect(() => {
-    const supabase = createClient();
     let timer: ReturnType<typeof setTimeout> | undefined;
     const ring = () => {
       clearTimeout(timer);
       timer = setTimeout(() => onChangeRef.current(), quietMs);
     };
 
-    channelCount += 1;
-    let channel = supabase.channel(`lakat-live-${channelCount}`);
-    for (const listen of JSON.parse(listenList) as LiveListen[]) {
-      const spec =
-        typeof listen === "string"
-          ? { event: "*" as const, schema: "public", table: listen }
-          : { schema: "public", ...listen };
-      channel = channel.on("postgres_changes", spec, ring);
-    }
     // Coming back often fires several of these a few seconds apart (back
     // online, then Realtime reconnects), so catch-ups within 5 seconds of
     // the last one are skipped: one request, not several.
@@ -109,13 +98,36 @@ export function useTableChanges(
       ring();
     };
 
-    // The first "subscribed" is the normal start; any later one is a
-    // reconnect after a drop, so catch up.
-    let joinedBefore = false;
-    channel.subscribe((status) => {
-      if (status !== "SUBSCRIBED") return;
-      if (joinedBefore) catchUp();
-      joinedBefore = true;
+    // The Supabase browser code is big (about 67 KB compressed) and only
+    // needed for this doorbell, which starts after the page is on screen.
+    // So it is downloaded here, on demand, instead of with the page's first
+    // scripts, which a phone must download and run before it can answer a
+    // tap (ticket 158, Lighthouse TBT and LCP). If the page is left before
+    // it arrives, nothing is opened.
+    let stopped = false;
+    let stopListening = () => {};
+    void import("@/lib/supabase/client").then(({ createClient }) => {
+      if (stopped) return;
+      const supabase = createClient();
+      channelCount += 1;
+      let channel = supabase.channel(`lakat-live-${channelCount}`);
+      for (const listen of JSON.parse(listenList) as LiveListen[]) {
+        const spec =
+          typeof listen === "string"
+            ? { event: "*" as const, schema: "public", table: listen }
+            : { schema: "public", ...listen };
+        channel = channel.on("postgres_changes", spec, ring);
+      }
+
+      // The first "subscribed" is the normal start; any later one is a
+      // reconnect after a drop, so catch up.
+      let joinedBefore = false;
+      channel.subscribe((status) => {
+        if (status !== "SUBSCRIBED") return;
+        if (joinedBefore) catchUp();
+        joinedBefore = true;
+      });
+      stopListening = () => void supabase.removeChannel(channel);
     });
 
     const onVisible = () => {
@@ -128,10 +140,11 @@ export function useTableChanges(
 
     // Leaving the page stops listening, so listeners never pile up.
     return () => {
+      stopped = true;
       clearTimeout(timer);
       document.removeEventListener("visibilitychange", onVisible);
       window.removeEventListener("online", catchUp);
-      void supabase.removeChannel(channel);
+      stopListening();
     };
   }, [listenList, catchUpOnReturn, quietMs]);
 }

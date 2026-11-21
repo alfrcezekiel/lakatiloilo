@@ -31,6 +31,13 @@ import { BACKEND_ADDRESSES, EXTRA_METRICS, SCORE_BUDGETS, VITALS_BUDGETS } from 
 const args = Object.fromEntries(
   process.argv.slice(2).filter((a) => a.includes("=")).map((a) => a.split(/=(.*)/s).slice(0, 2)),
 );
+// Say so when an option is not ours, for example k6's `-e LIVE_OK=yes`
+// (2026-11-21): Lighthouse only opens pages, like one visitor, so it needs
+// no agreement flag, and the option changes nothing.
+const unused = process.argv.slice(2).filter((a) => !/^(BASE_URL|DEVICES|PAGES)=/.test(a));
+if (unused.length) {
+  console.warn(`ℹ Ignored: ${unused.join(" ")}. Lighthouse only takes BASE_URL=…, DEVICES=… and PAGES=….`);
+}
 const BASE_URL = (args.BASE_URL ?? process.env.BASE_URL ?? "https://lakat-iloilo.vercel.app").replace(/\/+$/, "");
 const DEVICES = (args.DEVICES ?? process.env.DEVICES ?? "mobile,desktop").split(",").map((d) => d.trim());
 
@@ -113,6 +120,13 @@ try {
       writeFileSync(join(reportDir, `${page.name}-${device}.html`), result.report);
 
       console.log(`\n== ${page.name} (${page.path}) · ${device}`);
+      // Right under the heading, next to the numbers it affects, so it is
+      // not missed when only the top of the output is read (team run
+      // 2026-11-21: on battery, home TBT 580 ms ✗). The budget still counts.
+      const cpuNow = lhr.environment?.benchmarkIndex ?? 0;
+      if (device === "mobile" && cpuNow < SLOW_CPU) {
+        console.log(`   ⚠ CPU score ${Math.round(cpuNow)} (under ${SLOW_CPU}): on battery? TBT and Performance below are 2–3× too high.`);
+      }
       const row = { page: page.name, device, scores: {}, vitals: {}, problems: [] };
 
       for (const [id, min] of Object.entries(SCORE_BUDGETS)) {

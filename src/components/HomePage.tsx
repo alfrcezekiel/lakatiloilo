@@ -2,7 +2,7 @@
 
 import type { Accommodation, Destination, PlaceCategory, PlaceRating } from "@/lib/api";
 import { ratingKey, type RatingsByPlace } from "@/components/CardRating";
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useEffect, useMemo, useRef, startTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useTableChanges } from "@/lib/realtime";
 import { HeroSection } from "@/components/HeroSection";
@@ -102,20 +102,27 @@ export function HomePage({ places }: { places: Promise<HomePlaces> }) {
       // ratings already on screen instead of emptying them.
       if (result.failed && loadedOnce.current) return;
       loadedOnce.current = !result.failed;
-      setDestinations(result.destinations);
-      setAccommodations(result.accommodations);
-      // Ratings that fail on a live refresh keep the ones on screen.
-      setRatings((current) =>
-        result.ratings
-          ? new Map(result.ratings.map((r) => [ratingKey(r.place_type, r.place_id), r]))
-          : loadedOnce.current
-            ? current
-            : null,
-      );
-      // Categories that fail on a live refresh keep the ones on screen.
-      if (result.categories) setCategories(result.categories);
-      setLoadError(result.failed);
-      setLoading(false);
+      // Drawing every card at once (about 50) kept a phone busy for a
+      // quarter of a second in one piece, so a tap then did nothing
+      // (Lighthouse TBT, ticket 158). startTransition lets React draw them
+      // in small pieces and answer the traveler in between. Nothing on
+      // screen changes: the skeletons stay until the cards are ready.
+      startTransition(() => {
+        setDestinations(result.destinations);
+        setAccommodations(result.accommodations);
+        // Ratings that fail on a live refresh keep the ones on screen.
+        setRatings((current) =>
+          result.ratings
+            ? new Map(result.ratings.map((r) => [ratingKey(r.place_type, r.place_id), r]))
+            : loadedOnce.current
+              ? current
+              : null,
+        );
+        // Categories that fail on a live refresh keep the ones on screen.
+        if (result.categories) setCategories(result.categories);
+        setLoadError(result.failed);
+        setLoading(false);
+      });
     });
     return () => {
       cancelled = true;

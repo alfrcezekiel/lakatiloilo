@@ -167,3 +167,139 @@ The team re-ran Lighthouse on the charger: place LCP 2.75 s ✗, TBT 111 ms
   database, so the team starts it.
 - The website smoke on the live URL: the team runs it with
   `k6 run -e SITE_URL=https://lakat-iloilo.vercel.app performance/k6/scenarios/site-smoke.js`.
+
+## Team's phone run after the k6 tests (same day, live site)
+
+`npm run perf:lighthouse:mobile`. No CPU warning was printed, so the
+laptop was on the charger.
+
+| Page · phone | Perf. | A11y | Best pr. | SEO | LCP (≤ 2.5 s) | CLS | TBT (≤ 200 ms) | Security checks |
+|---|---|---|---|---|---|---|---|---|
+| Home | 97 | 100 | 100 | 100 | 1.06 s ✓ | 0 ✓ | **186 ms ✓** | ✓ ✓ ✓ |
+| Place | 97 | 100 | 100 | 100 | **2.60 s ✗** | 0 ✓ | 78 ms ✓ | ✓ ✓ ✓ |
+| Log in | 100 | 100 | 100 | 100 | 0.95 s ✓ | 0.031 ✓ | 25 ms ✓ | ✓ ✓ ✓ |
+
+- **Home TBT now passes** (186 ms, against 237–325 ms earlier today). It
+  was close to the line, so this is the charger plus normal run-to-run
+  variation, not a code change.
+- **The place page's LCP is still 0.1 s over** (2.60 s), as in every run
+  today. Every other score on that page is 97–100.
+
+### Try 4: preload the splash art in the `<head>` (not kept)
+
+This was the untried idea above. In a copy of the app (in the agent's
+scratchpad, so the team's server and the repo were untouched), the
+place page's loading skeleton called React's `preload()` for the splash
+art, with the same srcset, `sizes="100vw"` and `fetchpriority="high"`.
+The tag reached the page's `<head>` (checked with `curl`). Local
+production build, phone, two runs each, both on battery:
+
+| | LCP run 1 | LCP run 2 |
+|---|---|---|
+| Without the preload | 3.94 s | 3.92 s |
+| With the preload | 3.94 s | 3.95 s |
+
+**No change, so it was not added to the code.** Telling the browser
+about the photo earlier does not help, because the photo is not what it
+is waiting for. In Lighthouse's simulated slow-4G phone, the 28 KB photo
+shares the 1.6 Mbit/s connection with the page's ~340 KB of JavaScript,
+whatever order they start in.
+
+**Where this leaves the ✗ (stopped after four tries, per the team
+rule):**
+
+- With Lighthouse's *real* throttling the same page passes (1.96 s), and
+  the live page is ready in ~0.76 s without throttling.
+- The only lever left is **less JavaScript on the place page**: what
+  each script is, and whether some can load later. That is a code change
+  across the page, so it would be its own ticket, for the team to
+  decide. The 2.5 s budget stays.
+
+## Team's evening phone run, on battery (same day, live site)
+
+`npm run perf:lighthouse:mobile -- -e LIVE_OK=yes`. The laptop was **on
+battery**: CPU score 1,542 (against 3,235 in the run before it).
+
+| Page · phone | Perf. | A11y | Best pr. | SEO | LCP (≤ 2.5 s) | CLS | TBT (≤ 200 ms) | Security |
+|---|---|---|---|---|---|---|---|---|
+| Home | 85 ✗ | 100 | 100 | 100 | 1.18 s ✓ | 0 ✓ | **580 ms ✗** | ✓ ✓ ✓ |
+| Place | 88 ✗ | 100 | 100 | 100 | **2.45 s ✓** | 0 ✓ | **402 ms ✗** | ✓ ✓ ✓ |
+| Log in | 100 | 100 | 100 | 100 | 0.96 s ✓ | 0.031 ✓ | 87 ms ✓ | ✓ ✓ ✓ |
+
+**Not a regression, and nothing in the code to fix.** No code has
+changed since the run before it (on the charger: home TBT 186 ms ✓,
+place TBT 78 ms ✓). The only difference is the battery:
+
+- Lighthouse imitates a phone by slowing **this laptop's** CPU 4×. On
+  battery the laptop runs at about half speed, so the pretend phone is
+  about twice as slow as a real mid-range one.
+- Home's busy time is the same React and Next.js framework script as
+  before (`04by0qkjl0sry.js`, the new name of the same chunk after the
+  last deploy): 1.27 s of script work, with one 617 ms long task. Half
+  speed doubles that.
+- Same pattern as this morning's battery runs (home TBT 675–841 ms),
+  which fell to 186–325 ms on the charger.
+- The place page's LCP passed this time (2.45 s). It moves between about
+  2.45 and 3.4 s from run to run, so this is not a fix. The open item
+  stays as described above.
+
+**`-e LIVE_OK=yes` is a k6 option.** Lighthouse only opens pages, like
+one visitor, so it needs no agreement flag; the option was ignored and
+changed nothing.
+
+**What changed in the runner (`performance/lighthouse/run.mjs`):**
+
+- The battery warning printed only at the very end, after the
+  "Reports:" line, where it was easy to miss. Now each phone page also
+  shows `⚠ CPU score 1542 (under 2000): on battery? …` right under its
+  heading, next to the TBT it affects. The budget still counts as missed.
+- An option it does not use (such as `-e LIVE_OK=yes`) now prints
+  `ℹ Ignored: …` at the start.
+- Checked: on the login page on battery, both messages appeared, and
+  ESLint passes.
+
+**To judge phone speed:** plug in the charger, wait a minute, then run:
+
+```bash
+npm run perf:lighthouse:mobile
+```
+
+## Team's final phone run, on the charger (same day, live site)
+
+`npm run perf:lighthouse:mobile`, laptop plugged in: CPU score 2,869–3,015,
+so no battery warning. **This is today's fair phone result.**
+
+| Page · phone | Perf. | A11y | Best pr. | SEO | LCP (≤ 2.5 s) | CLS | TBT (≤ 200 ms) | Security |
+|---|---|---|---|---|---|---|---|---|
+| Home | 95 ✓ | 100 | 100 | 100 | 0.94 s ✓ | 0 ✓ | **246 ms ✗** | ✓ ✓ ✓ |
+| Place | 96 ✓ | 100 | 100 | 100 | **2.60 s ✗** | 0 ✓ | 100 ms ✓ | ✓ ✓ ✓ |
+| Log in | 100 | 100 | 100 | 100 | 0.95 s ✓ | 0.031 ✓ | 24 ms ✓ | ✓ ✓ ✓ |
+
+**The charger fixed what the battery broke.** Compared with the battery
+run 6 minutes earlier, Performance went from 85/88 to 95/96, home TBT
+from 580 to 246 ms and place TBT from 402 to 100 ms. Every score is now
+95–100, and all 9 security checks pass. Two vitals are still a little
+over their limits. Both were already known:
+
+1. **Home TBT 246 ms (limit 200).** Today's five charger runs gave 325,
+   237, 284, 186 and 246 ms, so 4 of 5 are over by 40–125 ms. This is a
+   small, real miss, not noise. Its cause is one script, the React and
+   Next.js framework chunk (`04by0qkjl0sry.js`): 615 ms of script work
+   while React brings the page to life, including one 297 ms long task.
+   The fix is to give home less to bring to life (fewer or lighter parts
+   that run in the browser). It is a change across the page, so it is
+   its own ticket.
+2. **Place LCP 2.60 s (limit 2.5).** The same 0.1 s miss as before. On
+   this run's real page load the header photo is ready in about 0.33 s
+   (first byte 40 ms, load delay 185 ms, download 70 ms, render 38 ms).
+   The 2.6 s comes from the simulated slow-4G phone, where the photo
+   shares the connection with ~340 KB of scripts. Four fixes have been
+   tried (above). The open lever is less JavaScript on the place page.
+
+**Both misses have the same root cause: the JavaScript the browser has
+to download and run.** Ticket 158, "lighter pages on a phone"
+(`docs/tickets/158-lighter-pages-on-a-phone.md`), covers both. It should start by measuring what is in each script chunk.
+The budgets stay at Google's limits.
+
+The runner change worked as intended: on the charger no `⚠ CPU score`
+line appeared, and on battery it would now show under each page.
