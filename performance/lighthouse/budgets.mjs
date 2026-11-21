@@ -31,3 +31,7 @@ export const EXTRA_METRICS = {
   "first-contentful-paint": "FCP",
   "speed-index": "Speed Index",
 };
+
+// The backend's address must never appear in a request the page makes
+// (tickets 151–153; the same list as e2e/flows/hidden-backend.spec.ts).
+export const BACKEND_ADDRESSES = ["localhost:5000", "127.0.0.1:5000", "api-lakat-iloilo"];

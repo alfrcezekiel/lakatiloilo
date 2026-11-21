@@ -23,3 +23,18 @@ export const HEAVY_THRESHOLDS = {
   http_req_duration: ['p(95)<1500'],
   checks: ['rate>0.95'],
 };
+
+// The website scenarios (site-*.js): the same limits as THRESHOLDS, judged
+// for pages and for /api answers separately, so a slow page can't hide
+// behind fast data calls. The security checks (enforced CSP, fresh nonce,
+// hidden backend) must pass every single time: a security rule that holds
+// 99 % of the time does not hold.
+// Speed is judged only on travelers' requests (tagged kind), so setup()'s
+// look-ups and warm-up visits don't count: the same 800 ms, not a looser one.
+export const SITE_THRESHOLDS = {
+  http_req_failed: THRESHOLDS.http_req_failed,
+  checks: THRESHOLDS.checks,
+  'http_req_duration{kind:page}': ['p(95)<800'],
+  'http_req_duration{kind:api}': ['p(95)<800'],
+  'checks{security:yes}': ['rate==1'],
+};

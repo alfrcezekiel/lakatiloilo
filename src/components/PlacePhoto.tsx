@@ -66,6 +66,11 @@ export function PlacePhoto({
   // requesting a smaller copy (team request 2026-11-19).
   fullSize?: boolean;
 }) {
+  // The hero is the largest picture on a place page (its LCP), so the
+  // browser downloads it before anything else (Lighthouse "LCP request
+  // discovery", 2026-11-21). Cards get no hint, so they never compete.
+  const heroPriority = size === "hero" ? "high" : undefined;
+
   if (!src) {
     // Cards use a 480 px copy and a 960 px option for high-density screens.
     // The hero keeps its 960/1920 options (see src/lib/splash.ts).
@@ -86,6 +91,7 @@ export function PlacePhoto({
         width={1920}
         height={1080}
         loading={size === "hero" ? "eager" : "lazy"}
+        fetchPriority={heroPriority}
         className={className}
       />
     );
@@ -98,6 +104,7 @@ export function PlacePhoto({
         src={src}
         alt={alt}
         loading={size === "hero" ? "eager" : "lazy"}
+        fetchPriority={heroPriority}
         className={className}
       />
     );
@@ -111,6 +118,7 @@ export function PlacePhoto({
       sizes={SIZES[size]}
       alt={alt}
       loading={size === "hero" ? "eager" : "lazy"}
+      fetchPriority={heroPriority}
       className={className}
     />
   );

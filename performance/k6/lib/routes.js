@@ -28,3 +28,15 @@ export const PLACE_ROUTES = [
   { name: 'GET /v1/accommodations/:id', placeType: 'accommodation', weight: 2 },
   { name: 'GET /v1/reviews?place', placeType: 'any', weight: 3 },
 ];
+
+// The website pages a traveler opens (site-*.js scenarios). Every page is
+// built per visit since the nonce CSP (ticket 156, src/app/layout.tsx), so
+// each one is real server work, not a cached file. Place pages use the ids
+// found in setup(). The data routes above are also visited, through the
+// website's /api proxy.
+export const SITE_PAGES = [
+  { name: 'PAGE /', path: '/', weight: 4 },
+  { name: 'PAGE /login', path: '/login', weight: 1 },
+  { name: 'PAGE /destinations/:id', placeType: 'destination', weight: 3 },
+  { name: 'PAGE /accommodations/:id', placeType: 'accommodation', weight: 2 },
+];

@@ -6,6 +6,21 @@ apps already use.
 
 > **Status (2026-11-17):** these layers are built and passing:
 >
+> - **Performance through the website** (L8, k6, 2026-11-21): `npm run perf:site:smoke`
+>   checks the pages and the `/api` proxy (tickets 151–156) on every answer:
+>   enforced CSP with a fresh nonce, and the backend's address and headers
+>   hidden. It passed on a local production build (port 3001): pages p(95)
+>   0.70 s, `/api` p(95) 0.34 s, 96 of 96 checks. Against a pretend site with
+>   planted mistakes, all 8 security checks failed, as they should.
+>   The team then ran `perf:site:load` (20 travelers, 7 min, on
+>   `npm run dev`): passed, pages p(95) 0.76 s, `/api` 0.42 s, 0 errors in
+>   3,090 requests, 15,327 of 15,327 security checks. The site smoke on the
+>   live URL passed too (pages 0.29 s, `/api` 0.32 s). See
+>   `docs/evaluations/2026-11-21-k6.md`. Lighthouse
+>   (`npm run perf:lighthouse`) now also checks each page for an enforced
+>   CSP, no CSP errors in the console and no request to the backend's
+>   address (all ✓ on the live site), and warns when the laptop's CPU is
+>   slow (on battery). See `docs/evaluations/2026-11-21-lighthouse.md`.
 > - **Page quality** (L8, Lighthouse, 2026-11-18): `npm run perf:lighthouse`
 >   scores the live site's home, place and login pages on a phone and a
 >   laptop. **Accessibility is 100 everywhere.** On a laptop every page is
@@ -366,13 +381,16 @@ lakatiloilo/
    │  │  ├─ config.js              BASE_URL, the live-URL safety guard
    │  │  ├─ routes.js              public GET routes and their weights
    │  │  ├─ thresholds.js          shared pass/fail limits
-   │  │  └─ traveler.js            setup() finds place ids; visit() = one visit
+   │  │  ├─ traveler.js            setup() finds place ids; visit() = one visit
+   │  │  └─ site.js                the same on the WEBSITE: pages + /api, CSP and hidden-backend checks
    │  ├─ scenarios/
    │  │  ├─ smoke.js               1 user, 30 s: does the script work?
    │  │  ├─ load.js                normal busy day
    │  │  ├─ stress.js              keep adding users until it breaks
    │  │  ├─ spike.js               sudden rush, then back to quiet
-   │  │  └─ soak.js                normal load for an hour
+   │  │  ├─ soak.js                normal load for an hour
+   │  │  ├─ site-smoke.js          website: every page and /api route once, 40 s
+   │  │  └─ site-load.js           website: 20 users, 7 min (the team starts it)
    │  └─ results/                  JSON summaries (git-ignored, .gitkeep only)
    └─ lighthouse/                            ← L8 page quality (Lighthouse)
       ├─ budgets.mjs               pass marks: Google's "good" limits
@@ -431,6 +449,8 @@ Root `package.json`:
 "perf:stress": "k6 run -e BASE_URL=http://localhost:5000 --summary-export performance/k6/results/stress.json performance/k6/scenarios/stress.js",
 "perf:spike":  "k6 run -e BASE_URL=http://localhost:5000 --summary-export performance/k6/results/spike.json performance/k6/scenarios/spike.js",
 "perf:soak":   "k6 run -e BASE_URL=http://localhost:5000 --summary-export performance/k6/results/soak.json performance/k6/scenarios/soak.js",
+"perf:site:smoke": "k6 run -e SITE_URL=http://localhost:3000 performance/k6/scenarios/site-smoke.js",
+"perf:site:load":  "k6 run -e SITE_URL=http://localhost:3000 --summary-export performance/k6/results/site-load.json performance/k6/scenarios/site-load.js",
 "perf:lighthouse": "node performance/lighthouse/run.mjs"
 ```
 
@@ -643,7 +663,8 @@ files. Open them: each one starts with a comment that explains it.
 | `lib/routes.js` | The public GET routes from `docs/SPEC.md`, each with a **weight**: how often a traveler visits it. `/v1/destinations` (4) is visited twice as often as `/v1/destinations/near` (2). The routes that need a place (`/v1/destinations/:id`, `/v1/accommodations/:id`, `/v1/reviews?place_type=…&place_id=…`) are listed apart, because place ids are UUIDs |
 | `lib/thresholds.js` | `THRESHOLDS` for smoke, load and soak: p(95) under 800 ms, errors under 1 %, checks over 99 %. `HEAVY_THRESHOLDS` for stress and spike: p(95) under 1.5 s, and k6 stops by itself (`abortOnFail`) once errors pass 5 % |
 | `lib/traveler.js` | What one pretend traveler does. `setup()` runs **once** before the test: it reads `/v1/destinations` and `/v1/accommodations` to find real place ids (up to 20 of each), and stops with a clear message if the backend isn't running. `visit()` picks a weighted route, sends a GET, checks for "200 and JSON", then waits 1–3 s like a person reading |
-| `scenarios/*.js` | Each one only sets `options` (how many travelers, for how long) and re-uses `setup` and `visit` |
+| `lib/site.js` | The website traveler (added 2026-11-21, after tickets 151–156). Calls the **website** (`SITE_URL`, default `http://localhost:3000`), not the backend: pages (home, log in, a destination, an accommodation) and the same data routes through `/api/v1/...`, the way a real browser does. `setup()` finds place ids through `/api` and opens each page once as a warm-up (the first visit after the website starts fills its caches: home took 0.85 s, then 0.3 s). Every page is checked for an **enforced** CSP (not report-only) with `frame-ancestors 'none'` and `object-src 'none'`, a script nonce that is new on every visit and matches the HTML, no `'unsafe-inline'` script, and no backend address in the HTML. Every `/api` answer is checked for no backend headers (`X-Powered-By`, CORS, `ETag`) and no backend address. These security checks are tagged `security:yes` |
+| `scenarios/*.js` | Each one only sets `options` (how many travelers, for how long) and re-uses `setup` and `visit` (`site-smoke.js` uses `tour`: every page and route in turn) |
 
 | Scenario | `options` | Takes about |
 |----------|-----------|-------------|
@@ -652,6 +673,8 @@ files. Open them: each one starts with a comment that explains it.
 | `stress.js` | 2 min each at 20, 50, 100, 150, then down. Heavy thresholds and guard | 10 min |
 | `spike.js` | 1 min at 5, 10 s up to 100, 1 min at 100, 10 s down to 5, 2 min at 5 to watch the recovery. Heavy thresholds and guard | 4.5 min |
 | `soak.js` | 2 min up to 20, 60 min at 20 (or `-e SOAK_MINUTES=30`), 2 min down. Guard | 64 min |
+| `site-smoke.js` | `vus: 1, duration: '40s'`, tours all 12 pages and `/api` routes. `SITE_THRESHOLDS`: p(95) under 800 ms for pages and for `/api` **separately** (setup's warm-up not counted), errors under 1 %, and **100 %** of the security checks | 45 s |
+| `site-load.js` | like `load.js` (20 travelers, 7 min) on the website, `SITE_THRESHOLDS`. Guard (localhost unless `-e LIVE_OK=yes`) | 7 min |
 
 Requests are tagged by route (`GET /v1/destinations/:id`), so the summary
 groups them by route instead of listing every place id separately.

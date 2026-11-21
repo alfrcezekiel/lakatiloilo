@@ -18,6 +18,8 @@
     "perf:stress": "k6 run -e BASE_URL=http://localhost:5000 --summary-export performance/k6/results/stress.json performance/k6/scenarios/stress.js",
     "perf:spike": "k6 run -e BASE_URL=http://localhost:5000 --summary-export performance/k6/results/spike.json performance/k6/scenarios/spike.js",
     "perf:soak": "k6 run -e BASE_URL=http://localhost:5000 --summary-export performance/k6/results/soak.json performance/k6/scenarios/soak.js",
+    "perf:site:smoke": "k6 run -e SITE_URL=http://localhost:3000 performance/k6/scenarios/site-smoke.js",
+    "perf:site:load": "k6 run -e SITE_URL=http://localhost:3000 --summary-export performance/k6/results/site-load.json performance/k6/scenarios/site-load.js",
     "perf:lighthouse": "node performance/lighthouse/run.mjs",
     "perf:lighthouse:focus": "node performance/lighthouse/focus.mjs"
   },

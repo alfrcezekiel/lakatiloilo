@@ -30,7 +30,7 @@ rules apply whenever test files are written or changed.
 | End-to-end, a11y | `e2e/flows/`, `e2e/a11y/` | Playwright |
 | Live smoke | `e2e/smoke/` | Playwright, `live` project |
 | Security scan | `security/zap/*.yaml` (Automation Framework plans) | OWASP ZAP desktop app |
-| Performance & load | `performance/k6/scenarios/{smoke,load,stress,spike,soak}.js`, shared code in `performance/k6/lib/` | Grafana k6 (local program) |
+| Performance & load | `performance/k6/scenarios/{smoke,load,stress,spike,soak}.js` (backend), `site-{smoke,load}.js` (website pages + `/api` proxy), shared code in `performance/k6/lib/` | Grafana k6 (local program) |
 | Page quality (Core Web Vitals, accessibility, best practices, SEO) | `performance/lighthouse/run.mjs`, pass marks in `budgets.mjs` | Lighthouse (npm), with the installed Google Chrome |
 
 - Shared data goes in `fixtures/`, pretend services in `fakes/` or
@@ -100,8 +100,9 @@ rules apply whenever test files are written or changed.
   `guardHeavyTest()`, which refuses any address other than localhost unless
   `-e LIVE_OK=yes` is passed. The team passes it, after agreeing, never the
   agent.
-- The agent may run `perf:smoke` against localhost to check that a script
-  works. The team starts load, stress, spike and soak tests, and every
+- The agent may run `perf:smoke` and `perf:site:smoke` against localhost
+  to check that a script works. Security checks in the site scenarios are
+  tagged `security:yes` and must pass 100 %: never lower that. The team starts load, stress, spike and soak tests, and every
   test on the live URL.
 - Always run smoke before any bigger test. If smoke fails, fix the script
   first.

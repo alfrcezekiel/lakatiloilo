@@ -26,7 +26,7 @@ import { fileURLToPath } from "node:url";
 import * as chromeLauncher from "chrome-launcher";
 import lighthouse from "lighthouse";
 import desktopConfig from "lighthouse/core/config/desktop-config.js";
-import { EXTRA_METRICS, SCORE_BUDGETS, VITALS_BUDGETS } from "./budgets.mjs";
+import { BACKEND_ADDRESSES, EXTRA_METRICS, SCORE_BUDGETS, VITALS_BUDGETS } from "./budgets.mjs";
 
 const args = Object.fromEntries(
   process.argv.slice(2).filter((a) => a.includes("=")).map((a) => a.split(/=(.*)/s).slice(0, 2)),
@@ -58,6 +58,44 @@ mkdirSync(reportDir, { recursive: true });
 const fmt = (value, unit) => (unit === "ms" ? `${Math.round(value)} ms` : value.toFixed(3));
 let missed = 0;
 const summary = [];
+// Lighthouse's own measure of this computer's speed (benchmarkIndex). It
+// slows the CPU 4× to imitate a phone, so a slow laptop means a slow
+// "phone": on battery (powersave) this laptop scored ~1,550 instead of
+// ~2,970 and phone TBT came out 2–3× worse (2026-11-18 and 2026-11-21).
+const SLOW_CPU = 2000;
+const cpuScores = [];
+
+const items = (lhr, id) => lhr.audits[id]?.details?.items ?? [];
+const text = (value) => (typeof value === "string" ? value : value?.formattedDefault ?? value?.text ?? JSON.stringify(value ?? ""));
+
+// - The CSP is enforced (Lighthouse's "csp-xss" audit reads the page's
+//   real header; a missing or report-only policy is a High finding there).
+//   Lighthouse also rates some fine choices High-risk ("Host allowlists
+//   can frequently be bypassed": we list 'self' next to the nonce and use
+//   no 'strict-dynamic'); only the findings below mean our policy really is
+//   missing or weak: no enforced policy, 'unsafe-inline' scripts, no
+//   object-src, script-src or base-uri, or a short nonce.
+// - The app's own code caused no CSP violation (the console stays clean
+//   of "Content Security Policy" errors).
+// - No request the page made went to the backend's address: everything
+//   goes through the website's /api (tickets 151–153).
+function securityChecks(lhr) {
+  const csp = items(lhr, "csp-xss").filter((item) => item.severity === "High" || text(item.severity).includes("High"));
+  const weak = csp
+    .map((item) => `${text(item.directive)} ${text(item.description)}`.trim())
+    .filter((line) => /No CSP found in enforcement mode|unsafe in-page scripts|Missing `object-src`|`script-src` directive is missing|Missing `base-uri`|Nonces should/i.test(line));
+  const violations = items(lhr, "errors-in-console")
+    .map((item) => text(item.description))
+    .filter((line) => /Content Security Policy/i.test(line));
+  const leaks = items(lhr, "network-requests")
+    .map((item) => item.url)
+    .filter((url) => BACKEND_ADDRESSES.some((address) => url.includes(address)));
+  return [
+    { label: "CSP enforced, scripts need a nonce", problems: weak },
+    { label: "No CSP violation in the console", problems: violations },
+    { label: "No request to the backend's address", problems: leaks },
+  ];
+}
 
 const chrome = await chromeLauncher.launch({ chromeFlags: ["--headless=new", "--no-first-run"] });
 try {
@@ -71,6 +109,7 @@ try {
         config,
       );
       const lhr = result.lhr;
+      cpuScores.push(lhr.environment?.benchmarkIndex ?? 0);
       writeFileSync(join(reportDir, `${page.name}-${device}.html`), result.report);
 
       console.log(`\n== ${page.name} (${page.path}) · ${device}`);
@@ -106,6 +145,15 @@ try {
         row.vitals[label] = Math.round(lhr.audits[id].numericValue);
         console.log(`     ${label.padEnd(15)} ${fmt(lhr.audits[id].numericValue, "ms").padStart(9)}`);
       }
+      // Security checks (tickets 151–156), read from the same visit. Any ✗
+      // counts as a missed budget.
+      for (const { label, problems } of securityChecks(lhr)) {
+        const ok = problems.length === 0;
+        if (!ok) missed++;
+        row.security = { ...row.security, [label]: ok };
+        console.log(`   ${ok ? "✓" : "✗"} ${label}`);
+        for (const problem of problems.slice(0, 5)) console.log(`        – ${problem}`);
+      }
       summary.push(row);
     }
   }
@@ -113,7 +161,14 @@ try {
   await chrome.kill();
 }
 
-writeFileSync(join(reportDir, "summary.json"), JSON.stringify({ baseUrl: BASE_URL, at: new Date().toISOString(), pages: summary }, null, 2));
+writeFileSync(join(reportDir, "summary.json"), JSON.stringify({ baseUrl: BASE_URL, at: new Date().toISOString(), cpuScore: Math.min(...cpuScores), pages: summary }, null, 2));
 console.log(`\nReports: ${reportDir}/<page>-<device>.html (open in a browser)`);
+const cpu = Math.min(...cpuScores);
+if (cpu < SLOW_CPU) {
+  console.warn(
+    `\n⚠ This computer's CPU score was ${cpu} (under ${SLOW_CPU}). Is it on battery? Phone TBT and Performance\n` +
+      "  come out 2–3× worse than they are. Plug in the charger and run again before judging the phone speed.",
+  );
+}
 console.log(missed === 0 ? "All budgets met ✓" : `${missed} budget(s) missed ✗`);
 process.exitCode = missed === 0 ? 0 : 1;
