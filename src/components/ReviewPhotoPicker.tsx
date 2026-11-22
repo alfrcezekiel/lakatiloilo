@@ -1,18 +1,12 @@
 "use client";
 
 import { ImagePlus, X } from "lucide-react";
-import { useEffect, useId, useMemo, useRef, useState } from "react";
+import { useId, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 import { pillButton } from "@/components/ui/button";
 import { MAX_REVIEW_PHOTOS, type ReviewPhoto } from "@/lib/api";
-import { fitPhoto, MAX_PHOTO_BYTES, PHOTO_TYPES } from "@/lib/shrink-photo";
-
-// The photo rules live with the shrinking (src/lib/shrink-photo.ts); kept
-// here too, for the other pickers that import them from this file.
-export { MAX_PHOTO_BYTES, PHOTO_TYPES };
-// Unchanged by the "photos over 2 MB" change (team request 2026-11-22):
-// what is stored is still at most 2 MB.
-export const PHOTO_MESSAGE = "Please choose a JPG, PNG or WebP photo up to 2 MB.";
+import { fitPhoto, PHOTO_MESSAGE, PHOTO_TYPES } from "@/lib/shrink-photo";
+import { useObjectUrls } from "@/lib/object-url";
 export const TOO_MANY_PHOTOS = `A review can have up to ${MAX_REVIEW_PHOTOS} photos.`;
 
 // "Add photos" in the review form (ticket 113; one photo since ticket 81):
@@ -52,8 +46,7 @@ export function ReviewPhotoPicker({
   // Temporary addresses for the chosen files, so they can be shown before
   // they are uploaded; released again when the files change or the form
   // closes.
-  const previews = useMemo(() => files.map((file) => URL.createObjectURL(file)), [files]);
-  useEffect(() => () => previews.forEach((url) => URL.revokeObjectURL(url)), [previews]);
+  const previews = useObjectUrls(files);
 
   const choose = async (chosen: FileList | null) => {
     const picked = Array.from(chosen ?? []);

@@ -11,9 +11,11 @@ import { QueryFailedError, type QueryRunner } from 'typeorm';
 import { SupabaseService } from '../../supabase/supabase.service';
 import { TravelerTransactions } from '../traveler-transactions';
 import { notYours } from './reviews.service';
-import { VIDEO_BUCKET } from './review-videos.bucket';
+import { removeVideoFiles, VIDEO_BUCKET, videoUrlOf } from './review-videos.bucket';
 
-export const MAX_VIDEO_BYTES = 50 * 1024 * 1024; // 50 MB, the same as the bucket (065)
+// The same limit and words as the website's src/lib/review-video.ts (and
+// the bucket in 065): change them together.
+export const MAX_VIDEO_BYTES = 50 * 1024 * 1024;
 export const VIDEO_MESSAGE = 'Please choose an MP4, MOV or WebM video up to 50 MB and 60 seconds.';
 const VIDEO_TYPES = ['video/mp4', 'video/quicktime', 'video/webm'];
 // "<user id>/<random id>.<mp4|mov|webm>", the same shape the database
@@ -40,11 +42,6 @@ export class ReviewVideosService {
     private readonly travelerTransactions: TravelerTransactions,
     private readonly supabase: SupabaseService,
   ) {}
-
-  // The public address of a stored video, or null.
-  urlOf(path: string | null | undefined): string | null {
-    return path ? this.supabase.publicFileUrl(VIDEO_BUCKET, path) : null;
-  }
 
   // Attaches an uploaded video to the traveler's own review (POST
   // /v1/reviews/:id/video):
@@ -75,7 +72,7 @@ export class ReviewVideosService {
       return old;
     });
     if (before && before !== path) await this.removeFile(accessToken, before);
-    return { video_url: this.urlOf(path as string)! };
+    return { video_url: videoUrlOf(this.supabase, path as string)! };
   }
 
   // Removes the video from the traveler's own review (DELETE
@@ -103,15 +100,9 @@ export class ReviewVideosService {
     return rows[0].video_path;
   }
 
-  // Deletes a video file as the traveler. Never fails the request: a
-  // leftover file is only logged.
-  async removeFile(accessToken: string, path: string): Promise<void> {
-    try {
-      const { error } = await this.supabase.travelerClient(accessToken).storage.from(VIDEO_BUCKET).remove([path]);
-      if (error) this.logger.warn(`Could not delete review video ${path}: ${error.message}`);
-    } catch (error) {
-      this.logger.warn(`Could not delete review video ${path}: ${String(error)}`);
-    }
+  // Deletes a video file as the traveler (review-videos.bucket.ts).
+  removeFile(accessToken: string, path: string): Promise<void> {
+    return removeVideoFiles(this.supabase, accessToken, [path], this.logger);
   }
 
   // The uploaded file's size and type, as Storage records them, or null.

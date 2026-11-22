@@ -8,7 +8,7 @@ stars, a bar for each star level shows how many reviews gave it, as in the
 
 **Blocked by:** None
 
-**Status:** todo
+**Status:** done (the team confirmed it works on the live site, 2026-11-22)
 
 - [x] The chips read, in order: Most relevant · With photos & videos · Newest;
       the chosen one is white, the others glass
@@ -23,7 +23,7 @@ stars, a bar for each star level shows how many reviews gave it, as in the
       reader, reachable with Tab, at least 44 px tall, and fit on one line
       or wrap evenly at 320 px
 - [x] A live update (a new review, a Helpful mark) keeps the chosen sort
-- [ ] Works on the live URL
+- [x] Works on the live URL
 
 **Progress (2026-11-22):** built; the team confirmed it on localhost the same day
 (every box but the live URL, which waits for the push).
@@ -46,3 +46,7 @@ stars, a bar for each star level shows how many reviews gave it, as in the
 - **Not checked:** a live update arriving while a chip is chosen (the sort
   is kept in the page's state, which a live update doesn't touch), and the
   live URL.
+
+**Live check (2026-11-22):** the team confirmed this ticket on the live
+site the same day it was pushed (commit d2db292), so the "Not checked: the
+live URL" lines above are answered.

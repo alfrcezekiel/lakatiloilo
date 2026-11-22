@@ -15,7 +15,7 @@ import { ReviewLike, helpfulCountOf } from '../../entities/review-like.entity';
 import { SupabaseService } from '../../supabase/supabase.service';
 import { TravelerTransactions } from '../traveler-transactions';
 import { ReviewPhotosService, type ReviewPhotoDto } from './review-photos.service';
-import { VIDEO_BUCKET } from './review-videos.bucket';
+import { removeVideoFiles, videoUrlOf } from './review-videos.bucket';
 
 // What the website gets for each review. Only the display name is ever
 // sent, never the reviewer's email (the reviews table does not hold it).
@@ -289,14 +289,7 @@ export class ReviewsService {
     });
     for (const path of paths) await this.photos.remove(accessToken, path);
     // Its video too (ticket 165), so no file is left behind.
-    if (videoPath) {
-      const { error } = await this.supabase
-        .travelerClient(accessToken)
-        .storage.from(VIDEO_BUCKET)
-        .remove([videoPath])
-        .catch((e: unknown) => ({ error: e as Error }));
-      if (error) this.logger.warn(`Could not delete review video ${videoPath}: ${String(error.message ?? error)}`);
-    }
+    if (videoPath) await removeVideoFiles(this.supabase, accessToken, [videoPath], this.logger);
     return { id, message: 'Your review has been deleted.' };
   }
 
@@ -307,7 +300,7 @@ export class ReviewsService {
     return {
       ...rest,
       photos,
-      video_url: video_path ? this.supabase.publicFileUrl(VIDEO_BUCKET, video_path) : null,
+      video_url: videoUrlOf(this.supabase, video_path),
     } as unknown as T;
   }
 

@@ -21,8 +21,10 @@ export const FIRST_SHOWN = 3;
 export const MORE_STEP = 5;
 
 // "Most relevant", the same rule as the admin Reviews screen (ticket 130):
-// Helpful marks plus replies. A reply in the Trash ("This reply was
-// deleted", kept only so the answers under it stay) does not count.
+// Helpful marks plus replies. A deleted reply does not count, whether its
+// writer deleted it or the team moved it to the Trash ("This reply was
+// deleted", kept only so the answers under it stay); the admin sort leaves
+// out both the same way (code review 2026-11-23).
 export function relevance(review: Review) {
   const replies = (review.replies ?? []).filter((reply) => !reply.deleted).length;
   return (review.helpful_count ?? 0) + replies;

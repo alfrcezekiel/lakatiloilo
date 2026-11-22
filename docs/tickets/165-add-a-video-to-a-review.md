@@ -9,7 +9,7 @@ traveler's own Storage folder (the upload rule change agreed on
 
 **Blocked by:** 162
 
-**Status:** todo
+**Status:** done (the team confirmed it works on the live site, 2026-11-22)
 
 - [x] A numbered SQL file adds video_path to reviews and the review-videos
       bucket with Row Level Security policies: anyone may view; a traveler
@@ -28,7 +28,9 @@ traveler's own Storage folder (the upload rule change agreed on
       whether someone else's review exists)
 - [x] The uploaded file is byte-for-byte the one chosen (same size)
 - [x] The video shows with the review's photos: it never plays by itself,
-      loads only when pressed, plays inside the page on a phone, and shows
+      loads only when pressed (changed 2026-11-22: it now shows its own first
+      frame as a thumbnail once near the screen, see ticket 166), plays
+      inside the page on a phone, and shows
       "This video can't play in this browser." if it can't play
 - [x] The With photos & videos chip includes reviews with a video
 - [x] The site's security rules allow video only from our own Supabase
@@ -36,7 +38,7 @@ traveler's own Storage folder (the upload rule change agreed on
 - [x] The frontend rules file records the one exception: the browser's
       Supabase library may upload a review video to the traveler's own
       folder, nothing else
-- [ ] Works on the live URL, on a laptop and a phone
+- [x] Works on the live URL, on a laptop and a phone
 
 **Progress (2026-11-22):** built; the team confirmed a real video review on
 localhost the same day (every box but the live URL, which waits for the
@@ -76,3 +78,6 @@ push).
   localhost), an iPhone MOV on Safari and Chrome, and the live URL.
   Ticket 166 adds changing or removing a saved video in the form.
 
+**Live check (2026-11-22):** the team confirmed this ticket on the live
+site the same day it was pushed (commit d2db292), so the "Not checked: the
+live URL" lines above are answered.

@@ -23,15 +23,8 @@ import { FromNotification, notifiedTint } from "@/components/FromNotification";
 import { SectionHeading } from "@/components/PlaceDetail";
 import { averageRating, RatingSummary, usePlaceReviews } from "@/components/PlaceReviews";
 import { travelerTypeLabels } from "@/lib/labels";
-import {
-  FIRST_SHOWN,
-  FIRST_SORT,
-  hasMedia,
-  orderReviews,
-  REVIEW_SORTS,
-  showMore,
-  type ReviewSort,
-} from "@/lib/review-order";
+import { FIRST_SHOWN, FIRST_SORT, hasMedia, orderReviews, showMore, type ReviewSort } from "@/lib/review-order";
+import { ReviewSortChips, ShowMoreReviews } from "@/components/ReviewListControls";
 
 // Scrolls a review or reply into view (below the navbar, scroll-mt-28),
 // one frame later so a thread that just opened has its full height.
@@ -233,26 +226,7 @@ export function ReviewsSection({ eyebrow }: { eyebrow?: string } = {}) {
           )}
 
           {reviews.length > 0 && (
-            // On a phone the three chips are equal columns (a long label
-            // wraps under itself) instead of wrapping into uneven rows.
-            <div role="group" aria-label="Sort reviews" className="grid grid-cols-3 gap-2 sm:flex sm:flex-wrap">
-              {REVIEW_SORTS.map((option) => (
-                <button
-                  key={option.id}
-                  type="button"
-                  aria-pressed={activeSort === option.id}
-                  onClick={() => chooseSort(option.id)}
-                  className={cn(
-                    "min-h-11 cursor-pointer rounded-full px-3 py-2 text-center text-sm leading-tight font-semibold transition-colors select-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white sm:px-4.5",
-                    activeSort === option.id
-                      ? "bg-white text-teal-950"
-                      : "border border-white/25 bg-white/10 text-white/80 hover:bg-white/20 hover:text-white",
-                  )}
-                >
-                  {option.label}
-                </button>
-              ))}
-            </div>
+            <ReviewSortChips active={activeSort} onChoose={chooseSort} />
           )}
 
           {reviews.length > 0 && ordered.length === 0 && (
@@ -377,23 +351,7 @@ export function ReviewsSection({ eyebrow }: { eyebrow?: string } = {}) {
             </ul>
           )}
 
-          {/* Show more reviews (ticket 163): 3 first, then 5 more each
-              press, so the page never turns into an endless scroll. */}
-          {ordered.length > visibleCount && (
-            <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-              <button
-                type="button"
-                onClick={pressShowMore}
-                aria-describedby="reviews-shown-count"
-                className={pillButton({ kind: "glass" })}
-              >
-                Show more reviews
-              </button>
-              <p id="reviews-shown-count" className="text-sm text-white/80">
-                Showing {visibleCount} of {ordered.length}
-              </p>
-            </div>
-          )}
+          <ShowMoreReviews shown={visibleCount} total={ordered.length} onMore={pressShowMore} />
         </div>
       )}
     </section>

@@ -10,7 +10,9 @@ import { SupabaseService } from '../../supabase/supabase.service';
 import { toSmallerWebp } from './photo-webp';
 
 const BUCKET = 'review-photos';
-export const MAX_PHOTO_BYTES = 2 * 1024 * 1024; // 2 MB, the same as the bucket (027)
+// The same limit and words as the website's src/lib/shrink-photo.ts (and
+// the buckets in 027 and 049): change them together.
+export const MAX_PHOTO_BYTES = 2 * 1024 * 1024;
 export const PHOTO_MESSAGE = 'Please choose a JPG, PNG or WebP photo up to 2 MB.';
 export const MAX_PHOTOS = 4;
 export const TOO_MANY_PHOTOS = 'A review can have up to 4 photos.';

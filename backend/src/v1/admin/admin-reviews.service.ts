@@ -9,6 +9,8 @@ import type { QueryRunner } from 'typeorm';
 import { httpErrorFrom } from '../database-errors';
 import { ReviewPhotosService, type ReviewPhotoDto } from '../reviews/review-photos.service';
 import { TravelerTransactions } from '../traveler-transactions';
+import { SupabaseService } from '../../supabase/supabase.service';
+import { videoUrlOf } from '../reviews/review-videos.bucket';
 import { withoutEmptyDeleted } from '../reviews/replies.service';
 
 // One review as the Reviews screen shows it (full admin management round,
@@ -24,6 +26,8 @@ export interface AdminReviewDto {
   comment: string;
   // Up to 4 photos, in order (ticket 113).
   photos: ReviewPhotoDto[];
+  // Its video's address, or null (ticket 166), so the team can moderate it.
+  video_url: string | null;
   hidden: boolean;
   created_at: Date;
   helpful_count: number;
@@ -88,8 +92,12 @@ export const REVIEW_FILTERS: ReviewFilter[] = ['all', 'hidden', 'reported'];
 export type ReviewSort = 'recent' | 'relevant' | 'top';
 const ORDER_BY: Record<ReviewSort, string> = {
   recent: 'r.created_at desc, r.id desc',
+  // Replies in the Trash and "This reply was deleted" placeholders don't
+  // count, the same rule as the place page's Most relevant
+  // (src/lib/review-order.ts; code review 2026-11-23).
   relevant: `(select count(*) from public.review_likes l where l.review_id = r.id)
-             + (select count(*) from public.review_replies p where p.review_id = r.id and p.trashed_at is null) desc,
+             + (select count(*) from public.review_replies p
+                 where p.review_id = r.id and p.trashed_at is null and p.deleted_at is null) desc,
              r.created_at desc, r.id desc`,
   top: 'r.rating desc, r.created_at desc, r.id desc',
 };
@@ -138,6 +146,7 @@ export class AdminReviewsService {
   constructor(
     private readonly travelerTransactions: TravelerTransactions,
     private readonly photos: ReviewPhotosService,
+    private readonly supabase: SupabaseService,
   ) {}
 
   // Runs work as the signed-in admin; the database's own refusals become
@@ -291,11 +300,11 @@ export class AdminReviewsService {
 
         // The order comes from the fixed list above (never from the
         // request as text); values travel as parameters.
-        const rows: Omit<AdminReviewDto, 'photos'>[] = await runner.query(
+        const rows: (Omit<AdminReviewDto, 'photos' | 'video_url'> & { video_path: string | null })[] = await runner.query(
           `select r.id, r.place_type, r.place_id,
                   coalesce(d.name, a.name, 'a place') as place_name,
                   r.user_id as reviewer_id, r.reviewer_name, r.rating, r.comment,
-                  r.created_at, r.hidden_at is not null as hidden,
+                  r.created_at, r.hidden_at is not null as hidden, r.video_path,
                   (select count(*)::int from public.review_likes l where l.review_id = r.id) as helpful_count,
                   (select count(*)::int from public.review_reports rr where rr.review_id = r.id) as report_count,
                   -- Not counting replies in the Trash (061; code review
@@ -319,7 +328,11 @@ export class AdminReviewsService {
           rows.map((r) => r.id),
         );
         return {
-          reviews: rows.map((review) => ({ ...review, photos: photos.get(review.id) ?? [] })),
+          reviews: rows.map(({ video_path, ...review }) => ({
+            ...review,
+            photos: photos.get(review.id) ?? [],
+            video_url: videoUrlOf(this.supabase, video_path),
+          })),
           total,
           page: query.page,
           per_page: query.perPage,

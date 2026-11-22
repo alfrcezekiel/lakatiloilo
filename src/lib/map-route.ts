@@ -10,10 +10,18 @@ export const PROFILE_LABEL: Record<RouteProfile, string> = { driving: "Car", wal
 // A point as [longitude, latitude], the order Mapbox uses.
 export type LngLat = [number, number];
 
-// The Mapbox Directions request for one route. The traveler's position is
+// The address that opens directions to a place in Google Maps ("Get
+// directions"): the side panel, the map's popup and the no-map card all use
+// this one (code review 2026-11-23; it was written out three times).
+export const googleDirectionsUrl = (latitude: number, longitude: number) =>
+  `https://www.google.com/maps/dir/?api=1&destination=${latitude},${longitude}`;
+
+// The Mapbox Directions request for one route (renamed from directionsUrl in
+// the code review of 2026-11-23, so it can't be mixed up with the Google
+// link above). The traveler's position is
 // rounded to 5 decimals (about 1 m): enough for a route, and no more
 // precise than needed when it leaves the browser.
-export function directionsUrl(profile: RouteProfile, from: LngLat, to: LngLat, token: string) {
+export function mapboxDirectionsRequest(profile: RouteProfile, from: LngLat, to: LngLat, token: string) {
   const point = ([lng, lat]: LngLat) => `${lng.toFixed(5)},${lat.toFixed(5)}`;
   const params = new URLSearchParams({
     geometries: "geojson",

@@ -25,7 +25,7 @@ import {
   adminQuerySettings,
   plural,
 } from "@/components/admin/admin-ui";
-import { ReviewPhotos } from "@/components/ReviewPhoto";
+import { AdminReviewMedia, VideoTag } from "@/components/admin/AdminReviewMedia";
 import { Stars, formatDate } from "@/components/ReviewsSection";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Spinner } from "@/components/ui/spinner";
@@ -111,6 +111,7 @@ function ReviewCard({ review, onDone }: { review: AdminReview; onDone: OnDone })
           ) : (
             <span className={cn(chip, "border-emerald-300/60 text-emerald-200")}>Visible</span>
           )}
+          <VideoTag videoUrl={review.video_url} />
           {review.report_count > 0 && (
             <span className={cn(chip, "border-amber-300/60 bg-amber-300/15 text-amber-200")}>
               <Flag aria-hidden="true" className="size-3.5" />
@@ -132,11 +133,7 @@ function ReviewCard({ review, onDone }: { review: AdminReview; onDone: OnDone })
           <span className="text-sm text-white/75">{formatDate(review.created_at)}</span>
         </div>
         <p className="mt-2 whitespace-pre-line wrap-break-word text-white/90">{review.comment}</p>
-        {review.photos.length > 0 && (
-          <div className="mt-3">
-            <ReviewPhotos photos={review.photos} reviewerName={review.reviewer_name} />
-          </div>
-        )}
+        <AdminReviewMedia photos={review.photos} videoUrl={review.video_url} reviewerName={review.reviewer_name} />
       </div>
 
       {/* N Helpful (ticket 125) and the replies (124) side by side; what

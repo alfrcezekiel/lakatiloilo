@@ -7,7 +7,7 @@ until all are shown.
 
 **Blocked by:** 162
 
-**Status:** todo
+**Status:** done (the team confirmed it works on the live site, 2026-11-22)
 
 - [x] 3 reviews show first; each press of Show more reviews adds 5
 - [x] "Showing N of M" is always right, and the button disappears once all
@@ -18,7 +18,7 @@ until all are shown.
       are
 - [x] After pressing Show more, the keyboard focus lands on the first newly
       shown review, so a screen-reader user hears what was added
-- [ ] Works on the live URL
+- [x] Works on the live URL
 
 **Progress (2026-11-22):** built with 162; the team confirmed it on localhost the
 same day (every box but the live URL, which waits for the push).
@@ -32,3 +32,7 @@ same day (every box but the live URL, which waits for the push).
   chips and stay where they are.
 - **Not checked:** a screen reader reading the newly focused review aloud,
   and the live URL.
+
+**Live check (2026-11-22):** the team confirmed this ticket on the live
+site the same day it was pushed (commit d2db292), so the "Not checked: the
+live URL" lines above are answered.

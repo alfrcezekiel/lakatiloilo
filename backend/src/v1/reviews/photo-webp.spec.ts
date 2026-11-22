@@ -92,14 +92,75 @@ describe('toSmallerWebp', () => {
     const stored = await toSmallerWebp({ buffer: squeezed, contentType: 'image/jpeg', extension: 'jpg' });
 
     expect(stored.contentType).toBe('image/jpeg');
-    expect(stored.buffer.equals(squeezed)).toBe(true);
+    expect(stored.buffer.equals(squeezed)).toBe(true); // it had no metadata to cut
   });
 
-  it('keeps a photo uploaded as WebP exactly as it is', async () => {
+  it('keeps a photo uploaded as WebP as it is (nothing to cut, so byte for byte)', async () => {
     const webp = await photoPixels(300, 200, 3).webp({ quality: 80 }).toBuffer();
 
     const stored = await toSmallerWebp({ buffer: webp, contentType: 'image/webp', extension: 'webp' });
 
-    expect(stored.buffer).toBe(webp);
+    expect(stored.contentType).toBe('image/webp');
+    expect(stored.buffer.equals(webp)).toBe(true);
+  });
+
+  // Code review 2026-11-23.
+
+  it('refuses a small file that would open as more than 50 million pixels (memory safety)', async () => {
+    // 758 KB on disk, 732 MB of pixels once opened.
+    const bomb = await sharp({ create: { width: 16000, height: 16000, channels: 3, background: '#115e59' } })
+      .png({ compressionLevel: 9 })
+      .toBuffer();
+
+    await expect(toSmallerWebp({ buffer: bomb, contentType: 'image/png', extension: 'png' })).rejects.toThrow();
+  });
+
+  it('saves a PNG with a transparency channel but no see-through pixel as a normal WebP, not lossless', async () => {
+    const solid = await photoPixels(400, 300, 3).ensureAlpha(1).png().toBuffer();
+    expect((await sharp(solid).metadata()).hasAlpha).toBe(true);
+
+    const stored = await toSmallerWebp({ buffer: solid, contentType: 'image/png', extension: 'png' });
+
+    expect(stored.contentType).toBe('image/webp');
+    expect(stored.buffer.includes(Buffer.from('VP8L'))).toBe(false); // VP8L = lossless
+  });
+
+  it('cuts the GPS out of a JPG it keeps, leaves the picture byte for byte, and keeps it upright', async () => {
+    const raw = Buffer.alloc(400 * 300 * 3);
+    let seed = 1;
+    for (let i = 0; i < raw.length; i++) {
+      seed = (seed * 1103515245 + 12345) & 0x7fffffff;
+      raw[i] = seed & 255;
+    }
+    const withGps = await sharp(raw, { raw: { width: 400, height: 300, channels: 3 } })
+      .jpeg({ quality: 30 })
+      .withMetadata({ orientation: 6 })
+      .withExif({ IFD3: { GPSLatitudeRef: 'N', GPSLatitude: '10/1 41/1 30/1' } })
+      .toBuffer();
+    const sosOf = (b: Buffer) => b.subarray(b.indexOf(Buffer.from([0xff, 0xda])));
+
+    const stored = await toSmallerWebp({ buffer: withGps, contentType: 'image/jpeg', extension: 'jpg' });
+
+    expect(stored.contentType).toBe('image/jpeg'); // kept: WebP would be bigger
+    expect(sosOf(stored.buffer).equals(sosOf(withGps))).toBe(true);
+    expect(stored.buffer.includes(Buffer.from('GPS'))).toBe(false);
+    const meta = await sharp(stored.buffer).metadata();
+    expect(meta.orientation).toBe(6);
+    expect(meta.exif!.length).toBeLessThan(60); // orientation only
+  });
+
+  it("cuts a PNG's text notes and a WebP's camera data, keeping the pictures the same", async () => {
+    const png = await photoPixels(60, 40, 4).png().withMetadata().withExif({ IFD0: { Copyright: 'Someone' } }).toBuffer();
+    const webp = await photoPixels(60, 40, 3).webp({ quality: 80 }).withExif({ IFD3: { GPSLatitudeRef: 'N' } }).toBuffer();
+    expect((await sharp(webp).metadata()).exif).toBeDefined();
+
+    const keptWebp = await toSmallerWebp({ buffer: webp, contentType: 'image/webp', extension: 'webp' });
+
+    expect((await sharp(keptWebp.buffer).metadata()).exif).toBeUndefined();
+    expect((await sharp(keptWebp.buffer).raw().toBuffer()).equals(await sharp(webp).raw().toBuffer())).toBe(true);
+    const { stripPng } = await import('./strip-metadata');
+    const cleanPng = stripPng(png);
+    expect(cleanPng.includes(Buffer.from('Someone'))).toBe(false);
+    expect((await sharp(cleanPng).raw().toBuffer()).equals(await sharp(png).raw().toBuffer())).toBe(true);
   });
 });

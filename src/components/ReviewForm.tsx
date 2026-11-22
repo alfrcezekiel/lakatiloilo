@@ -11,6 +11,7 @@ import {
   addReviewPhoto,
   attachReviewVideo,
   backendMessage,
+  removeReviewVideo,
   backendRefusal,
   createReview,
   deleteReviewPhoto,
@@ -20,7 +21,7 @@ import {
 import { loginToken } from "@/lib/login";
 import { ReviewPhotoPicker } from "@/components/ReviewPhotoPicker";
 import { ReviewVideoPicker } from "@/components/ReviewVideo";
-import { uploadReviewVideo } from "@/lib/review-video";
+import { deleteUploadedVideo, uploadReviewVideo } from "@/lib/review-video";
 import type { Review } from "@/components/ReviewsSection";
 
 const MAX_COMMENT = 500;
@@ -77,6 +78,8 @@ export function ReviewForm({
   // A video (ticket 165): the file to upload when saving, and how far its
   // upload is (0 to 100), or null when no video is uploading.
   const [video, setVideo] = useState<File | null>(null);
+  // Editing (ticket 166): the traveler pressed Remove video on the saved one.
+  const [removeVideo, setRemoveVideo] = useState(false);
   const [videoPercent, setVideoPercent] = useState<number | null>(null);
   const currentPhotos = (saved?.photos ?? []).filter((p) => !removedIds.includes(p.id));
 
@@ -164,18 +167,32 @@ export function ReviewForm({
       //    the backend. If it fails, the review stays saved and the video
       //    stays in the form with the reason, so the traveler can retry.
       let finished: Review = withPhotos;
+      // Remove video (ticket 166), when no new video replaces it (a new one
+      // replaces and deletes the old one on its own).
+      if (removeVideo && !video && withPhotos.video_url) {
+        await removeReviewVideo(token, review.id);
+        finished = { ...withPhotos, video_url: null };
+        setSaved(finished);
+        setRemoveVideo(false);
+      }
       if (video) {
+        // Where it was uploaded, so a file that could not be attached is
+        // deleted again instead of filling the free storage (code review
+        // 2026-11-23).
+        let uploaded: string | null = null;
         try {
           setProgress("Uploading your video…");
           setVideoPercent(0);
-          const path = await uploadReviewVideo(video, token, setVideoPercent);
+          uploaded = await uploadReviewVideo(video, token, setVideoPercent);
           setProgress("Attaching your video…");
-          const videoUrl = await attachReviewVideo(token, review.id, path);
+          const videoUrl = await attachReviewVideo(token, review.id, uploaded);
           finished = { ...withPhotos, video_url: videoUrl };
           setSaved(finished);
           setVideo(null);
+          setRemoveVideo(false);
         } catch (error) {
           keepOpen = true;
+          if (uploaded) await deleteUploadedVideo(uploaded, token);
           const why = backendMessage(error) ?? (error instanceof Error ? error.message : fallbackError);
           setFormError(`Your review was saved, but the video could not be added: ${why} Remove it or try again.`);
           return;
@@ -297,7 +314,12 @@ export function ReviewForm({
               setVideo(next);
               setFormError(null);
             }}
-            hasSavedVideo={Boolean(saved?.video_url)}
+            savedUrl={saved?.video_url ?? null}
+            removeSaved={removeVideo}
+            onRemoveSavedChange={(remove) => {
+              setRemoveVideo(remove);
+              setFormError(null);
+            }}
             disabled={busy}
           />
 

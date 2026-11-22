@@ -1,4 +1,5 @@
--- Check 15 — review videos are locked down (ticket 165, supabase/sql/065).
+-- Check 15 — review videos are locked down (tickets 165 and 166,
+-- supabase/sql/065 and 066).
 --
 -- READ-ONLY (SELECT only). Run: Supabase -> SQL Editor -> New query ->
 -- paste -> Run.
@@ -48,6 +49,16 @@ problems as (
   union all
   select 'The rule that keeps a video in its writer''s own folder (trigger reviews_video_must_be_own) is missing.'
   where not exists (select 1 from pg_trigger where tgname = 'reviews_video_must_be_own' and not tgisinternal)
+
+  union all
+  -- 066 (ticket 166): the list of Trash videos is for admins only.
+  select 'The Trash videos list (admin_trashed_review_videos, 066) is missing.'
+  where not exists (select 1 from pg_proc where proname = 'admin_trashed_review_videos')
+
+  union all
+  select 'Someone not logged in may call admin_trashed_review_videos.'
+  where exists (select 1 from pg_proc where proname = 'admin_trashed_review_videos')
+    and has_function_privilege('anon', 'public.admin_trashed_review_videos()', 'execute')
 
   union all
   select 'Someone not logged in may set a review''s video_path.'

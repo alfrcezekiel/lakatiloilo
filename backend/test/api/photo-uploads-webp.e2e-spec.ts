@@ -91,6 +91,17 @@ describe('photo uploads save WebP (ticket 164)', () => {
     expect(saved[0].body.length).toBeLessThan(photo.size);
   });
 
+  it('keeps an /admin place photo sent as WebP as it is', async () => {
+    const { saved, placePhotos } = await setUp();
+    const photo = await upload('webp');
+
+    const url = await placePhotos.upload(TOKENS.admin, 'accommodation', 'place-3', photo);
+
+    expect(url).toMatch(/\.webp$/);
+    expect(saved[0].contentType).toBe('image/webp');
+    expect(saved[0].body.equals(photo.buffer)).toBe(true);
+  });
+
   it('refuses a file that starts like a JPG but is not a photo, with the usual message, and saves nothing', async () => {
     const { saved, reviewPhotos } = await setUp();
     const broken = Buffer.concat([Buffer.from([0xff, 0xd8, 0xff, 0xe0]), Buffer.from('not really a photo')]);

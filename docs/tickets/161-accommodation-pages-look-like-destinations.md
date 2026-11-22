@@ -8,7 +8,7 @@ details built in the glass detail pages round stay as they are.
 
 **Blocked by:** None
 
-**Status:** todo
+**Status:** done (the team confirmed it works on the live site, 2026-11-22)
 
 - [x] An accommodation page and its loading skeleton use the same teal as a
       destination page; no indigo or blue is left on the page
@@ -21,7 +21,7 @@ details built in the glass detail pages round stay as they are.
 - [x] Text stays readable on the teal (contrast 4.5:1)
 - [x] Looks right at 320, 375, 425, 768, 1024 and 1440 px; nothing scrolls
       sideways
-- [ ] Works on the live URL
+- [x] Works on the live URL
 
 **Progress (2026-11-22):** built; the team confirmed it on localhost the
 same day (every box but the live URL, which waits for the push).
@@ -40,3 +40,7 @@ same day (every box but the live URL, which waits for the push).
 - `npx tsc --noEmit`, `npx eslint src` (no warnings), 119 unit tests and
   `npm run build` pass.
 - **Not checked:** the live URL.
+
+**Live check (2026-11-22):** the team confirmed this ticket on the live
+site the same day it was pushed (commit d2db292), so the "Not checked: the
+live URL" lines above are answered.

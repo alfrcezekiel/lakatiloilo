@@ -1,9 +1,11 @@
 import { ConflictException, Injectable, Logger, NotFoundException } from '@nestjs/common';
-import { QueryFailedError } from 'typeorm';
+import { QueryFailedError, type QueryRunner } from 'typeorm';
 import { httpErrorFrom } from '../database-errors';
 import { TravelerTransactions } from '../traveler-transactions';
 import { ReviewPhotosService } from '../reviews/review-photos.service';
 import { PlacePhotosService } from './place-photos.service';
+import { SupabaseService } from '../../supabase/supabase.service';
+import { removeVideoFiles } from '../reviews/review-videos.bucket';
 
 // The dashboard's Trash (admin extras round, ticket 147; supabase/sql/060).
 // What an admin deletes waits there for 30 days and can be restored. A
@@ -90,7 +92,31 @@ export class AdminTrashService {
     private readonly travelerTransactions: TravelerTransactions,
     private readonly placePhotos: PlacePhotosService,
     private readonly reviewPhotos: ReviewPhotosService,
+    private readonly supabase: SupabaseService,
   ) {}
+
+  // Review videos (ticket 166). The delete functions in 062 answer the
+  // photo files to remove, not the videos (065 came later), and reviews in
+  // the Trash can't be read directly (060). So, in the same transaction,
+  // the videos of reviews in the Trash are listed just before and just
+  // after a delete for good (066); the ones whose review is gone are
+  // deleted from Storage afterwards. The 30-day rule stays in 062.
+  private async trashedVideos(runner: QueryRunner): Promise<Map<string, string>> {
+    const rows: { review_id: string; video_path: string }[] = await runner.query(
+      'select review_id, video_path from public.admin_trashed_review_videos()',
+    );
+    return new Map(rows.map((row) => [row.review_id, row.video_path]));
+  }
+
+  private static gone(before: Map<string, string>, after: Map<string, string>): string[] {
+    return [...before].filter(([reviewId]) => !after.has(reviewId)).map(([, path]) => path);
+  }
+
+  // Deletes review video files as the admin (065 lets admins delete them;
+  // review-videos.bucket.ts).
+  private deleteVideos(accessToken: string, paths: string[]) {
+    return removeVideoFiles(this.supabase, accessToken, paths, this.logger);
+  }
 
   // Deletes the files of what was deleted for good. A file that cannot be
   // deleted is only logged: the rows are gone already.
@@ -127,6 +153,7 @@ export class AdminTrashService {
   // Everything in the Trash (reviews, replies and places), newest first.
   async list(accessToken: string): Promise<TrashedItemDto[]> {
     let expiredFiles: PlaceFiles | undefined;
+    let expiredVideos: string[] = [];
     const [reviews, replies, places] = await this.asAdmin<
       [
         Omit<TrashedReviewDto, 'kind' | 'expires_at'>[],
@@ -136,10 +163,12 @@ export class AdminTrashService {
     >(accessToken, 'open the Trash', async (runner) => {
       // First, what has waited more than 30 days is deleted for good
       // (ticket 149; no scheduled job).
+      const videosBefore = await this.trashedVideos(runner);
       const [{ expired }]: { expired: PlaceFiles }[] = await runner.query(
         'select public.admin_empty_expired_trash() as expired',
       );
       expiredFiles = expired;
+      expiredVideos = AdminTrashService.gone(videosBefore, await this.trashedVideos(runner));
       return [
         await runner.query('select * from public.admin_trashed_reviews()'),
         await runner.query('select * from public.admin_trashed_replies()'),
@@ -147,6 +176,7 @@ export class AdminTrashService {
       ];
     });
     await this.deleteFiles(accessToken, expiredFiles);
+    await this.deleteVideos(accessToken, expiredVideos);
     const expires = (trashedAt: Date) => new Date(new Date(trashedAt).getTime() + TRASH_DAYS * DAY_MS);
     const items: TrashedItemDto[] = [
       ...reviews.map((row) => ({ ...row, kind: 'review' as const, expires_at: expires(row.trashed_at) })),
@@ -207,33 +237,45 @@ export class AdminTrashService {
     id: string,
     placeType?: PlaceType,
   ): Promise<{ id: string; message: string }> {
-    const result = await this.asAdmin<{ found: boolean; files: PlaceFiles | null }>(
+    const result = await this.asAdmin<{ found: boolean; files: PlaceFiles | null; videos: string[] }>(
       accessToken,
       'delete for good',
       async (runner) => {
         if (kind === 'review') {
+          const videosBefore = await this.trashedVideos(runner);
           const [{ paths }]: { paths: string[] | null }[] = await runner.query(
             'select public.admin_delete_review_for_good($1) as paths',
             [id],
           );
-          return { found: paths !== null, files: paths ? { photo_urls: [], review_photo_paths: paths } : null };
+          return {
+            found: paths !== null,
+            files: paths ? { photo_urls: [], review_photo_paths: paths } : null,
+            videos: AdminTrashService.gone(videosBefore, await this.trashedVideos(runner)),
+          };
         }
         if (kind === 'reply') {
           const [{ outcome }]: { outcome: string | null }[] = await runner.query(
             'select public.admin_delete_reply_for_good($1) as outcome',
             [id],
           );
-          return { found: outcome !== null, files: null };
+          return { found: outcome !== null, files: null, videos: [] };
         }
+        // A place takes its reviews with it, and their videos.
+        const videosBefore = await this.trashedVideos(runner);
         const [{ files }]: { files: PlaceFiles | null }[] = await runner.query(
           'select public.admin_delete_place_for_good($1, $2) as files',
           [placeType, id],
         );
-        return { found: files !== null, files };
+        return {
+          found: files !== null,
+          files,
+          videos: AdminTrashService.gone(videosBefore, await this.trashedVideos(runner)),
+        };
       },
     );
     if (!result.found) throw new NotFoundException("That isn't in the Trash any more.");
     await this.deleteFiles(accessToken, result.files);
+    await this.deleteVideos(accessToken, result.videos);
     return { id, message: 'Deleted for good.' };
   }
 }

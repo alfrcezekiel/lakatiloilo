@@ -6,6 +6,8 @@ import {
 import type { QueryRunner } from 'typeorm';
 import { ReviewPhotosService, type ReviewPhotoDto } from '../reviews/review-photos.service';
 import { TravelerTransactions } from '../traveler-transactions';
+import { SupabaseService } from '../../supabase/supabase.service';
+import { videoUrlOf } from '../reviews/review-videos.bucket';
 import { httpErrorFrom } from '../database-errors';
 
 // One report on a review, as the Reports screen shows it. Never who sent
@@ -30,6 +32,8 @@ export interface ReportedReviewDto {
   comment: string;
   // Up to 4 photos, in order (ticket 113).
   photos: ReviewPhotoDto[];
+  // Its video's address, or null (ticket 166), so the team can moderate it.
+  video_url: string | null;
   // Hidden by the team (ticket 109), or by three reports (ticket 110).
   hidden: boolean;
   created_at: Date;
@@ -61,6 +65,7 @@ export class AdminReportsService {
   constructor(
     private readonly travelerTransactions: TravelerTransactions,
     private readonly photos: ReviewPhotosService,
+    private readonly supabase: SupabaseService,
   ) {}
 
   // Runs work as the signed-in admin, so Row Level Security and the review
@@ -78,11 +83,11 @@ export class AdminReportsService {
     return this.travelerTransactions.run(
       accessToken,
       async (runner) => {
-        const rows: Omit<ReportedReviewDto, 'photos'>[] = await runner.query(
+        const rows: (Omit<ReportedReviewDto, 'photos' | 'video_url'> & { video_path: string | null })[] = await runner.query(
           `select r.id, r.place_type, r.place_id,
                   coalesce(d.name, a.name, 'a place') as place_name,
                   r.user_id as reviewer_id, r.reviewer_name, r.rating, r.comment,
-                  r.created_at, r.hidden_at is not null as hidden,
+                  r.created_at, r.hidden_at is not null as hidden, r.video_path,
                   count(rr.id)::int as report_count,
                   json_agg(
                     json_build_object('id', rr.id, 'reason', rr.reason,
@@ -105,7 +110,11 @@ export class AdminReportsService {
           runner,
           rows.map((r) => r.id),
         );
-        return rows.map((review) => ({ ...review, photos: photos.get(review.id) ?? [] }));
+        return rows.map(({ video_path, ...review }) => ({
+          ...review,
+          photos: photos.get(review.id) ?? [],
+          video_url: videoUrlOf(this.supabase, video_path),
+        }));
       },
       (error) => httpErrorFrom(error, this.logger, 'list reports'),
     );

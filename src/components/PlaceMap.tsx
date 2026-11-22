@@ -7,8 +7,24 @@ import "mapbox-gl/dist/mapbox-gl.css";
 import { pillButton } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import {
+  FIRST_STYLE,
+  pinElement,
+  popupContent,
+  ROUTE_LAYERS,
+  ROUTE_SOURCE,
+  STYLE_LABELS,
+  STYLES,
+  supportsWebGL,
+  TRAFFIC_LAYER,
+  TRAFFIC_SOURCE,
+  ZOOM,
+  type RouteState,
+  type StyleId,
+} from "@/components/place-map-parts";
+import {
   ARRIVED_METERS,
-  directionsUrl,
+  googleDirectionsUrl,
+  mapboxDirectionsRequest,
   distanceMeters,
   firstRoute,
   formatDistance,
@@ -99,95 +115,8 @@ type Tone = "destination" | "accommodation";
 // places" using the /near endpoints, docs/LATER.md). Add them back with
 // that ticket.
 
-const STYLES = {
-  satellite: "mapbox://styles/mapbox/satellite-v9",
-  satelliteStreets: "mapbox://styles/mapbox/satellite-streets-v12",
-  streets: "mapbox://styles/mapbox/streets-v12",
-} as const;
-type StyleId = keyof typeof STYLES;
-const FIRST_STYLE: StyleId = "satelliteStreets";
-// Short labels on a phone, so the three buttons fit in one row at 320 px.
-const STYLE_LABELS: Record<StyleId, { short: string; full: string }> = {
-  satellite: { short: "Satellite", full: "Satellite" },
-  satelliteStreets: { short: "Sat + Streets", full: "Satellite Streets" },
-  streets: { short: "Streets", full: "Streets" },
-};
-
-const PIN_COLOR: Record<"main" | "you", string> = {
-  // The place the traveler is going to: dark teal green (teal-800).
-  main: "#115e59",
-  // The traveler: blue (blue-600), the same blue as the route line.
-  you: "#2563eb",
-};
-
-const ZOOM = 15;
 // True once Mapbox refused a satellite tile during this visit (see above).
 let satelliteRefused = false;
-
-const directions = (lat: number, lng: number) =>
-  `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
-
-// The teardrop pin from the design, as a real button so it can be reached
-// with the Tab key; Mapbox opens its popup on click.
-function pinElement(kind: "main" | "you", label: string) {
-  const button = document.createElement("button");
-  button.type = "button";
-  button.setAttribute("aria-label", label);
-  button.style.cssText = "padding:0;border:0;background:none;cursor:pointer;filter:drop-shadow(0 6px 10px rgba(0,0,0,.35))";
-  button.innerHTML = `<svg width="44" height="55" viewBox="0 0 32 40" aria-hidden="true"><path d="M16 1C7.7 1 1 7.6 1 15.6 1 26.8 16 39 16 39s15-12.2 15-23.4C31 7.6 24.3 1 16 1Z" fill="${PIN_COLOR[kind]}" stroke="#ffffff" stroke-width="2"/><circle cx="16" cy="15.5" r="5.5" fill="#ffffff"/></svg>`;
-  return button;
-}
-
-// The popup's contents: kind, name, a line under it, and one link.
-function popupContent(kindLabel: string, title: string, sub: string, link: { label: string; href: string }) {
-  const root = document.createElement("div");
-  root.style.cssText = "width:230px;font-family:var(--font-inter),system-ui,sans-serif";
-  const kind = document.createElement("p");
-  kind.className = "font-mono-label";
-  kind.style.cssText = "margin:0;font-size:10px;color:rgba(255,255,255,.8)";
-  kind.textContent = kindLabel;
-  const name = document.createElement("p");
-  name.style.cssText = "margin:4px 28px 0 0;font-family:var(--font-fraunces),serif;font-size:20px;font-weight:500;line-height:1.15";
-  name.textContent = title;
-  root.append(kind, name);
-  if (sub) {
-    const line = document.createElement("p");
-    line.style.cssText = "margin:6px 0 0;font-size:13px;line-height:1.45;color:rgba(255,255,255,.88)";
-    line.textContent = sub;
-    root.append(line);
-  }
-  const a = document.createElement("a");
-  a.href = link.href;
-  a.textContent = link.label;
-  a.target = "_blank";
-  a.rel = "noopener noreferrer";
-  a.style.cssText =
-    "margin-top:12px;display:flex;align-items:center;justify-content:center;height:40px;border-radius:999px;background:var(--accent);color:var(--accent-foreground);font-size:14px;font-weight:600;text-decoration:none";
-  root.append(a);
-  return root;
-}
-
-const ROUTE_SOURCE = "lakat-route";
-const ROUTE_LAYERS = ["lakat-route-casing", "lakat-route-line"] as const;
-const TRAFFIC_SOURCE = "lakat-traffic";
-const TRAFFIC_LAYER = "lakat-traffic-line";
-
-// What the route preview is doing.
-type RouteState =
-  | { status: "idle" }
-  | { status: "locating" | "loading"; profile: RouteProfile }
-  | { status: "shown"; profile: RouteProfile; distance: number; duration: number }
-  | { status: "arrived" }
-  | { status: "error"; message: string };
-
-function supportsWebGL() {
-  try {
-    const canvas = document.createElement("canvas");
-    return Boolean(canvas.getContext("webgl2") ?? canvas.getContext("webgl"));
-  } catch {
-    return false;
-  }
-}
 
 export function PlaceMap({
   tone,
@@ -328,7 +257,7 @@ export function PlaceMap({
             }).setDOMContent(
               popupContent(tone === "destination" ? "This destination" : "Your stay", name, address, {
                 label: "Get directions",
-                href: directions(latitude, longitude),
+                href: googleDirectionsUrl(latitude, longitude),
               }),
             ),
           )
@@ -552,7 +481,7 @@ export function PlaceMap({
     lastFetch.current = Date.now();
     if (fit) setRoute({ status: "loading", profile });
     try {
-      const response = await fetch(directionsUrl(profile, start, [longitude, latitude], token), {
+      const response = await fetch(mapboxDirectionsRequest(profile, start, [longitude, latitude], token), {
         signal: controller.signal,
       });
       const found = firstRoute(await response.json().catch(() => null));
@@ -678,7 +607,7 @@ export function PlaceMap({
           {latitude}° N, {longitude}° E
         </p>
         <a
-          href={directions(latitude, longitude)}
+          href={googleDirectionsUrl(latitude, longitude)}
           target="_blank"
           rel="noopener noreferrer"
           className={cn(pillButton({ kind: "main" }), "mt-4")}

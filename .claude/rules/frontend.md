@@ -27,7 +27,9 @@ paths:
   the browser may upload **a review video** straight into the traveler's
   own folder of the `review-videos` Storage bucket, with the traveler's own
   login and the public (anon) key (`src/lib/review-video.ts`), because a
-  video is too big for the backend (Vercel stops at 4.5 MB). Only that:
+  video is too big for the backend (Vercel stops at 4.5 MB), and may delete
+  that same just-uploaded file again if attaching it fails (code review
+  2026-11-23, `deleteUploadedVideo`). Only that:
   never another bucket, never someone else's folder, never a table. The
   backend then checks the file and attaches it (POST
   /v1/reviews/:id/video); Storage policies decide who may write

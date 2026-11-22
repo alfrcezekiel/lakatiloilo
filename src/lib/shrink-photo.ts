@@ -19,8 +19,12 @@
 // A photo re-saved here loses its hidden metadata (GPS included) and is
 // turned upright first, like the backend does.
 
+// The same types, limit and words as the backend's
+// backend/src/v1/reviews/review-photos.service.ts (and the buckets in 027
+// and 049): change them together.
 export const PHOTO_TYPES = ["image/jpeg", "image/png", "image/webp"];
-export const MAX_PHOTO_BYTES = 2 * 1024 * 1024; // 2 MB, the same as the buckets (027, 049)
+export const MAX_PHOTO_BYTES = 2 * 1024 * 1024;
+export const PHOTO_MESSAGE = "Please choose a JPG, PNG or WebP photo up to 2 MB.";
 // A bigger file is refused straight away: decoding it could run a phone
 // out of memory.
 export const MAX_INPUT_BYTES = 40 * 1024 * 1024;

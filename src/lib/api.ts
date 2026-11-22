@@ -605,6 +605,8 @@ export interface ReportedReview {
   comment: string;
   // Up to 4 photos, in order (ticket 113).
   photos: ReviewPhoto[];
+  // Its video's address, or null (ticket 166).
+  video_url: string | null;
   // Hidden by the team (ticket 109), or by three reports (ticket 110).
   hidden: boolean;
   created_at: string;
@@ -632,6 +634,8 @@ export interface AdminReview {
   rating: number;
   comment: string;
   photos: ReviewPhoto[];
+  // Its video's address, or null (ticket 166).
+  video_url: string | null;
   hidden: boolean;
   created_at: string;
   helpful_count: number;
@@ -895,6 +899,18 @@ export interface AdminOverviewData {
   hidden_reviews: number;
   places: number;
   newest_reports: NewestReport[];
+  // Storage used (ticket 167), or null when it could not be read.
+  storage: StorageUsed | null;
+}
+
+// Every file in the project against the free plan's 1 GB, and the three
+// buckets the app fills (ticket 167).
+export interface StorageUsed {
+  used_bytes: number;
+  limit_bytes: number;
+  place_photos_bytes: number;
+  review_photos_bytes: number;
+  review_videos_bytes: number;
 }
 
 export const getAdminOverview = async (accessToken: string) =>

@@ -1,7 +1,7 @@
 "use client";
 
 import { ArrowLeft, ArrowRight, Check, ImagePlus, Plus, Star, Trash2, X } from "lucide-react";
-import { useEffect, useId, useMemo, useRef, useState } from "react";
+import { useId, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { ADMIN_PLACES_KEY } from "@/components/admin/AdminPlaces";
 import { ConfirmDeleteDialog } from "@/components/admin/ConfirmDeleteDialog";
@@ -17,8 +17,8 @@ import {
   type CreditErrors,
   type Credits,
 } from "@/components/admin/PhotoCreditsField";
-import { PHOTO_MESSAGE, PHOTO_TYPES } from "@/components/ReviewPhotoPicker";
-import { fitPhoto } from "@/lib/shrink-photo";
+import { fitPhoto, PHOTO_MESSAGE, PHOTO_TYPES } from "@/lib/shrink-photo";
+import { useObjectUrl } from "@/lib/object-url";
 import { Spinner } from "@/components/ui/spinner";
 import {
   MAX_PLACE_PHOTOS,
@@ -149,13 +149,7 @@ function AddPhoto({ place, count }: { place: AdminPlaceDetails; count: number })
   const [busy, setBusy] = useState(false);
   const [line, setLine] = useState<string | null>(null);
   const [failure, setFailure] = useState<string | null>(null);
-  const preview = useMemo(() => (file ? URL.createObjectURL(file) : null), [file]);
-  useEffect(
-    () => () => {
-      if (preview) URL.revokeObjectURL(preview);
-    },
-    [preview],
-  );
+  const preview = useObjectUrl(file);
 
   // True while a photo over 2 MB is being made smaller (team request
   // 2026-11-22, src/lib/shrink-photo.ts).
@@ -255,7 +249,7 @@ function AddPhoto({ place, count }: { place: AdminPlaceDetails; count: number })
         className={cn("text-xs", fileError && !preparing ? "text-amber-200" : "text-white/70")}
       >
         {preparing
-          ? "Making the photo smaller…"
+          ? "Making your photo smaller…"
           : (fileError ?? "JPG, PNG or WebP from your computer; over 2 MB is made smaller for you.")}
       </p>
       <PhotoCreditsField

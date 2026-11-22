@@ -1,9 +1,9 @@
 "use client";
 
 import { ImagePlus, X } from "lucide-react";
-import { useEffect, useMemo, useState, type RefObject } from "react";
-import { PHOTO_MESSAGE, PHOTO_TYPES } from "@/components/ReviewPhotoPicker";
-import { fitPhoto } from "@/lib/shrink-photo";
+import { useState, type RefObject } from "react";
+import { fitPhoto, PHOTO_MESSAGE, PHOTO_TYPES } from "@/lib/shrink-photo";
+import { useObjectUrl } from "@/lib/object-url";
 import { cn } from "@/lib/utils";
 
 // A place's photo on the Edit and Add forms (full admin management round,
@@ -33,13 +33,7 @@ export function PlacePhotoField({
   // The form focuses it when a new place has no photo yet.
   inputRef: RefObject<HTMLInputElement | null>;
 }) {
-  const preview = useMemo(() => (photo ? URL.createObjectURL(photo) : null), [photo]);
-  useEffect(
-    () => () => {
-      if (preview) URL.revokeObjectURL(preview);
-    },
-    [preview],
-  );
+  const preview = useObjectUrl(photo);
   // True while a photo over 2 MB is being made smaller (team request
   // 2026-11-22, src/lib/shrink-photo.ts).
   const [preparing, setPreparing] = useState(false);
@@ -112,7 +106,7 @@ export function PlacePhotoField({
       </div>
       <p role={preparing ? "status" : undefined} className="text-xs text-white/70">
         {preparing
-          ? "Making the photo smaller…"
+          ? "Making your photo smaller…"
           : photo
           ? adding
             ? `Photo: ${photo.name}.`

@@ -8,7 +8,7 @@ team on 2026-11-22).
 
 **Blocked by:** None
 
-**Status:** todo
+**Status:** done (the team confirmed it works on the live site, 2026-11-22)
 
 - [x] A JPG or PNG uploaded through each of the four uploads is stored as
       WebP, with the same width and height
@@ -29,7 +29,7 @@ team on 2026-11-22).
       uploads, with fakes, never the hosted database
 - [x] The before and after file sizes of three sample photos are written in
       this ticket's progress note
-- [ ] Works on the live URL
+- [x] Works on the live URL
 
 **Progress (2026-11-22):** built; the team confirmed it on localhost the
 same day, including photos over 2 MB (every box but the live URL, which
@@ -119,3 +119,15 @@ choose a JPG, PNG or WebP photo up to 2 MB." stays exactly as it was.
 - **Not checked:** the pickers themselves with the team's login (the team
   checks on localhost), real iPhone Safari, and the live URL.
 
+**Live check (2026-11-22):** the team confirmed this ticket on the live
+site the same day it was pushed (commit d2db292), so the "Not checked: the
+live URL" lines above are answered.
+
+**Code review (2026-11-23):** the API tests call the two upload functions
+every route goes through (not the HTTP routes); the WebP-kept case is now
+tested for /admin uploads too. Also fixed: a file that would open as more
+than 50 million pixels is refused before it is decoded (a 758 KB PNG could
+open as 732 MB); a PNG is lossless only when a pixel really is see-through;
+and every stored photo now has its hidden metadata cut out, GPS included,
+also when it is kept as uploaded (strip-metadata.ts, without
+re-compressing). 5 new tests.

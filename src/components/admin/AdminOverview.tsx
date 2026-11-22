@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronRight, EyeOff, Flag, MapPin, MessageSquareText, type LucideIcon } from "lucide-react";
+import { ChevronRight, EyeOff, Flag, HardDrive, MapPin, MessageSquareText, type LucideIcon } from "lucide-react";
 import Link from "next/link";
 import { useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -12,14 +12,17 @@ import {
   getAdminOverview,
   REPORT_REASON_LABELS,
   type AdminOverviewData,
+  type StorageUsed,
 } from "@/lib/api";
+import { formatBytes, storageLevel, storagePercent } from "@/lib/storage-used";
 import { freshToken } from "@/lib/login";
 import { timeAgo } from "@/lib/notifications";
 import { useTableChanges } from "@/lib/realtime";
 import { cn } from "@/lib/utils";
 
 // The dashboard home (/admin, admin dashboard & moderation round, ticket
-// 111): four glass stat tiles, then the 5 newest reports, each opening that
+// 111): four glass stat tiles, storage used (ticket 167), then the 5
+// newest reports, each opening that
 // review on the Reports screen. The numbers come from GET
 // /v1/admin/overview, read as the admin, so the database decides.
 //
@@ -52,6 +55,74 @@ function StatTile({
   );
 }
 
+// Storage used (ticket 167): every file in the project against the free
+// plan's 1 GB (supabase/sql/067). Amber from 80 %, with words that say so,
+// so the colour is never the only sign.
+export function StorageCard({ storage }: { storage: StorageUsed | null }) {
+  if (!storage) {
+    return (
+      <section aria-labelledby="storage-heading" className={cn(adminGlass, "p-5 sm:p-6")}>
+        <h2 id="storage-heading" className="font-fraunces text-2xl font-medium">
+          Storage
+        </h2>
+        <p className="mt-2 text-sm text-white/85">Storage used can&apos;t be read right now. Please try again later.</p>
+      </section>
+    );
+  }
+  const { used_bytes: used, limit_bytes: limit } = storage;
+  const percent = storagePercent(used, limit);
+  const level = storageLevel(used, limit);
+  const summary = `${formatBytes(used)} of ${formatBytes(limit)} used`;
+  const other = Math.max(
+    0,
+    used - storage.review_videos_bytes - storage.review_photos_bytes - storage.place_photos_bytes,
+  );
+  return (
+    <section
+      aria-labelledby="storage-heading"
+      className={cn(adminGlass, "p-5 sm:p-6", level !== "ok" && "border-amber-300/70")}
+    >
+      <div className="flex flex-wrap items-baseline justify-between gap-2">
+        <h2 id="storage-heading" className="flex items-center gap-2 font-fraunces text-2xl font-medium">
+          <HardDrive aria-hidden="true" className="size-5 shrink-0 text-amber-300" />
+          Storage
+        </h2>
+        <span className="text-xs text-white/75">Every file in the project, free plan</span>
+      </div>
+      <p className="mt-3 font-fraunces text-3xl leading-none font-medium">
+        {formatBytes(used)} <span className="text-lg text-white/80">of {formatBytes(limit)} used</span>
+      </p>
+      <div
+        role="meter"
+        aria-label="Storage used"
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-valuenow={percent}
+        aria-valuetext={`${summary}, ${percent} %`}
+        className="mt-3 h-2.5 w-full overflow-hidden rounded-full bg-white/15"
+      >
+        <div
+          className={cn("h-full rounded-full", level === "ok" ? "bg-emerald-400" : "bg-amber-400")}
+          style={{ width: `${Math.max(percent, used > 0 ? 1 : 0)}%` }}
+        />
+      </div>
+      {level !== "ok" && (
+        <p role="status" className="mt-3 text-sm font-semibold text-amber-200">
+          {level === "full"
+            ? "Full: new photos and videos can't be uploaded. Delete old videos in the Trash for good, or move to a paid plan."
+            : `Nearly full (${percent} %): uploads stop at ${formatBytes(limit)}. Delete old videos for good, or plan a paid plan.`}
+        </p>
+      )}
+      <ul aria-label="What uses it" className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs text-white/80">
+        <li>Review videos {formatBytes(storage.review_videos_bytes)}</li>
+        <li>Review photos {formatBytes(storage.review_photos_bytes)}</li>
+        <li>Place photos {formatBytes(storage.place_photos_bytes)}</li>
+        {other > 0 && <li>Other files {formatBytes(other)}</li>}
+      </ul>
+    </section>
+  );
+}
+
 function OverviewSkeleton() {
   return (
     <div className="space-y-6">
@@ -63,6 +134,7 @@ function OverviewSkeleton() {
           <Skeleton key={i} className="h-32 rounded-2xl" />
         ))}
       </div>
+      <Skeleton className="h-36 w-full rounded-2xl" />
       <Skeleton className="h-72 w-full rounded-2xl" />
     </div>
   );
@@ -97,6 +169,8 @@ function OverviewContent({ data }: { data: AdminOverviewData }) {
           detail="Destinations and stays"
         />
       </ul>
+
+      <StorageCard storage={data.storage ?? null} />
 
       <section aria-labelledby="newest-reports-heading" className={cn(adminGlass, "p-5 sm:p-6")}>
         <div className="flex flex-wrap items-baseline justify-between gap-2">

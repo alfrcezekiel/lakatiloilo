@@ -43,8 +43,7 @@ export const glassPill =
   "inline-flex items-center rounded-full border border-white/25 bg-white/15 text-white backdrop-blur-md";
 
 // The address that opens directions in Google Maps (Get directions).
-export const directionsUrl = (latitude: number, longitude: number) =>
-  `https://www.google.com/maps/dir/?api=1&destination=${latitude},${longitude}`;
+export { googleDirectionsUrl as directionsUrl } from "@/lib/map-route";
 
 export function BackLink({ className }: { className?: string }) {
   return (

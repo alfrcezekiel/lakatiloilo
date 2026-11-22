@@ -17,7 +17,10 @@ export const VIDEO_TYPES: Record<string, string> = {
   "video/quicktime": "mov",
   "video/webm": "webm",
 };
-export const MAX_VIDEO_BYTES = 50 * 1024 * 1024; // 50 MB, the same as the bucket (065)
+// The same limit and words as the backend's
+// backend/src/v1/reviews/review-videos.service.ts (and the bucket in 065):
+// change them together.
+export const MAX_VIDEO_BYTES = 50 * 1024 * 1024;
 export const MAX_VIDEO_SECONDS = 60;
 export const VIDEO_MESSAGE = "Please choose an MP4, MOV or WebM video up to 50 MB and 60 seconds.";
 // For the file chooser: the types, and ".mov" for phones that don't name it.
@@ -116,4 +119,23 @@ export function uploadReviewVideo(
     request.onerror = () => reject(new Error("We couldn't upload your video. Please check your connection and try again."));
     request.send(file);
   });
+}
+
+// Deletes a video this browser just uploaded into the traveler's own folder,
+// when attaching it to the review failed (code review 2026-11-23), so it
+// doesn't fill the free storage. The Storage rules let a traveler delete
+// only in their own folder (065). Never throws: a leftover is only a
+// leftover (cleaning those up is parked in docs/LATER.md).
+export async function deleteUploadedVideo(path: string, accessToken: string): Promise<void> {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  if (!supabaseUrl || !anonKey) return;
+  try {
+    await fetch(`${supabaseUrl}/storage/v1/object/review-videos/${path}`, {
+      method: "DELETE",
+      headers: { Authorization: `Bearer ${accessToken}`, apikey: anonKey },
+    });
+  } catch {
+    // Offline or refused: nothing more to do here.
+  }
 }

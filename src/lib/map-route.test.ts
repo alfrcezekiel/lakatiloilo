@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   ARRIVED_METERS,
-  directionsUrl,
+  mapboxDirectionsRequest,
   distanceMeters,
   firstRoute,
   formatDistance,
@@ -10,9 +10,9 @@ import {
   shouldReroute,
 } from "./map-route";
 
-describe("directionsUrl", () => {
+describe("mapboxDirectionsRequest", () => {
   it("asks for the chosen profile from the traveler to the place, rounding their position", () => {
-    const url = new URL(directionsUrl("walking", [122.5621234567, 10.7202987654], [122.5667, 10.6917], "pk.fake"));
+    const url = new URL(mapboxDirectionsRequest("walking", [122.5621234567, 10.7202987654], [122.5667, 10.6917], "pk.fake"));
     expect(url.origin).toBe("https://api.mapbox.com");
     expect(url.pathname).toBe("/directions/v5/mapbox/walking/122.56212,10.72030;122.56670,10.69170");
     expect(url.searchParams.get("geometries")).toBe("geojson");
