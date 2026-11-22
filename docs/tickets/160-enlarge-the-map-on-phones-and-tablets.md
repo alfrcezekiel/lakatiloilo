@@ -63,3 +63,14 @@ confirms on a real phone and tablet.
   pass.
 - **Not checked:** a real phone and tablet (iOS Safari and Android
   Chrome), and the live URL.
+
+**Fix (2026-11-22, team request after the live check):** on a phone the
+place's popup, opened when the map loads, sat under the "Route from my
+location" panel and hid its ✕. Two causes: the popup and panel overlapped
+on narrow maps, and Mapbox flipped a tall popup (an accommodation's
+two-line name) below the pin, over the layer buttons. Now the popup is
+always above its pin (`anchor: "bottom"`), and once the panel is on screen
+the map slides down by exactly the overlap. Checked at 320, 375, 425,
+768, 1024 and 1440 px on a destination and an accommodation: the popup
+stays inside the map, clear of the panel and the layer buttons, ✕
+reachable.

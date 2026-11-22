@@ -341,7 +341,16 @@ export function PlaceMap({
         const main = new mapboxgl.Marker({ element: pinElement("main", name), anchor: "bottom" })
           .setLngLat([longitude, latitude])
           .setPopup(
-            new mapboxgl.Popup({ offset: 52, maxWidth: "280px", focusAfterOpen: false }).setDOMContent(
+            new mapboxgl.Popup({
+              offset: 52,
+              maxWidth: "280px",
+              focusAfterOpen: false,
+              // Always above the pin. Left to choose, Mapbox flipped a tall
+              // popup (an accommodation's two-line name) below the pin on a
+              // phone, over the layer buttons and past the map's edge; the
+              // effect that clears the top panel then makes room above.
+              anchor: "bottom",
+            }).setDOMContent(
               popupContent(tone === "destination" ? "This destination" : "Your stay", name, address, {
                 label: "Get directions",
                 href: directions(latitude, longitude),
@@ -451,6 +460,28 @@ export function PlaceMap({
     opener.current = from;
     setExpanded(true);
   }
+
+  // The place's popup opens when the map loads, centred over the pin. On a
+  // phone it ran under the "Route from my location" panel, which hid its
+  // top and its ✕ (team report 2026-11-22). Once that panel is on screen
+  // (ready), measure both; if they overlap, slide the map down by exactly
+  // the overlap. On a laptop they sit side by side and nothing moves.
+  useEffect(() => {
+    if (!ready) return;
+    const frameId = requestAnimationFrame(() => {
+      const m = map.current;
+      const popup = mainMarker.current?.getPopup();
+      const panel = topControls.current?.getBoundingClientRect();
+      if (!m || !popup?.isOpen() || !panel || panel.height === 0) return;
+      const box = popup.getElement()?.getBoundingClientRect();
+      if (!box) return;
+      const sideBySide = box.right <= panel.left || box.left >= panel.right;
+      const overlap = panel.bottom + 12 - box.top;
+      // panBy with a negative y moves the map's content down.
+      if (!sideBySide && overlap > 0) m.panBy([0, -overlap], { duration: 0 });
+    });
+    return () => cancelAnimationFrame(frameId);
+  }, [ready]);
 
   // Layer buttons show or hide the matching pins.
   useEffect(() => {
