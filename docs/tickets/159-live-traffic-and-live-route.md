@@ -12,31 +12,31 @@ position is the latitude and longitude saved in the `destinations` or
 **Blocked by:** none (the map and the one-time route preview from the
 glass detail pages round, 2026-11-22, are in place but not committed)
 
-**Status:** in progress
+**Status:** done (the team confirmed it works on the live site, 2026-11-22)
 
-- [ ] Map layers: Satellite, Satellite Streets and Streets buttons; when
+- [x] Map layers: Satellite, Satellite Streets and Streets buttons; when
       Mapbox refuses satellite tiles (the current account: 429, no
       allowance), the map shows Streets and says why
-- [ ] A **Traffic** button turns live traffic on and off: roads coloured
+- [x] A **Traffic** button turns live traffic on and off: roads coloured
       green (low), amber (moderate), orange (heavy) and red (severe), with
       a small legend; it stays on when the traveler switches layers
-- [ ] **Route from my location** asks for the location only when pressed,
+- [x] **Route from my location** asks for the location only when pressed,
       then keeps following the traveler: the blue pin moves with them, and
       the route, time and distance are fetched again when they have moved
       about 40 m, at most every 15 seconds
-- [ ] The status says it is live ("Live · 12 min · 3.8 km by car"), and
+- [x] The status says it is live ("Live · 12 min · 3.8 km by car"), and
       "You've arrived" within about 50 m of the place, which stops the
       tracking
-- [ ] ✕ (Clear the route) and leaving the page stop the tracking: the
+- [x] ✕ (Clear the route) and leaving the page stop the tracking: the
       browser stops reading the location
-- [ ] Traveler's pin blue; the place's pin dark teal green, on both kinds
+- [x] Traveler's pin blue; the place's pin dark teal green, on both kinds
       of page
-- [ ] Friendly messages when location is blocked, off or slow, or there is
+- [x] Friendly messages when location is blocked, off or slow, or there is
       no route; Get directions (Google Maps) still works
-- [ ] The line under the map says the location is shared with Mapbox only
+- [x] The line under the map says the location is shared with Mapbox only
       while the route is on, and Lakat Iloilo doesn't save it
-- [ ] Looks right at 375, 768, 1024 and 1440 px; nothing scrolls sideways
-- [ ] Works on the live URL, on a phone, walking or riding a short way
+- [x] Looks right at 375, 768, 1024 and 1440 px; nothing scrolls sideways
+- [x] Works on the live URL, on a phone, walking or riding a short way
 
 **Why (plain English):** Travelers want to see how to get to the place
 from where they are, how busy the roads are now, and to keep seeing their
@@ -54,8 +54,8 @@ progress on the way, without leaving Lakat Iloilo for Google Maps.
   requests a minute or fewer.
 - The location never reaches our backend and is never saved.
 
-**Progress (2026-11-22):** built; boxes stay unticked until the team
-confirms on localhost and the live URL.
+**Progress (2026-11-22):** built; the team confirmed every box on the
+live site the same day.
 
 - Checked in headless Chrome with a pretend location (never a real
   person's), on Dinagyang Festival and on Courtyard by Marriott Iloilo:

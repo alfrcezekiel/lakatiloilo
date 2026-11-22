@@ -7,25 +7,27 @@ or can do changes.
 
 **Blocked by:** none (157 is done)
 
-**Status:** in progress (built and measured locally, not pushed)
+**Status:** done (closed 2026-11-22 as "much better, not fully met", team decision; see the change note at the end)
 
-- [ ] Measured first: what is in each script chunk on home and on a place
+- [x] Measured first: what is in each script chunk on home and on a place
       page, and its size (written in the progress note below)
-- [ ] Home: TBT ≤ 200 ms on a phone in 2 Lighthouse runs out of 2, on the
+- [x] Home: TBT ≤ 200 ms on a phone in 2 Lighthouse runs out of 2, on the
       charger (`npm run perf:lighthouse:mobile`, no `⚠ CPU score` line)
-- [ ] Place page: LCP ≤ 2.5 s on a phone in 2 runs out of 2, on the charger
-- [ ] Performance stays ≥ 90, and Accessibility, Best Practices and SEO
+      — **accepted by the team, not met:** 201 ms ✗ and 184 ms ✓ (before: average 256 ms)
+- [x] Place page: LCP ≤ 2.5 s on a phone in 2 runs out of 2, on the charger
+      — **accepted by the team, not met:** 2.15 s ✓ and 2.60 s ✗ (before: average 2.91 s)
+- [x] Performance stays ≥ 90, and Accessibility, Best Practices and SEO
       stay at 100, on phone and laptop
-- [ ] The 9 Lighthouse security checks still pass (enforced CSP with a
+- [x] The 9 Lighthouse security checks still pass (enforced CSP with a
       nonce, no CSP errors, no request to the backend's address)
-- [ ] `npm run perf:site:smoke` passes (every security check 100 %)
-- [ ] Everything on home still works: search, category chips, Featured and
+- [x] `npm run perf:site:smoke` passes (every security check 100 %)
+- [x] Everything on home still works: search, category chips, Featured and
       Trending, the lists and their paging, live updates, the navbar and
       its dropdown, Scroll to top, the fades
-- [ ] Everything on a place page still works: the photo gallery, reviews
+- [x] Everything on a place page still works: the photo gallery, reviews
       (write, edit, delete, like, reply), live updates, the back link
-- [ ] Looks the same at 375, 768, 1024 and 1440 px
-- [ ] Works on the live URL
+- [x] Looks the same at 375, 768, 1024 and 1440 px
+- [x] Works on the live URL
 
 **Why (plain English):** On 2026-11-21 the live site scored 95–100 on a
 phone, with two small misses, both caused by the JavaScript the phone
@@ -165,3 +167,42 @@ reviews, photo gallery and navbar code. Loading them later would change
 what shows first on the page (the reviews would arrive after it), so
 that is a team decision, not part of this ticket's "nothing changes"
 rule.
+
+**Live check, run 1 (2026-11-22, team, phone, on the charger):** the
+live site serves the new code (home starts with 17 scripts, not 18).
+Home: Performance 97, LCP 1.00 s, **TBT 201 ms ✗ by 1 ms** (before: 186–325
+ms, 4 of 5 over). Place: Performance 97, **LCP 2.15 s ✓** (before:
+2.60–3.36 s, all over), TBT 149 ms. Log in 100. All 9 security checks ✓.
+Boxes stay unticked: the ticket asks for 2 runs out of 2. Waiting for
+run 2. Details in `docs/evaluations/2026-11-22-lighthouse.md`.
+
+**Live check, run 2 (2026-11-22, team, phone, on the charger):** home
+TBT **184 ms ✓**, place LCP **2.60 s ✗** (photo requested first and ready
+by 0.41 s on the real load; the miss is only in Lighthouse's simulation),
+place TBT 140 ms, every score 95–100, security ✓.
+
+**Over both runs:** home TBT 201 ✗ / 184 ✓, place LCP 2.15 ✓ / 2.60 ✗.
+Both are much better than before 158 (TBT average 256 ms, LCP average
+2.91 s), but neither met "2 runs out of 2". Both now sit within
+run-to-run noise of their limits. Stopped here (same miss again, team
+rule). Boxes stay unticked. **Team decision needed:** close 158 as
+"much better, not fully met", or keep it open for a bigger change
+(options in `docs/evaluations/2026-11-22-lighthouse.md`).
+
+**Change (2026-11-22, team request):** ticket closed as **"much better,
+not fully met"**. Ticket 158 measurably improved both phone vitals on the
+live site (home TBT average 256 → 193 ms, place LCP average 2.91 →
+2.38 s), but neither met "2 runs out of 2": each now sits within
+run-to-run noise of its limit (each passed once and missed once). The
+real page loads are fast (the place photo is ready in about 0.41 s).
+Both misses are recorded as known, the budgets stay at Google's limits,
+and no more code goes into this before the demo. The bigger lever (less
+JavaScript overall, by changing how pages are built) is not part of the
+MVP. `docs/SPEC.md` has no line about these budgets, so it is unchanged.
+
+**Team confirmed (2026-11-22, live URL):** the team checked the
+functions on home and a place page and found them working well, and
+ticked every box. The two budget boxes are ticked as **accepted**, not
+as met: their numbers above stay as measured (each passed once and
+missed once).
+

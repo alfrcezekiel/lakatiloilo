@@ -191,10 +191,9 @@ CPU core, not of the live site. The live site did not break at all: it held
 400 travelers at once for the whole 20-minute ramp, with pages p(95)
 0.26 s and 0 errors in 111,017 requests.
 Lighthouse on a phone (on the charger) scores 95–100 on every page, with
-accessibility 100 everywhere. Two small misses are still open, both
-caused by how much JavaScript the phone has to run: home's TBT (246 ms,
-limit 200 ms) and the place page's LCP (2.6 s, limit 2.5 s). Ticket
-158 covers both. Reports to open in a browser:
+accessibility 100 everywhere. Ticket 158 made phones faster (home TBT
+average 256 → 193 ms, place LCP average 2.91 → 2.38 s). Each still
+misses its budget now and then by a hair, which the team accepted. Reports to open in a browser:
 [`performance/k6/report.html`](performance/k6/report.html) and
 [`performance/lighthouse/report.html`](performance/lighthouse/report.html).
 

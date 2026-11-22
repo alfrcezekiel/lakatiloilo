@@ -9,7 +9,7 @@ stuck on the map. Laptops (from 1024 px) keep the map as it is.
 
 **Blocked by:** none (builds on 159, which is waiting for the team's check)
 
-**Status:** in progress (the team confirmed it works on 2026-11-22; waiting for the live URL check)
+**Status:** done (the team confirmed it works on the live site, 2026-11-22)
 
 - [x] At 768, 425, 375 and 320 px an **Enlarge map** button shows under the
       map and as a round button on the map; at 1024 px and wider it does not
@@ -24,7 +24,7 @@ stuck on the map. Laptops (from 1024 px) keep the map as it is.
 - [x] The live route keeps running while the map is enlarged or closed
 - [x] Nothing scrolls sideways; every button at least 44 × 44 px; the
       keyboard focus moves into the enlarged map and back to the button
-- [ ] Works on a real phone and tablet on the live URL
+- [x] Works on a real phone and tablet on the live URL
 
 **Why (plain English):** On a laptop the mouse can scroll the page past the
 map and Ctrl + scroll zooms it. On a phone the same map is a small window

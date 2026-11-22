@@ -37,6 +37,28 @@ a{color:var(--brand)}
 <div class="tile"><b>18 / 18</b><span>security checks passed</span></div>
 </div>
 
+<h2>After ticket 158: both live phone runs (team, 2026-11-22, on the charger)</h2>
+<div class="verdict mixed"><b>Both budgets passed once and missed once, each by a hair.</b> Home TBT was 201 ms ✗ then 184 ms ✓; place LCP was 2.15 s ✓ then 2.60 s ✗. Both are clearly better than before ticket 158, but neither passes 2 runs out of 2 yet. Stopped here, as the team rule asks. <b>Team decision (2026-11-22): ticket 158 closed as "much better, not fully met"</b>; both misses are known and accepted, and the budgets stay at Google's limits.</div>
+<div class="wrap"><table><thead><tr><th></th><th class="n">Run 1</th><th class="n">Run 2</th><th class="n">Before ticket 158</th></tr></thead><tbody>
+<tr><td>Home TBT (≤ 200 ms)</td><td class="n"><span class="bad">201 ms ✗</span></td><td class="n"><span class="ok">184 ms ✓</span></td><td class="n">186–325 ms, average 256</td></tr>
+<tr><td>Place LCP (≤ 2.5 s)</td><td class="n"><span class="ok">2.15 s ✓</span></td><td class="n"><span class="bad">2.60 s ✗</span></td><td class="n">2.60–3.36 s, average 2.91</td></tr>
+<tr><td>Performance (home · place · log in)</td><td class="n">97 · 97 · 100</td><td class="n">97 · 95 · 100</td><td class="n">89–97 · 81–97 · 100</td></tr>
+</tbody></table></div>
+<p class="note">Why the place LCP moves: on the real load, the photo is now the first request after the page (at 343 ms, High priority, ready by 0.41 s). The miss exists only in Lighthouse's simulated slow phone, whose estimate moved by 0.45 s between two runs of the same code. Real throttling gave 1.96 s ✓.</p>
+
+<h3>Run 1 in detail</h3>
+<div class="verdict mixed"><b>The place page's LCP now passes (2.15 s), and home's TBT is 201 ms, 1 ms over the limit.</b> Every score is 97–100, and all 9 security checks pass. Ticket 158 asks for 2 runs out of 2, so a second run decides it.</div>
+<div class="wrap"><table><thead><tr><th>Page · phone</th><th class="n">Perf.</th><th class="n">LCP ≤ 2.5 s</th><th class="n">TBT ≤ 200 ms</th><th class="n">Before ticket 158 (charger runs)</th></tr></thead><tbody>
+<tr><td>Home</td><td class="n"><span class="pill ok">97</span></td><td class="n"><span class="ok">999 ms ✓</span></td><td class="n"><span class="bad">201 ms ✗</span></td><td class="n">TBT 186–325 ms, 4 of 5 over</td></tr>
+<tr><td>Place</td><td class="n"><span class="pill ok">97</span></td><td class="n"><span class="ok">2,153 ms ✓</span></td><td class="n"><span class="ok">149 ms ✓</span></td><td class="n">LCP 2.60–3.36 s, all over</td></tr>
+<tr><td>Log in</td><td class="n"><span class="pill ok">100</span></td><td class="n"><span class="ok">956 ms ✓</span></td><td class="n"><span class="ok">37 ms ✓</span></td><td class="n">100</td></tr>
+</tbody></table></div>
+<ul>
+<li><b>Place LCP passes live for the first time,</b> 0.45 s faster than the best run before. The 67 KB of Supabase code no longer downloads before the header photo.</li>
+<li><b>Home TBT 201 ms is within run-to-run noise</b> (about ±40 ms), and well below the average before (256 ms). The remaining busy time is React drawing the page (165 and 92 ms tasks), the Next.js loader (109 ms) and the Supabase code arriving later (81 ms).</li>
+<li>The live site serves the new code: home starts with 17 scripts, not 18.</li>
+</ul>
+
 <h2>Phone: the team's final run, on the charger (CPU score 2,869–3,015)</h2>
 <div class="wrap"><table><thead><tr><th>Page</th><th class="n">Perf.</th><th class="n">A11y</th><th class="n">Best pr.</th><th class="n">SEO</th><th class="n">LCP ≤ 2.5 s</th><th class="n">CLS ≤ 0.1</th><th class="n">TBT ≤ 200 ms</th><th class="n">FCP</th><th class="n">Speed Index</th><th>Security</th></tr></thead><tbody>
 <tr><td>Home <code>/</code></td><td class="n"><span class="pill ok">95</span></td><td class="n"><span class="pill ok">100</span></td><td class="n"><span class="pill ok">100</span></td><td class="n"><span class="pill ok">100</span></td><td class="n"><span class="ok">940 ms ✓</span></td><td class="n"><span class="ok">0.000 ✓</span></td><td class="n"><span class="bad">246 ms ✗</span></td><td class="n">940 ms</td><td class="n">2,794 ms</td><td><span class="pill ok">✓ ✓ ✓</span></td></tr>
@@ -111,7 +133,7 @@ a{color:var(--brand)}
 <p><b>Stopped after these tries, as the team rule asks.</b> The only lever left is <b>less JavaScript on the place page</b>: finding what each script is, and whether some can load later. That is a change across the page, so it would be its own ticket, for the team to decide. The 2.5 s budget stays.</p>
 
 <h2>Next step</h2>
-<p><b>Both misses have the same root cause: the JavaScript the phone has to download and run.</b> Ticket 158, "lighter pages on a phone" (<code>docs/tickets/158-lighter-pages-on-a-phone.md</code>), covers both. It should start by measuring what is in each script chunk, then move the parts that are not needed straight away to load later. The budgets stay at Google's limits.</p>
+<p><b>Both misses have the same root cause: the JavaScript the phone has to download and run.</b> Ticket 158, "lighter pages on a phone" (<code>docs/tickets/158-lighter-pages-on-a-phone.md</code>), worked on both and was closed as "much better, not fully met" on 2026-11-22 (see the section at the top). It should start by measuring what is in each script chunk, then move the parts that are not needed straight away to load later. The budgets stay at Google's limits.</p>
 
 <h2>Not checked</h2>
 <ul>
