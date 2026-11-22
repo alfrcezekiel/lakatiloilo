@@ -16,7 +16,7 @@ export function PlaceListSkeleton({
   withPill?: boolean;
 }) {
   return (
-    <section id={id} className="py-16">
+    <section id={id} className="scroll-mt-20 py-16">
       <div className="mx-auto max-w-6xl px-4 sm:px-6">
         <h2 className="mb-8 text-3xl font-semibold text-white">{title}</h2>
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">

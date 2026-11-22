@@ -129,6 +129,28 @@ export function HomePage({ places }: { places: Promise<HomePlaces> }) {
     };
   }, [places]);
 
+  // Arriving from a link to a section ("Keep exploring" on a place page:
+  // /#walking-list, /#accommodation-list). The browser scrolls there at
+  // once, while the lists are still grey skeletons of 3 cards; when the real
+  // cards arrive (up to 6, and empty categories disappear) everything above
+  // grows or shrinks, so the traveler ended up in the wrong section (team
+  // report 2026-11-22). Once the places are in, scroll to the section again,
+  // with no glide. Only once per visit: a live refresh never moves the page.
+  const hashHandled = useRef(false);
+  useEffect(() => {
+    if (loading || hashHandled.current) return;
+    hashHandled.current = true;
+    const id = decodeURIComponent(window.location.hash.slice(1));
+    if (!id) return;
+    // Wait one frame so the new cards are laid out before measuring.
+    const frame = requestAnimationFrame(() => {
+      // A category with no places is hidden: show the category cards instead.
+      const target = document.getElementById(id) ?? document.getElementById("explore-categories");
+      target?.scrollIntoView({ block: "start" });
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [loading]);
+
   // What every section shows: the category cards count these and the lists
   // display them, so both always agree with the location filter.
   const visibleDestinations = useMemo(

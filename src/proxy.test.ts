@@ -45,6 +45,15 @@ describe("Content-Security-Policy", () => {
     expect(enforced).toMatch(/img-src [^;]*https:\/\/images\.unsplash\.com/);
   });
 
+  it("lets the map load: Mapbox styles, tiles and its blob: worker (glass detail pages round)", async () => {
+    const { enforced } = await policyFor("/destinations/some-place");
+
+    expect(enforced).toMatch(/connect-src [^;]*https:\/\/api\.mapbox\.com/);
+    expect(enforced).toMatch(/connect-src [^;]*https:\/\/\*\.tiles\.mapbox\.com/);
+    expect(enforced).toMatch(/img-src [^;]*https:\/\/api\.mapbox\.com/);
+    expect(enforced).toContain("worker-src 'self' blob:");
+  });
+
   it("trusts only our own Supabase project, not every *.supabase.co site", async () => {
     const { enforced } = await policyFor("/");
 

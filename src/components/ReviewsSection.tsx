@@ -20,7 +20,7 @@ import { ReportReview } from "@/components/ReportReview";
 import { ReviewPhotos } from "@/components/ReviewPhoto";
 import { FromNotification, notifiedTint } from "@/components/FromNotification";
 import { SectionHeading } from "@/components/PlaceDetail";
-import { averageRating, countedReviews, usePlaceReviews } from "@/components/PlaceReviews";
+import { averageRating, RatingSummary, usePlaceReviews } from "@/components/PlaceReviews";
 import { travelerTypeLabels } from "@/lib/labels";
 
 // Scrolls a review or reply into view (below the navbar, scroll-mt-28),
@@ -46,7 +46,9 @@ export const glassCard = "rounded-xl bg-white/10 border border-white/20 text-whi
 // Security lets anyone read them, so no login is needed to see them. Only
 // the reviewer's display name is shown, never their email. Writing,
 // editing and deleting go through the backend too.
-export function ReviewsSection() {
+// eyebrow: the numbered label over the heading on the glass detail pages
+// ("05 — Guests say").
+export function ReviewsSection({ eyebrow }: { eyebrow?: string } = {}) {
   const pathname = usePathname();
   const { user, ready } = useCurrentUser();
   const { placeType, placeId, reviews, loadError, setReviews } = usePlaceReviews();
@@ -91,7 +93,9 @@ export function ReviewsSection() {
 
   return (
     <section aria-labelledby="reviews-heading">
-      <SectionHeading id="reviews-heading">Reviews</SectionHeading>
+      <SectionHeading id="reviews-heading" eyebrow={eyebrow}>
+        Reviews
+      </SectionHeading>
 
       {loadError ? (
         <p className="text-white/80">We couldn&apos;t load reviews right now.</p>
@@ -106,17 +110,11 @@ export function ReviewsSection() {
       ) : (
         <div className="space-y-4">
           {/* Summary: average stars and how many reviews */}
+          {/* The big average with a bar per star (glass detail pages round). */}
           {average === null ? (
             <p className="text-white/90">No reviews yet.</p>
           ) : (
-            <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-white">
-              <Stars rating={average} className="text-xl" />
-              <span className="text-lg font-semibold">{average.toFixed(1)}</span>
-              <span className="text-white/70">
-                · {countedReviews(reviews).length} review
-                {countedReviews(reviews).length === 1 ? "" : "s"}
-              </span>
-            </p>
+            <RatingSummary reviews={reviews} />
           )}
 
           {/* Logged in: the form, or a note if they already reviewed. */}

@@ -104,10 +104,18 @@ async function isAdmin(accessToken: string) {
 //     server injects CSS without a nonce. Scan a production build
 //     (`npm run build` + `npm start`) to see what the live site sends.
 //   - blob: images: the review and admin photo pickers preview a photo before upload.
+//   - Mapbox (glass detail pages round, 2026-11-22): the map on the
+//     destination and accommodation pages (src/components/PlaceMap.tsx).
+//     api.mapbox.com serves the styles, fonts and icons, *.tiles.mapbox.com
+//     the map tiles, events.mapbox.com its usage counts (part of Mapbox's
+//     terms), and the map draws in a blob: worker.
 //   - Supabase: only OUR project (from NEXT_PUBLIC_SUPABASE_URL), not every
 //     *.supabase.co site (code review 2026-11-20): https for Storage photos
 //     and Auth, wss for Realtime (live updates uses a WebSocket).
 const CSP_HEADER = "Content-Security-Policy";
+
+// Where the map (Mapbox GL) loads its styles, tiles and fonts from.
+const MAPBOX = "https://api.mapbox.com https://*.tiles.mapbox.com https://events.mapbox.com";
 
 // Our Supabase project's address, e.g. https://abcd.supabase.co, or "" if
 // the variable is missing (the app's Supabase client then fails loudly).
@@ -135,9 +143,11 @@ export function contentSecurityPolicy(nonce: string) {
     "style-src-attr 'unsafe-inline'",
     // Place photos come from Supabase Storage and Wikimedia (thumb. serves the
     // resized copies); the hero and category cards use Unsplash photos.
-    `img-src 'self' data: blob: ${supabase} https://upload.wikimedia.org https://thumb.wikimedia.org https://images.unsplash.com`,
+    `img-src 'self' data: blob: ${supabase} https://upload.wikimedia.org https://thumb.wikimedia.org https://images.unsplash.com ${MAPBOX}`,
     "font-src 'self'",
-    `connect-src 'self' ${supabase} ${realtime}`,
+    `connect-src 'self' ${supabase} ${realtime} ${MAPBOX}`,
+    "worker-src 'self' blob:",
+    "child-src 'self' blob:",
     "frame-src 'none'",
     "frame-ancestors 'none'",
     "object-src 'none'",

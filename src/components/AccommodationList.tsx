@@ -46,7 +46,7 @@ export function AccommodationList({
   if (accommodations.length === 0) return null;
 
   return (
-    <section id={id} className="py-16">
+    <section id={id} className="scroll-mt-20 py-16">
       <div className="mx-auto max-w-6xl px-4 sm:px-6">
         <Reveal>
           <h2 className="mb-8 text-3xl font-semibold text-white">

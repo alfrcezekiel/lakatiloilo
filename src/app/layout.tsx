@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { connection } from "next/server";
-import { Fraunces, Inter } from "next/font/google";
+import { Fraunces, IBM_Plex_Mono, Inter } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/components/Providers";
 
@@ -15,6 +15,14 @@ const fraunces = Fraunces({
 const inter = Inter({
   subsets: ["latin"],
   variable: "--font-inter",
+  display: "swap",
+});
+
+// The small uppercase labels on the detail pages (glass detail pages round).
+const plexMono = IBM_Plex_Mono({
+  subsets: ["latin"],
+  weight: ["500"],
+  variable: "--font-plex-mono",
   display: "swap",
 });
 
@@ -35,7 +43,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
 
   return (
     <html lang="en" className="h-full antialiased">
-      <body className={`${fraunces.variable} ${inter.variable} min-h-full flex flex-col`}>
+      <body className={`${fraunces.variable} ${inter.variable} ${plexMono.variable} min-h-full flex flex-col`}>
         <Providers>{children}</Providers>
       </body>
     </html>

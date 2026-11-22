@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { getReviews, type Review } from "@/lib/api";
 import { useTableChanges } from "@/lib/realtime";
 import { loginToken, useCurrentUser } from "@/lib/login";
-import { StatTile } from "@/components/PlaceDetail";
+import { Fact, StatTile } from "@/components/PlaceDetail";
 
 type PlaceType = "destination" | "accommodation";
 type Place = { placeType: PlaceType; placeId: string };
@@ -174,5 +174,78 @@ export function RatingTile() {
         </span>
       )}
     </StatTile>
+  );
+}
+
+// The Rating fact in the glass strip over the photo (glass detail pages
+// round): the same four states as RatingTile, in the new QuickFacts look.
+export function RatingFact() {
+  const { reviews, loadError } = usePlaceReviews();
+  const average = reviews ? averageRating(reviews) : null;
+  const count = reviews ? countedReviews(reviews).length : 0;
+
+  return (
+    <Fact label="Rating">
+      {loadError ? (
+        <span className="font-normal text-white/80">Not available</span>
+      ) : reviews === null ? (
+        <span className="font-normal text-white/80">Loading…</span>
+      ) : average === null ? (
+        <span className="font-normal text-white/80">No reviews yet</span>
+      ) : (
+        <span className="flex flex-wrap items-baseline gap-x-1.5">
+          <span aria-hidden="true" className="text-accent">
+            ★
+          </span>
+          <span>{average.toFixed(1)}</span>
+          <span className="text-sm font-normal text-white/80">
+            · {count} review{count === 1 ? "" : "s"}
+          </span>
+        </span>
+      )}
+    </Fact>
+  );
+}
+
+// The rating summary at the top of Reviews: the big average and how many
+// reviews gave each star, 5 down to 1. Only the reviews that count
+// (countedReviews), so a hidden review never moves the bars.
+export function RatingSummary({ reviews }: { reviews: Review[] }) {
+  const counted = countedReviews(reviews);
+  const average = averageRating(reviews);
+  if (average === null || counted.length === 0) return null;
+
+  const bars = [5, 4, 3, 2, 1].map((star) => {
+    const n = counted.filter((r) => Math.round(r.rating) === star).length;
+    return { star, n, pct: (n / counted.length) * 100 };
+  });
+
+  return (
+    <div className="glass flex flex-wrap items-center gap-8 rounded-3xl border border-white/20 bg-white/10 p-6 text-white sm:p-7">
+      <div className="shrink-0">
+        <p className="font-fraunces text-7xl font-medium leading-none">{average.toFixed(1)}</p>
+        <p aria-hidden="true" className="mt-2 text-lg tracking-[0.15em] text-accent">
+          {"★★★★★".slice(0, Math.round(average))}
+          <span className="text-white/30">{"★★★★★".slice(Math.round(average))}</span>
+        </p>
+        <p className="mt-1 text-sm text-white/80">
+          <span className="sr-only">Average {average.toFixed(1)} out of 5 from </span>
+          {counted.length} review{counted.length === 1 ? "" : "s"}
+        </p>
+      </div>
+      <dl className="min-w-56 flex-1 space-y-2 text-sm">
+        {bars.map((b) => (
+          <div key={b.star} className="flex items-center gap-2.5">
+            <dt className="w-12 shrink-0 text-white/90">
+              {b.star} star{b.star === 1 ? "" : "s"}
+            </dt>
+            <dd className="h-2 flex-1 overflow-hidden rounded-full bg-white/15" aria-hidden="true">
+              <div className="h-full rounded-full bg-accent" style={{ width: `${b.pct}%` }} />
+            </dd>
+            <dd className="w-8 shrink-0 text-right text-white/80">{b.n}</dd>
+          </div>
+        ))}
+      </dl>
+    </div>
   );
 }

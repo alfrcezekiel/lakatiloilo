@@ -161,6 +161,13 @@ the NestJS backend. Still parked:
   round in the spec (2026-11-19).
 
 ### Interactive map (Mapbox GL) — needs a team decision
+**Change (2026-11-22, team request):** the map is now on the destination
+and accommodation pages, with a route preview from the traveler's
+location (docs/SPEC.md, detail pages). Still open: a map of all places on
+the home page, and the Mapbox account's satellite tiles, which Mapbox
+currently refuses (no allowance on the account; only its owner can change
+that, and it may mean billing). Mapbox stays outside the pinned stack.
+
 Proposed 2026-10-21. Mapbox GL is outside the pinned stack: it adds a new
 library, needs a Mapbox account and access token, and is billed past a
 free monthly limit. The team parked it until everyone agrees to add it.
@@ -238,7 +245,7 @@ to one session:
 
 ### Other features
 - Booking/payments for accommodations
-- Directions on the map (after the map itself)
+- ~~Directions on the map~~ — done 2026-11-22 as the route preview on the detail pages
 - Full search results page and searching inside descriptions
 - Price range display for accommodations
 - Room type information for accommodations
