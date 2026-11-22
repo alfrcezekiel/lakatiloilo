@@ -399,8 +399,11 @@ lakatiloilo/
    │  │  ├─ stress.js              keep adding users until it breaks
    │  │  ├─ spike.js               sudden rush, then back to quiet
    │  │  ├─ soak.js                normal load for an hour
+   │  │  ├─ breakpoint.js          one ramp to 400 users that stops itself when the app breaks
    │  │  ├─ site-smoke.js          website: every page and /api route once, 40 s
-   │  │  └─ site-load.js           website: 20 users, 7 min (the team starts it)
+   │  │  ├─ site-load.js           website: 20 users, 7 min (the team starts it)
+   │  │  ├─ site-stress.js, site-spike.js, site-soak.js   website versions of the above
+   │  │  └─ site-breakpoint.js     website: ramp to 400 until it breaks
    │  └─ results/                  JSON summaries (git-ignored, .gitkeep only)
    └─ lighthouse/                            ← L8 page quality (Lighthouse)
       ├─ budgets.mjs               pass marks: Google's "good" limits
@@ -685,6 +688,7 @@ files. Open them: each one starts with a comment that explains it.
 | `soak.js` | 2 min up to 20, 60 min at 20 (or `-e SOAK_MINUTES=30`), 2 min down. Guard | 64 min |
 | `site-smoke.js` | `vus: 1, duration: '40s'`, tours all 12 pages and `/api` routes. `SITE_THRESHOLDS`: p(95) under 800 ms for pages and for `/api` **separately** (setup's warm-up not counted), errors under 1 %, and **100 %** of the security checks | 45 s |
 | `site-load.js` | like `load.js` (20 travelers, 7 min) on the website, `SITE_THRESHOLDS`. Guard (localhost unless `-e LIVE_OK=yes`) | 7 min |
+| `breakpoint.js`, `site-breakpoint.js` | added 2026-11-21: one straight ramp from 0 to 400 travelers over 20 minutes (`-e BREAK_MAX_VUS=160…1000`, `-e BREAK_MINUTES=5…60`). The same "clearly failing" limits as stress (errors over 5 %, p(95) over 1.5 s, and on the website any security check failing), but **every** limit stops the test (`abortOnFail`). `vus max=` in the summary is how many travelers were on when it broke (a little after it really broke, because p(95) is judged over the whole run). Guard. Shared code in `lib/breakpoint.js` | up to 20 min |
 
 Requests are tagged by route (`GET /v1/destinations/:id`), so the summary
 groups them by route instead of listing every place id separately.
@@ -702,6 +706,7 @@ bigger on it.
 | Stress (to 150) | `perf:stress` | `perf:site:stress` | `perf:live:stress` 🔒 | `perf:live:site:stress` 🔒 | 10 min |
 | Spike (to 100) | `perf:spike` | `perf:site:spike` | `perf:live:spike` 🔒 | `perf:live:site:spike` 🔒 | 4.5 min |
 | Soak (20 for 1 h) | `perf:soak` | `perf:site:soak` | `perf:live:soak` 🔒 | `perf:live:site:soak` 🔒 | 64 min |
+| Breakpoint (to 400, stops when it breaks) | `perf:breakpoint` | `perf:site:breakpoint` | `perf:live:breakpoint` 🔒 | `perf:live:site:breakpoint` 🔒 | up to 20 min |
 
 ```bash
 npm run perf:site:smoke

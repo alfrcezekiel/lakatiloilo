@@ -180,8 +180,16 @@ Docker. Results are written up in [`docs/evaluations/`](docs/evaluations/).
 | 8 | Page quality | pages appear fast on a phone, and are accessible and findable | Lighthouse |
 
 **Latest results (2026-11-21):** every k6 test passed, locally and on
-the live site: 0 errors in 123,825 requests with up to 150 travelers at
-once, and the CSP and hidden backend checks passed on every answer.
+the live site: 0 errors in 180,019 requests with up to 150 travelers at
+once, and the CSP and hidden backend checks passed on every answer. A
+second live round, with a full 60-minute soak, gave the same speeds
+(live pages p(95) under 0.3 s) with no slow-down over the hour. The
+breakpoint test (2026-11-22) found that one laptop running the website
+reaches its limit at about 200 travelers at once (pages slower than
+1.5 s, still 0 errors). That's the limit of one website process on one
+CPU core, not of the live site. The live site did not break at all: it held
+400 travelers at once for the whole 20-minute ramp, with pages p(95)
+0.26 s and 0 errors in 111,017 requests.
 Lighthouse on a phone (on the charger) scores 95–100 on every page, with
 accessibility 100 everywhere. Two small misses are still open, both
 caused by how much JavaScript the phone has to run: home's TBT (246 ms,
@@ -213,7 +221,8 @@ npm run perf:lighthouse:mobile
 ```
 
 The performance commands come in four groups, each with `smoke`,
-`load`, `stress`, `spike` and `soak`:
+`load`, `stress`, `spike`, `soak` and `breakpoint` (keeps adding
+travelers until the app breaks, then stops by itself):
 
 | Group | Target |
 |-------|--------|
@@ -222,7 +231,7 @@ The performance commands come in four groups, each with `smoke`,
 | `perf:live:…` | the live backend |
 | `perf:live:site:…` | the live website |
 
-Run a smoke before anything bigger. Live stress, spike and soak refuse
+Run a smoke before anything bigger. Live stress, spike, soak and breakpoint refuse
 to start unless the whole team agrees and adds `-- -e LIVE_OK=yes`.
 Lighthouse also has `perf:lighthouse:desktop`, `perf:lighthouse:local`
 and `perf:lighthouse:focus`. Lighthouse needs no `-e LIVE_OK=yes`: it

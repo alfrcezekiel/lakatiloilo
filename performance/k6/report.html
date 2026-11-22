@@ -67,6 +67,60 @@ a{color:var(--brand)}
 </tbody></table></div>
 <p class="note">The website thresholds are: all checks over 99 % (95 % in stress and spike), <b>security checks exactly 100 %</b>, and pages and <code>/api</code> judged separately against the limit, so a slow page can't hide behind fast data calls. The warm-up visits in <code>setup()</code> are not counted.</p>
 
+<h2>Second live round: stress, spike and a full 60-minute soak (team, 21:45–23:03)</h2>
+<div class="verdict"><b>All 3 passed again, with 0 errors in 56,194 requests and 185,356 of 185,356 security checks.</b> Every p(95) is within 10 ms of the first round, and an hour of steady use did not slow anything down.</div>
+<div class="wrap"><table><thead><tr><th>Test</th><th>Travelers</th><th>Length</th><th class="n">Pages p(95)</th><th>of limit</th><th class="n"><code>/api</code> p(95)</th><th class="n">Limit</th><th class="n">Slowest</th><th class="n">Requests</th><th class="n">Errors</th><th class="n">Security checks</th><th class="n">First round (pages / <code>/api</code>)</th><th>Thresholds</th></tr></thead><tbody>
+<tr><td>Live website stress</td><td>up to 150</td><td>9 min</td><td class="n">292 ms</td><td><div class="bar" title="292 ms of 1500 ms"><i style="width:19.5%"></i></div></td><td class="n">206 ms</td><td class="n">1,500 ms</td><td class="n">1,784 ms</td><td class="n">18,533</td><td class="n">0</td><td class="n">61,038 / 61,038</td><td class="n">284 / 210 ms</td><td><span class="pill ok">✓ 5/5</span></td></tr>
+<tr><td>Live website spike</td><td>jump to 100</td><td>4.3 min</td><td class="n">286 ms</td><td><div class="bar" title="286 ms of 1500 ms"><i style="width:19.1%"></i></div></td><td class="n">204 ms</td><td class="n">1,500 ms</td><td class="n">534 ms</td><td class="n">3,623</td><td class="n">0</td><td class="n">12,062 / 12,062</td><td class="n">276 / 198 ms</td><td><span class="pill ok">✓ 5/5</span></td></tr>
+<tr><td>Live website soak</td><td>20</td><td><b>64 min</b></td><td class="n">295 ms</td><td><div class="bar" title="295 ms of 800 ms"><i style="width:36.9%"></i></div></td><td class="n">218 ms</td><td class="n">800 ms</td><td class="n">2,559 ms</td><td class="n">34,038</td><td class="n">0</td><td class="n">112,256 / 112,256</td><td class="n">295 / 213 ms (30 min)</td><td><span class="pill ok">✓ 5/5</span></td></tr>
+</tbody></table></div>
+<ul>
+<li><b>Repeatable:</b> the live site's speed under load is a stable number, not a lucky run.</li>
+<li><b>No slow-down over an hour:</b> the soak ran for 60 minutes at full load (double the first round's 30), and its p(95) matches the 9-minute stress test. Nothing leaks or fills up over time.</li>
+<li><b>Slowest single request 2.6 s</b> (one <code>/api</code> answer in the soak, out of 34,038), with no change to p(95) or errors. The likely cause is a Vercel function starting fresh.</li>
+<li><b>The live site ran commit <code>4b07824</code>.</b> Ticket 158 (<code>90d5942</code>) is not pushed yet. It only changes code in the traveler's browser, which k6 does not run, so these numbers are unaffected.</li>
+<li><b>These were the website tests again,</b> so the two items under "Not checked" below are still open.</li>
+</ul>
+
+<h2>Breakpoint, live site (team, 2026-11-22)</h2>
+<div class="verdict"><b>The live site did not break: it held 400 travelers at once without slowing down.</b> 0 errors in 111,017 requests, pages p(95) 259 ms, and all 364,022 security checks passed over the full 20-minute ramp. The test printed <code>BREAKPOINT RESULT: the app did not break. It held up to 400 travelers at once.</code></div>
+<div class="tiles">
+<div class="tile"><b>400</b><span>travelers at once, no break</span></div>
+<div class="tile"><b>92 / s</b><span>requests at the end</span></div>
+<div class="tile"><b>259 ms</b><span>pages p(95) (limit 1,500)</span></div>
+<div class="tile"><b>0</b><span>errors in 111,017 requests</span></div>
+<div class="tile"><b>3.0 GB</b><span>downloaded from Vercel</span></div>
+</div>
+<div class="wrap"><table><thead><tr><th>Run</th><th>Travelers</th><th class="n">Requests / s</th><th class="n">Pages p(95)</th><th>of 1.5 s limit</th><th class="n"><code>/api</code> p(95)</th><th class="n">Errors</th><th class="n">Security checks</th><th>Result</th></tr></thead><tbody>
+<tr><td><b>Live breakpoint</b></td><td>0 → 400</td><td class="n">92</td><td class="n">259 ms</td><td><div class="bar" title="259 ms of 1500 ms"><i style="width:17.3%"></i></div></td><td class="n">188 ms</td><td class="n">0 / 111,017</td><td class="n">364,022 / 364,022</td><td><span class="pill ok">✓ did not break</span></td></tr>
+<tr><td>Live stress (2026-11-21)</td><td>up to 150</td><td class="n">34</td><td class="n">292 ms</td><td><div class="bar" title="292 ms of 1500 ms"><i style="width:19.5%"></i></div></td><td class="n">206 ms</td><td class="n">0 / 18,533</td><td class="n">61,038 / 61,038</td><td><span class="pill ok">✓</span></td></tr>
+<tr><td>Laptop breakpoint</td><td>0 → 229, stopped</td><td class="n">46</td><td class="n">1,520 ms</td><td><div class="bar" title="1500 ms of 1500 ms"><i style="width:100.0%"></i></div></td><td class="n">1,070 ms</td><td class="n">0 / 31,890</td><td class="n">100 %</td><td><span class="pill warn">limit at ~200–229</span></td></tr>
+</tbody></table></div>
+<ul>
+<li><b>More travelers did not make the live site slower:</b> 259 ms at 400, against 292 ms at 150. Vercel started more copies of the website as traffic grew, while the laptop has one website process on one CPU core.</li>
+<li><b>The limit was never close:</b> the slowest single request in 20 minutes took 1.03 s.</li>
+<li><b>Vercel's firewall did not block the test</b> (0 failed requests).</li>
+<li><b>The live breaking point is above 400,</b> 8–20 times the expected demo-day crowd. That's enough for the MVP.</li>
+<li><b>Cost:</b> 3.0 GB downloaded in 20 minutes. On Vercel's free plan (about 100 GB a month), don't repeat this casually.</li>
+<li>The live site ran commit <code>4b07824</code> (ticket 158 not pushed yet), which doesn't change server speed.</li>
+</ul>
+
+<h2>Breakpoint, website on localhost (team, 2026-11-22, just after midnight)</h2>
+<div class="verdict mixed"><b>The test found the breaking point: about 200–229 travelers at once on one laptop.</b> There, pages p(95) reached 1.52 s (limit 1.5 s), and k6 stopped the test by itself after 11.5 of 20 minutes. Even at the limit there were 0 errors in 31,890 requests, and every security check passed. The <code>ERRO … stopping test prematurely</code> line means k6 stopped on purpose, not that the script crashed.</div>
+<div class="wrap"><table><thead><tr><th>Request</th><th class="n">Website CPU per request</th><th class="n">Backend CPU per request</th></tr></thead><tbody>
+<tr><td>Home <code>/</code></td><td class="n"><b>69 ms</b></td><td class="n">22 ms</td></tr>
+<tr><td>A place page</td><td class="n">23 ms</td><td class="n">9 ms</td></tr>
+<tr><td><code>/login</code></td><td class="n">11 ms</td><td class="n">0 ms</td></tr>
+<tr><td><code>/api/v1/destinations</code></td><td class="n">6 ms</td><td class="n">8 ms</td></tr>
+</tbody></table></div>
+<ul>
+<li><b>Root cause:</b> <code>next start</code> is one Node.js process, which can only use one CPU core (1,000 ms of work a second). At 46 requests a second, with home on 4 of every 10 visits, the website needed about 1,200 ms of work every second, so requests waited in line.</li>
+<li><b>Not a bug, and no limit loosened.</b> A CPU profile shows no single slow spot in our code: the time is Next.js rendering the page and packing the place data.</li>
+<li><b>The live site is different:</b> Vercel starts more copies of the website as traffic grows, which is why live stress at 150 stayed at 0.28 s. The live breaking point is still unknown (<code>npm run perf:live:site:breakpoint -- -e LIVE_OK=yes</code>, after the team agrees).</li>
+<li><b>Changed:</b> the test now prints <code>BREAKPOINT RESULT: …</code> in plain words when it stops.</li>
+<li><b>For demo day:</b> 20–50 people at once is far below 200, even on one laptop.</li>
+</ul>
+
 <h2>What it means for a traveler on demo day</h2>
 <ul>
 <li>Even if 150 people open the site at once, or 100 arrive in one burst after a post is shared, every page and data answer arrives. On the live site, 95 % of them arrive in under 0.3 s.</li>
@@ -84,10 +138,10 @@ a{color:var(--brand)}
 
 <h2>Not checked</h2>
 <ul>
-<li>More than 150 travelers. No test went past that, so the app's breaking point is not known yet.</li>
-<li>Live stress, spike and soak on the backend's own URL. The live website tests already reach it through <code>/api</code>.</li>
-<li>Page speed as a traveler sees it in the browser. That is Lighthouse's job: see <a href="../lighthouse/report.html">the Lighthouse report</a>.</li>
+<li>Above 400 travelers on the live site. The live breakpoint (2026-11-22) held 400 without slowing down; going higher (<code>-e BREAK_MAX_VUS=</code>, up to 1000) would send more than 3 GB again and isn't needed for the MVP.</li>
+<li>Live stress, spike and soak on the backend's own URL (<code>perf:live:stress</code>, <code>perf:live:spike</code>, <code>perf:live:soak</code>, each with <code>-- -e LIVE_OK=yes</code>). No result was saved for these (<code>results/live-stress.json</code>, <code>live-spike.json</code> and <code>live-soak.json</code> do not exist, checked 2026-11-22). The live rounds and the live breakpoint used the website tests, which reach the backend through <code>/api</code>, so the backend has been loaded live up to 400 travelers, but only behind the website.</li>
 </ul>
+<p class="note"><b>Checked elsewhere:</b> page speed as a traveler sees it in the browser is Lighthouse's job, and it was checked on the live site (2026-11-21, phone on the charger): every score 95–100, accessibility 100, all 9 security checks ✓, with two small misses that ticket 158 works on. See <a href="../lighthouse/report.html">the Lighthouse report</a>.</p>
 
 <footer>Data comes from <code>performance/k6/results/*.json</code> (git-ignored) and the team's pasted summaries. The written report is <code>docs/evaluations/2026-11-21-k6.md</code>.</footer>
 </main></body></html>

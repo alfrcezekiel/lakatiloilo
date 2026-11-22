@@ -52,3 +52,23 @@ export const SITE_HEAVY_THRESHOLDS = {
   'http_req_duration{kind:api}': ['p(95)<1500'],
   'checks{security:yes}': ['rate==1'],
 };
+
+// Breakpoint tests (breakpoint.js, site-breakpoint.js; lib/breakpoint.js):
+// the same "clearly failing" numbers as stress and spike, but EVERY limit
+// stops the test (abortOnFail), because finding the moment it breaks is
+// the point. delayAbortEval gives k6 a minute of data before it judges.
+const stop = (threshold) => ({ threshold, abortOnFail: true, delayAbortEval: '1m' });
+
+export const BREAKPOINT_THRESHOLDS = {
+  http_req_failed: [stop('rate<0.05')],
+  http_req_duration: [stop('p(95)<1500')],
+  checks: [stop('rate>0.95')],
+};
+
+export const SITE_BREAKPOINT_THRESHOLDS = {
+  http_req_failed: [stop('rate<0.05')],
+  checks: [stop('rate>0.95')],
+  'http_req_duration{kind:page}': [stop('p(95)<1500')],
+  'http_req_duration{kind:api}': [stop('p(95)<1500')],
+  'checks{security:yes}': [stop('rate==1')],
+};
