@@ -99,7 +99,7 @@ export default async function DestinationDetailPage({
 
   // Glass detail pages round (2026-11-22): the "Destination detail —
   // desktop" design. Only real data from the database is shown. The map
-  // (src/components/PlaceMap.tsx) is now in scope; update docs/SPEC.md.
+  // (src/components/PlaceMap.tsx) is now in scope (docs/SPEC.md, detail pages).
   const tabs = [
     { id: "overview", label: "Overview" },
     ...(photoCount > 0 ? [{ id: "photos", label: "Photos" }] : []),
@@ -144,7 +144,7 @@ export default async function DestinationDetailPage({
             </span>
           </Fact>
         </QuickFacts>
-        <SectionTabs tone="destination" tabs={tabs} />
+        <SectionTabs tabs={tabs} />
         <PlaceBody
           main={
             <>
@@ -195,7 +195,6 @@ export default async function DestinationDetailPage({
                 <PanelFact label="Category">{category}</PanelFact>
               </SidePanel>
               <KeepExploring
-                tone="destination"
                 links={[
                   { label: `More: ${category}`, hint: "Places like this one", href: `/#${destination.category}-list` },
                   { label: "Places to stay", hint: "Hotels, resorts and homestays", href: "/#accommodation-list" },

@@ -5,9 +5,13 @@ import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 import { pillButton } from "@/components/ui/button";
 import { MAX_REVIEW_PHOTOS, type ReviewPhoto } from "@/lib/api";
+import { fitPhoto, MAX_PHOTO_BYTES, PHOTO_TYPES } from "@/lib/shrink-photo";
 
-export const PHOTO_TYPES = ["image/jpeg", "image/png", "image/webp"];
-export const MAX_PHOTO_BYTES = 2 * 1024 * 1024; // 2 MB, the same as the bucket (027)
+// The photo rules live with the shrinking (src/lib/shrink-photo.ts); kept
+// here too, for the other pickers that import them from this file.
+export { MAX_PHOTO_BYTES, PHOTO_TYPES };
+// Unchanged by the "photos over 2 MB" change (team request 2026-11-22):
+// what is stored is still at most 2 MB.
 export const PHOTO_MESSAGE = "Please choose a JPG, PNG or WebP photo up to 2 MB.";
 export const TOO_MANY_PHOTOS = `A review can have up to ${MAX_REVIEW_PHOTOS} photos.`;
 
@@ -22,7 +26,8 @@ export const TOO_MANY_PHOTOS = `A review can have up to ${MAX_REVIEW_PHOTOS} pho
 //
 // The browser checks the type, size and number first, so a wrong file
 // gets a message at once without being uploaded; the backend, the Storage
-// bucket and the database check everything again.
+// bucket and the database check everything again. A photo over 2 MB is
+// made smaller in the browser first (fitPhoto, team request 2026-11-22).
 export function ReviewPhotoPicker({
   current,
   onRemoveCurrent,
@@ -39,6 +44,8 @@ export function ReviewPhotoPicker({
   const input = useRef<HTMLInputElement>(null);
   const inputId = useId();
   const [error, setError] = useState<string | null>(null);
+  // True while a photo over 2 MB is being made smaller.
+  const [preparing, setPreparing] = useState(false);
   const total = current.length + files.length;
   const room = MAX_REVIEW_PHOTOS - total;
 
@@ -48,10 +55,20 @@ export function ReviewPhotoPicker({
   const previews = useMemo(() => files.map((file) => URL.createObjectURL(file)), [files]);
   useEffect(() => () => previews.forEach((url) => URL.revokeObjectURL(url)), [previews]);
 
-  const choose = (chosen: FileList | null) => {
+  const choose = async (chosen: FileList | null) => {
     const picked = Array.from(chosen ?? []);
     if (picked.length === 0) return;
-    const fitting = picked.filter((file) => PHOTO_TYPES.includes(file.type) && file.size <= MAX_PHOTO_BYTES);
+    // Lets the same file be chosen again after Remove.
+    if (input.current) input.current.value = "";
+    setError(null);
+    setPreparing(true);
+    // One at a time, so a phone never holds several big photos at once.
+    const fitting: File[] = [];
+    for (const file of picked) {
+      const fitted = await fitPhoto(file);
+      if (fitted) fitting.push(fitted);
+    }
+    setPreparing(false);
     const kept = fitting.slice(0, Math.max(room, 0));
     const messages: string[] = [];
     if (fitting.length < picked.length) {
@@ -64,8 +81,6 @@ export function ReviewPhotoPicker({
     if (kept.length < fitting.length) messages.push(`${TOO_MANY_PHOTOS} Remove one to add another.`);
     setError(messages.length > 0 ? messages.join(" ") : null);
     if (kept.length > 0) onFilesChange([...files, ...kept]);
-    // Lets the same file be chosen again after Remove.
-    if (input.current) input.current.value = "";
   };
 
   const removeButton = (label: string, onClick: () => void) => (
@@ -93,8 +108,8 @@ export function ReviewPhotoPicker({
         multiple
         accept={PHOTO_TYPES.join(",")}
         className="sr-only"
-        disabled={disabled || room <= 0}
-        onChange={(e) => choose(e.target.files)}
+        disabled={disabled || room <= 0 || preparing}
+        onChange={(e) => void choose(e.target.files)}
       />
 
       {total > 0 && (
@@ -152,6 +167,12 @@ export function ReviewPhotoPicker({
         </label>
       ) : (
         <p className="text-sm text-white/75">{MAX_REVIEW_PHOTOS} of {MAX_REVIEW_PHOTOS} photos. Remove one to add another.</p>
+      )}
+
+      {preparing && (
+        <p role="status" className="text-sm text-white/85">
+          Making your photo smaller…
+        </p>
       )}
 
       {error && (

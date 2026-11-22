@@ -157,6 +157,9 @@ export interface Review {
   // Its photos, up to 4, in order (ticket 113; one photo before that).
   // Missing from older answers, which means none.
   photos?: ReviewPhoto[];
+  // Its video's address, or null (ticket 165). Missing from older answers,
+  // which means none.
+  video_url?: string | null;
   // The replies under it, oldest first (review extras round). Missing from
   // a review the backend has just saved, which has none yet.
   replies?: Reply[];
@@ -396,6 +399,27 @@ export const deleteReviewPhoto = async (accessToken: string, reviewId: string, p
     `/v1/reviews/${encodeURIComponent(reviewId)}/photos/${encodeURIComponent(photoId)}`,
     { headers: { Authorization: `Bearer ${accessToken}` } },
   );
+};
+
+// Attaches a video the browser uploaded into the traveler's own folder to
+// their review (POST /v1/reviews/:id/video, ticket 165) and answers its
+// address. Refusals carry a plain message, for example "Please choose an
+// MP4, MOV or WebM video up to 50 MB and 60 seconds."
+export const attachReviewVideo = async (accessToken: string, reviewId: string, path: string) => {
+  const { data } = await api().post<{ video_url: string }>(
+    `/v1/reviews/${encodeURIComponent(reviewId)}/video`,
+    { path },
+    { headers: { Authorization: `Bearer ${accessToken}` } },
+  );
+  return data.video_url;
+};
+
+// Removes the video from the traveler's own review (DELETE
+// /v1/reviews/:id/video, ticket 165).
+export const removeReviewVideo = async (accessToken: string, reviewId: string) => {
+  await api().delete(`/v1/reviews/${encodeURIComponent(reviewId)}/video`, {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
 };
 
 // What the backend answers after deleting a review.

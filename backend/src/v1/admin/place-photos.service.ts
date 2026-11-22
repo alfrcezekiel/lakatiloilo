@@ -8,7 +8,7 @@ const BUCKET = 'place-photos';
 
 // A place's photo in Supabase Storage (full admin management round, ticket
 // 119). Files go into the place-photos bucket as
-// "<destination|accommodation>/<place id>/<random>.<jpg|png|webp>".
+// "<destination|accommodation>/<place id>/<random>.<webp|jpg|png>".
 // Every upload and delete is made AS the logged-in admin (their login is
 // sent to Storage), so the Storage policies in supabase/sql/049 decide:
 // only admins may add or delete. The backend never uses the service_role
@@ -19,8 +19,8 @@ export class PlacePhotosService {
 
   constructor(
     private readonly supabase: SupabaseService,
-    // Only for its check of the file's real type and size (shared with
-    // review photos: JPG, PNG or WebP up to 2 MB).
+    // For its check of the file's real type and size and its WebP saving
+    // (shared with review photos: JPG, PNG or WebP up to 2 MB).
     private readonly reviewPhotos: ReviewPhotosService,
   ) {}
 
@@ -30,14 +30,17 @@ export class PlacePhotosService {
     return this.reviewPhotos.check(photo);
   }
 
-  // Uploads the photo and answers its public address.
+  // Uploads the photo and answers its public address. A JPG or PNG is
+  // saved as a smaller WebP that looks the same (ticket 164), the same way
+  // as review photos.
   async upload(accessToken: string, type: AdminPlaceType, placeId: string, photo: UploadedPhoto) {
     const kind = this.check(photo);
-    const path = `${type}/${placeId}/${randomUUID()}.${kind.extension}`;
+    const stored = await this.reviewPhotos.toStored(photo, kind);
+    const path = `${type}/${placeId}/${randomUUID()}.${stored.extension}`;
     const { error } = await this.supabase
       .travelerClient(accessToken)
       .storage.from(BUCKET)
-      .upload(path, photo.buffer, { contentType: kind.contentType, upsert: false });
+      .upload(path, stored.buffer, { contentType: stored.contentType, upsert: false });
     if (error) {
       this.logger.error(`Could not upload a place photo: ${error.message}`);
       throw new ServiceUnavailableException("We couldn't save the photo. Please try again.");

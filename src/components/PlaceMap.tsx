@@ -94,17 +94,10 @@ import {
 // small glass card with the address and Get directions instead.
 
 type Tone = "destination" | "accommodation";
-type Kind = "stay" | "food" | "heritage";
-
-// A place near this one (optional; needs a backend "nearby" endpoint).
-export type NearbyPlace = {
-  id: string;
-  name: string;
-  kind: Kind;
-  latitude: number;
-  longitude: number;
-  href: string;
-};
+// "Nearby places" pins and filters were removed in the code review of
+// 2026-11-22: no page passed any, and the SPEC parks the feature ("Nearby
+// places" using the /near endpoints, docs/LATER.md). Add them back with
+// that ticket.
 
 const STYLES = {
   satellite: "mapbox://styles/mapbox/satellite-v9",
@@ -120,44 +113,33 @@ const STYLE_LABELS: Record<StyleId, { short: string; full: string }> = {
   streets: { short: "Streets", full: "Streets" },
 };
 
-const PIN_COLOR: Record<Kind | "main" | "you", string> = {
+const PIN_COLOR: Record<"main" | "you", string> = {
   // The place the traveler is going to: dark teal green (teal-800).
   main: "#115e59",
   // The traveler: blue (blue-600), the same blue as the route line.
   you: "#2563eb",
-  stay: "#818cf8",
-  food: "#fb923c",
-  heritage: "#2dd4bf",
 };
-const KIND_LABEL: Record<Kind, string> = { stay: "Stay", food: "Food & Dine-in", heritage: "Heritage Site" };
-const LAYER_LABEL: Record<Kind, string> = { stay: "Stays", food: "Food", heritage: "Heritage" };
 
 const ZOOM = 15;
 // True once Mapbox refused a satellite tile during this visit (see above).
 let satelliteRefused = false;
-// One shared empty list, so a page that passes no nearby places doesn't
-// rebuild the map on every render.
-const NO_NEARBY: NearbyPlace[] = [];
 
 const directions = (lat: number, lng: number) =>
   `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
 
 // The teardrop pin from the design, as a real button so it can be reached
 // with the Tab key; Mapbox opens its popup on click.
-function pinElement(kind: Kind | "main" | "you", label: string) {
-  const main = kind === "main" || kind === "you";
+function pinElement(kind: "main" | "you", label: string) {
   const button = document.createElement("button");
   button.type = "button";
   button.setAttribute("aria-label", label);
   button.style.cssText = "padding:0;border:0;background:none;cursor:pointer;filter:drop-shadow(0 6px 10px rgba(0,0,0,.35))";
-  const width = main ? 44 : 30;
-  const height = main ? 55 : 38;
-  button.innerHTML = `<svg width="${width}" height="${height}" viewBox="0 0 32 40" aria-hidden="true"><path d="M16 1C7.7 1 1 7.6 1 15.6 1 26.8 16 39 16 39s15-12.2 15-23.4C31 7.6 24.3 1 16 1Z" fill="${PIN_COLOR[kind]}" stroke="#ffffff" stroke-width="2"/><circle cx="16" cy="15.5" r="5.5" fill="#ffffff"/></svg>`;
+  button.innerHTML = `<svg width="44" height="55" viewBox="0 0 32 40" aria-hidden="true"><path d="M16 1C7.7 1 1 7.6 1 15.6 1 26.8 16 39 16 39s15-12.2 15-23.4C31 7.6 24.3 1 16 1Z" fill="${PIN_COLOR[kind]}" stroke="#ffffff" stroke-width="2"/><circle cx="16" cy="15.5" r="5.5" fill="#ffffff"/></svg>`;
   return button;
 }
 
 // The popup's contents: kind, name, a line under it, and one link.
-function popupContent(kindLabel: string, title: string, sub: string, link: { label: string; href: string; main: boolean }) {
+function popupContent(kindLabel: string, title: string, sub: string, link: { label: string; href: string }) {
   const root = document.createElement("div");
   root.style.cssText = "width:230px;font-family:var(--font-inter),system-ui,sans-serif";
   const kind = document.createElement("p");
@@ -177,13 +159,10 @@ function popupContent(kindLabel: string, title: string, sub: string, link: { lab
   const a = document.createElement("a");
   a.href = link.href;
   a.textContent = link.label;
-  if (link.main) {
-    a.target = "_blank";
-    a.rel = "noopener noreferrer";
-  }
-  a.style.cssText = link.main
-    ? "margin-top:12px;display:flex;align-items:center;justify-content:center;height:40px;border-radius:999px;background:var(--accent);color:var(--accent-foreground);font-size:14px;font-weight:600;text-decoration:none"
-    : "margin-top:12px;display:flex;align-items:center;justify-content:center;height:40px;border-radius:999px;border:1px solid rgba(255,255,255,.3);background:rgba(255,255,255,.16);color:#fff;font-size:14px;font-weight:600;text-decoration:none";
+  a.target = "_blank";
+  a.rel = "noopener noreferrer";
+  a.style.cssText =
+    "margin-top:12px;display:flex;align-items:center;justify-content:center;height:40px;border-radius:999px;background:var(--accent);color:var(--accent-foreground);font-size:14px;font-weight:600;text-decoration:none";
   root.append(a);
   return root;
 }
@@ -216,19 +195,16 @@ export function PlaceMap({
   address,
   latitude,
   longitude,
-  nearby = NO_NEARBY,
 }: {
   tone: Tone;
   name: string;
   address: string;
   latitude: number;
   longitude: number;
-  nearby?: NearbyPlace[];
 }) {
   const frame = useRef<HTMLDivElement>(null);
   const box = useRef<HTMLDivElement>(null);
   const map = useRef<MapboxMap | null>(null);
-  const pins = useRef<{ kind: Kind; marker: Marker }[]>([]);
   const [near, setNear] = useState(false);
   const [failed, setFailed] = useState(false);
   const [style, setStyle] = useState<StyleId>(() => (satelliteRefused ? "streets" : FIRST_STYLE));
@@ -270,10 +246,9 @@ export function PlaceMap({
   // The button that opened the enlarged map gets the focus back.
   const opener = useRef<HTMLElement | null>(null);
   const toggleButton = useRef<HTMLButtonElement>(null);
-  const [layers, setLayers] = useState<Record<Kind, boolean>>({ stay: true, food: true, heritage: true });
   const token = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
-  const panel = tone === "destination" ? "bg-teal-950/60" : "bg-indigo-950/60";
-  const kindsShown = (Object.keys(LAYER_LABEL) as Kind[]).filter((k) => nearby.some((p) => p.kind === k));
+  // Both kinds of page are teal (ticket 161).
+  const panel = "bg-teal-950/60";
 
   // Wait until the map is close to the screen before loading Mapbox.
   useEffect(() => {
@@ -354,7 +329,6 @@ export function PlaceMap({
               popupContent(tone === "destination" ? "This destination" : "Your stay", name, address, {
                 label: "Get directions",
                 href: directions(latitude, longitude),
-                main: true,
               }),
             ),
           )
@@ -372,17 +346,6 @@ export function PlaceMap({
           drawRoute(m);
         });
 
-        pins.current = nearby.map((p) => ({
-          kind: p.kind,
-          marker: new mapboxgl.Marker({ element: pinElement(p.kind, `${p.name} — ${KIND_LABEL[p.kind]}`), anchor: "bottom" })
-            .setLngLat([p.longitude, p.latitude])
-            .setPopup(
-              new mapboxgl.Popup({ offset: 40, maxWidth: "280px", focusAfterOpen: false }).setDOMContent(
-                popupContent(KIND_LABEL[p.kind], p.name, "", { label: "View details", href: p.href, main: false }),
-              ),
-            )
-            .addTo(m),
-        }));
         map.current = m;
       } catch {
         if (!cancelled) setFailed(true);
@@ -400,9 +363,8 @@ export function PlaceMap({
       styleReady.current = false;
       map.current?.remove();
       map.current = null;
-      pins.current = [];
     };
-  }, [near, token, latitude, longitude, name, address, tone, nearby]);
+  }, [near, token, latitude, longitude, name, address, tone]);
 
   // Enlarged map: one-finger moves, no page scroll behind it, Escape and
   // Tab handled, the map redrawn at its new size, focus in and back out.
@@ -482,13 +444,6 @@ export function PlaceMap({
     });
     return () => cancelAnimationFrame(frameId);
   }, [ready]);
-
-  // Layer buttons show or hide the matching pins.
-  useEffect(() => {
-    pins.current.forEach(({ kind, marker }) => {
-      marker.getElement().style.display = layers[kind] ? "" : "none";
-    });
-  }, [layers]);
 
   // Live traffic lines, under the route line so the route stays on top.
   function drawTraffic(m: MapboxMap) {
@@ -765,8 +720,8 @@ export function PlaceMap({
           2026-11-22, "the map still shows nothing"). */}
       <div ref={box} className="size-full" role="region" aria-label={`Map of ${name}`} />
 
-      {/* Top-left: the route preview, then the nearby-place filters. On a
-          phone it stops short of the zoom buttons on the right. */}
+      {/* Top-left: the route preview. On a phone it stops short of the
+          zoom buttons on the right. */}
       <div
         ref={topControls}
         className="absolute top-3.5 right-16 left-3.5 flex flex-col items-start gap-2 sm:right-auto sm:max-w-sm"
@@ -865,29 +820,6 @@ export function PlaceMap({
         </div>
       )}
 
-      {kindsShown.length > 0 && (
-        <div
-          role="group"
-          aria-label="Show nearby places"
-          className={cn("glass flex flex-wrap gap-1.5 rounded-full border border-white/25 p-1.5", panel)}
-        >
-          {kindsShown.map((k) => (
-            <button
-              key={k}
-              type="button"
-              aria-pressed={layers[k]}
-              onClick={() => setLayers((l) => ({ ...l, [k]: !l[k] }))}
-              className={cn(
-                "inline-flex h-9 cursor-pointer items-center gap-2 rounded-full border px-3.5 text-[13px] font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white",
-                layers[k] ? "border-white bg-white text-slate-900" : "border-white/30 bg-white/5 text-white",
-              )}
-            >
-              <span aria-hidden="true" className="size-2.5 rounded-full ring-2 ring-white/60" style={{ background: PIN_COLOR[k] }} />
-              {LAYER_LABEL[k]}
-            </button>
-          ))}
-        </div>
-      )}
       </div>
 
       {/* Bottom-left: the layer buttons, or why satellite is missing. */}

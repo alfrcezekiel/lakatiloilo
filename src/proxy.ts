@@ -109,6 +109,9 @@ async function isAdmin(accessToken: string) {
 //     api.mapbox.com serves the styles, fonts and icons, *.tiles.mapbox.com
 //     the map tiles, events.mapbox.com its usage counts (part of Mapbox's
 //     terms), and the map draws in a blob: worker.
+//   - Review videos (ticket 165): media-src allows our own Supabase
+//     project (playing) and blob: (the preview before upload); the upload
+//     itself goes to our Supabase project, already in connect-src.
 //   - Supabase: only OUR project (from NEXT_PUBLIC_SUPABASE_URL), not every
 //     *.supabase.co site (code review 2026-11-20): https for Storage photos
 //     and Auth, wss for Realtime (live updates uses a WebSocket).
@@ -145,6 +148,11 @@ export function contentSecurityPolicy(nonce: string) {
     // resized copies); the hero and category cards use Unsplash photos.
     `img-src 'self' data: blob: ${supabase} https://upload.wikimedia.org https://thumb.wikimedia.org https://images.unsplash.com ${MAPBOX}`,
     "font-src 'self'",
+    // Review videos (ticket 165): from our own Supabase project's Storage,
+    // and blob: for the preview of a video chosen before it is uploaded.
+    // Without this line, media-src falls back to default-src 'self' and
+    // every review video is blocked.
+    `media-src 'self' blob: ${supabase}`,
     `connect-src 'self' ${supabase} ${realtime} ${MAPBOX}`,
     "worker-src 'self' blob:",
     "child-src 'self' blob:",

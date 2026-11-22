@@ -21,6 +21,8 @@ const TRAVELER_ROUTES: [Method, string][] = [
   ['delete', `/v1/reviews/${ID}/like`],
   ['post', `/v1/reviews/${ID}/photos`],
   ['delete', `/v1/reviews/${ID}/photos/${ID}`],
+  ['post', `/v1/reviews/${ID}/video`],
+  ['delete', `/v1/reviews/${ID}/video`],
   ['post', `/v1/reviews/${ID}/report`],
   ['post', `/v1/reviews/${ID}/replies`],
   ['patch', `/v1/replies/${ID}`],
@@ -166,6 +168,8 @@ describe('Refusals (API)', () => {
       ['patch', '/v1/reviews/abc', "We couldn't find that review."],
       ['delete', '/v1/reviews/abc', "We couldn't find that review."],
       ['post', '/v1/reviews/abc/like', "We couldn't find that review."],
+      ['post', '/v1/reviews/abc/video', "We couldn't find that review."],
+      ['delete', '/v1/reviews/abc/video', "We couldn't find that review."],
       ['post', '/v1/reviews/abc/replies', "We couldn't find that review."],
       ['patch', '/v1/replies/abc', "We couldn't find that reply."],
       ['delete', "/v1/replies/1' or '1'='1", "We couldn't find that reply."],
@@ -194,6 +198,21 @@ describe('Refusals (API)', () => {
 
       expect(res.status).toBe(400);
       expect(res.body.message).toBe(sentence);
+    });
+
+    it('refuses to attach a video from another traveler\'s folder (400, nothing looked up in Storage)', async () => {
+      const someoneElse = '33333333-3333-4333-8333-333333333333/44444444-4444-4444-8444-444444444444.mp4';
+
+      const res = await call('post', `/v1/reviews/${UNKNOWN_ID}/video`).set(bearer(TOKENS.traveler)).send({ path: someoneElse });
+
+      expect(res.status).toBe(400);
+      expect(res.body.message).toBe('Please choose an MP4, MOV or WebM video up to 50 MB and 60 seconds.');
+    });
+
+    it('refuses a video path that is not one of ours (400)', async () => {
+      const res = await call('post', `/v1/reviews/${UNKNOWN_ID}/video`).set(bearer(TOKENS.traveler)).send({ path: '../../etc/passwd' });
+
+      expect(res.status).toBe(400);
     });
 
     it('checks the review before asking Supabase about the login (no wasted call)', async () => {

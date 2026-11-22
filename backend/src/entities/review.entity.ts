@@ -34,6 +34,11 @@ export class Review {
   // Its photos are in the review_photos table (up to 4, supabase/sql/044);
   // the old single photo_path column is gone (046).
 
+  // Where its video is in the review-videos bucket, or null (ticket 165,
+  // supabase/sql/065).
+  @Column({ type: 'text', nullable: true })
+  video_path: string | null;
+
   @Column('timestamptz')
   created_at: Date;
 

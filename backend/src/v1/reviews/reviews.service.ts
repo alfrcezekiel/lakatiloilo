@@ -15,6 +15,7 @@ import { ReviewLike, helpfulCountOf } from '../../entities/review-like.entity';
 import { SupabaseService } from '../../supabase/supabase.service';
 import { TravelerTransactions } from '../traveler-transactions';
 import { ReviewPhotosService, type ReviewPhotoDto } from './review-photos.service';
+import { VIDEO_BUCKET } from './review-videos.bucket';
 
 // What the website gets for each review. Only the display name is ever
 // sent, never the reviewer's email (the reviews table does not hold it).
@@ -24,7 +25,13 @@ export type ReviewDto = Pick<
 > & {
   // Up to 4 photos, in order (ticket 113).
   photos: ReviewPhotoDto[];
+  // Its video's public address, or null (ticket 165).
+  video_url: string | null;
 };
+
+// A review row as read from the database, before its photos and video
+// address are added.
+type ReviewRow<T> = Omit<T, 'photos' | 'video_url'> & { video_path: string | null };
 
 export type PlaceType = 'destination' | 'accommodation';
 
@@ -58,7 +65,7 @@ export interface DeletedReview {
   message: string;
 }
 
-const COLUMNS = 'id, user_id, reviewer_name, traveler_type, rating, comment, created_at';
+const COLUMNS = 'id, user_id, reviewer_name, traveler_type, rating, comment, created_at, video_path';
 
 // A review as GET /v1/reviews sends it: the review, plus its "Helpful"
 // count and whether the traveler asking marked it (profiles & likes round).
@@ -119,6 +126,7 @@ export class ReviewsService {
         .addSelect('r.rating', 'rating')
         .addSelect('r.comment', 'comment')
         .addSelect('r.created_at', 'created_at')
+        .addSelect('r.video_path', 'video_path')
         .addSelect(helpfulCountOf('r'), 'helpful_count')
         .addSelect(
           (mine) =>
@@ -133,14 +141,14 @@ export class ReviewsService {
         .andWhere('r.place_id = :placeId', { placeId })
         .setParameter('viewerId', viewerId)
         .orderBy('r.created_at', 'DESC')
-        .getRawMany<Omit<ReviewWithLikes, 'photos'>>();
+        .getRawMany<ReviewRow<ReviewWithLikes>>();
       // Their photos (ticket 113), read the same way: only photos of
       // reviews everyone may read.
       const photos = await this.photos.photosFor(
         this.reviews.manager,
         rows.map((r) => r.id),
       );
-      return rows.map((r) => ({ ...r, photos: photos.get(r.id) ?? [] }));
+      return rows.map((r) => this.withMedia(r, photos.get(r.id) ?? []));
     } catch (error) {
       this.logger.error(`Could not read reviews: ${String(error)}`);
       throw new ServiceUnavailableException('Could not load reviews right now.');
@@ -163,9 +171,9 @@ export class ReviewsService {
       return await this.travelerTransactions.run(
         accessToken,
         async (runner) => {
-          const rows: Omit<ReviewWithLikes, 'photos'>[] = await runner.query(
+          const rows: ReviewRow<ReviewWithLikes>[] = await runner.query(
             `select r.id, r.user_id, r.reviewer_name, r.traveler_type, r.rating, r.comment,
-                    r.created_at,
+                    r.created_at, r.video_path,
                     (select count(*)::int from public.review_likes l where l.review_id = r.id)
                       as helpful_count,
                     false as liked_by_me
@@ -180,7 +188,7 @@ export class ReviewsService {
             runner,
             rows.map((r) => r.id),
           );
-          return rows.map((r) => ({ ...r, photos: photos.get(r.id) ?? [] }));
+          return rows.map((r) => this.withMedia(r, photos.get(r.id) ?? []));
         },
         (error) => error as Error,
       );
@@ -233,13 +241,13 @@ export class ReviewsService {
   // review starts with none.
   create(accessToken: string, review: NewReview): Promise<ReviewDto> {
     return this.asTraveler(accessToken, async (runner) => {
-      const rows: Omit<ReviewDto, 'photos'>[] = await runner.query(
+      const rows: ReviewRow<ReviewDto>[] = await runner.query(
         `insert into public.reviews (place_type, place_id, rating, comment)
             values ($1, $2, $3, $4)
             returning ${COLUMNS}`,
         [review.place_type, review.place_id, review.rating, review.comment],
       );
-      return { ...rows[0], photos: [] };
+      return this.withMedia(rows[0], []);
     });
   }
 
@@ -251,7 +259,7 @@ export class ReviewsService {
   update(accessToken: string, id: string, changes: ReviewChanges): Promise<ReviewDto> {
     return this.asTraveler(accessToken, async (runner) => {
       // For UPDATE, TypeORM answers with [changed rows, how many].
-      const [rows]: [Omit<ReviewDto, 'photos'>[], number] = await runner.query(
+      const [rows]: [ReviewRow<ReviewDto>[], number] = await runner.query(
         `update public.reviews
             set rating = $1, comment = $2
           where id = $3 and user_id = auth.uid()
@@ -260,7 +268,7 @@ export class ReviewsService {
       );
       if (rows.length === 0) throw notYours();
       const photos = await this.photos.photosFor(runner, [id]);
-      return { ...rows[0], photos: photos.get(id) ?? [] };
+      return this.withMedia(rows[0], photos.get(id) ?? []);
     });
   }
 
@@ -269,18 +277,38 @@ export class ReviewsService {
   // photo rows go with it (on delete cascade); the files are then deleted
   // from Storage, as the traveler.
   async remove(accessToken: string, id: string): Promise<DeletedReview> {
-    const paths = await this.asTraveler(accessToken, async (runner) => {
+    const { paths, videoPath } = await this.asTraveler(accessToken, async (runner) => {
       const filePaths = await this.photos.pathsOf(runner, id);
       // For DELETE, TypeORM answers with [deleted rows, how many].
-      const [, count]: [unknown[], number] = await runner.query(
-        'delete from public.reviews where id = $1 and user_id = auth.uid() returning id',
+      const [rows, count]: [{ video_path: string | null }[], number] = await runner.query(
+        'delete from public.reviews where id = $1 and user_id = auth.uid() returning video_path',
         [id],
       );
       if (count === 0) throw notYours();
-      return filePaths;
+      return { paths: filePaths, videoPath: rows[0]?.video_path ?? null };
     });
     for (const path of paths) await this.photos.remove(accessToken, path);
+    // Its video too (ticket 165), so no file is left behind.
+    if (videoPath) {
+      const { error } = await this.supabase
+        .travelerClient(accessToken)
+        .storage.from(VIDEO_BUCKET)
+        .remove([videoPath])
+        .catch((e: unknown) => ({ error: e as Error }));
+      if (error) this.logger.warn(`Could not delete review video ${videoPath}: ${String(error.message ?? error)}`);
+    }
     return { id, message: 'Your review has been deleted.' };
+  }
+
+  // A review row as the website gets it: its photos, and its video's
+  // public address instead of where it is stored (ticket 165).
+  private withMedia<T>(row: ReviewRow<T>, photos: ReviewPhotoDto[]) {
+    const { video_path, ...rest } = row;
+    return {
+      ...rest,
+      photos,
+      video_url: video_path ? this.supabase.publicFileUrl(VIDEO_BUCKET, video_path) : null,
+    } as unknown as T;
   }
 
   // Who is asking, for "liked by me" on GET /v1/reviews. Reading reviews

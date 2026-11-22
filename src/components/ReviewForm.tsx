@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
   addReviewPhoto,
+  attachReviewVideo,
   backendMessage,
   backendRefusal,
   createReview,
@@ -18,6 +19,8 @@ import {
 } from "@/lib/api";
 import { loginToken } from "@/lib/login";
 import { ReviewPhotoPicker } from "@/components/ReviewPhotoPicker";
+import { ReviewVideoPicker } from "@/components/ReviewVideo";
+import { uploadReviewVideo } from "@/lib/review-video";
 import type { Review } from "@/components/ReviewsSection";
 
 const MAX_COMMENT = 500;
@@ -71,6 +74,10 @@ export function ReviewForm({
   const [removedIds, setRemovedIds] = useState<string[]>([]);
   // "Adding photo 2 of 3…" while uploading.
   const [progress, setProgress] = useState<string | null>(null);
+  // A video (ticket 165): the file to upload when saving, and how far its
+  // upload is (0 to 100), or null when no video is uploading.
+  const [video, setVideo] = useState<File | null>(null);
+  const [videoPercent, setVideoPercent] = useState<number | null>(null);
   const currentPhotos = (saved?.photos ?? []).filter((p) => !removedIds.includes(p.id));
 
   const length = comment.trim().length;
@@ -151,7 +158,32 @@ export function ReviewForm({
         );
         return;
       }
-      onSaved(withPhotos);
+
+      // 3. The video (ticket 165): uploaded straight into the traveler's
+      //    own Storage folder (too big for the backend), then attached by
+      //    the backend. If it fails, the review stays saved and the video
+      //    stays in the form with the reason, so the traveler can retry.
+      let finished: Review = withPhotos;
+      if (video) {
+        try {
+          setProgress("Uploading your video…");
+          setVideoPercent(0);
+          const path = await uploadReviewVideo(video, token, setVideoPercent);
+          setProgress("Attaching your video…");
+          const videoUrl = await attachReviewVideo(token, review.id, path);
+          finished = { ...withPhotos, video_url: videoUrl };
+          setSaved(finished);
+          setVideo(null);
+        } catch (error) {
+          keepOpen = true;
+          const why = backendMessage(error) ?? (error instanceof Error ? error.message : fallbackError);
+          setFormError(`Your review was saved, but the video could not be added: ${why} Remove it or try again.`);
+          return;
+        } finally {
+          setVideoPercent(null);
+        }
+      }
+      onSaved(finished);
     } catch (error) {
       // The backend explains its refusals in plain words (for example
       // "You've already reviewed this place."); otherwise a general one.
@@ -258,6 +290,30 @@ export function ReviewForm({
             }}
             disabled={busy}
           />
+
+          <ReviewVideoPicker
+            file={video}
+            onFileChange={(next) => {
+              setVideo(next);
+              setFormError(null);
+            }}
+            hasSavedVideo={Boolean(saved?.video_url)}
+            disabled={busy}
+          />
+
+          {videoPercent !== null && (
+            <div className="space-y-1">
+              <label htmlFor={`review-${placeId}-video-progress`} className="text-sm text-white/85">
+                Uploading your video: {videoPercent}%
+              </label>
+              <progress
+                id={`review-${placeId}-video-progress`}
+                max={100}
+                value={videoPercent}
+                className="block h-2 w-full max-w-xs overflow-hidden rounded-full accent-amber-400"
+              />
+            </div>
+          )}
 
           <div className="flex flex-wrap items-center gap-3">
             {/* disabled while saving, so it cannot be sent twice. */}

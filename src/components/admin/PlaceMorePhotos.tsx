@@ -17,7 +17,8 @@ import {
   type CreditErrors,
   type Credits,
 } from "@/components/admin/PhotoCreditsField";
-import { MAX_PHOTO_BYTES, PHOTO_MESSAGE, PHOTO_TYPES } from "@/components/ReviewPhotoPicker";
+import { PHOTO_MESSAGE, PHOTO_TYPES } from "@/components/ReviewPhotoPicker";
+import { fitPhoto } from "@/lib/shrink-photo";
 import { Spinner } from "@/components/ui/spinner";
 import {
   MAX_PLACE_PHOTOS,
@@ -156,16 +157,22 @@ function AddPhoto({ place, count }: { place: AdminPlaceDetails; count: number })
     [preview],
   );
 
-  const choose = (chosen: File | undefined) => {
+  // True while a photo over 2 MB is being made smaller (team request
+  // 2026-11-22, src/lib/shrink-photo.ts).
+  const [preparing, setPreparing] = useState(false);
+  const choose = async (chosen: File | undefined) => {
     if (!chosen) return;
-    if (!PHOTO_TYPES.includes(chosen.type) || chosen.size > MAX_PHOTO_BYTES) {
-      setFileError(PHOTO_MESSAGE);
-    } else {
-      setFileError(null);
-      setFile(chosen);
-      setLine(null);
-    }
     if (input.current) input.current.value = "";
+    setFileError(null);
+    setPreparing(true);
+    const fitted = await fitPhoto(chosen);
+    setPreparing(false);
+    if (fitted) {
+      setFile(fitted);
+      setLine(null);
+    } else {
+      setFileError(PHOTO_MESSAGE);
+    }
   };
 
   const add = async () => {
@@ -215,10 +222,10 @@ function AddPhoto({ place, count }: { place: AdminPlaceDetails; count: number })
           type="file"
           accept={PHOTO_TYPES.join(",")}
           className="sr-only"
-          disabled={busy}
+          disabled={busy || preparing}
           aria-invalid={!!fileError}
           aria-describedby={`${inputId}-help`}
-          onChange={(e) => choose(e.target.files?.[0])}
+          onChange={(e) => void choose(e.target.files?.[0])}
         />
         <label
           htmlFor={inputId}
@@ -242,8 +249,14 @@ function AddPhoto({ place, count }: { place: AdminPlaceDetails; count: number })
           </button>
         )}
       </div>
-      <p id={`${inputId}-help`} className={cn("text-xs", fileError ? "text-amber-200" : "text-white/70")}>
-        {fileError ?? "JPG, PNG or WebP, up to 2 MB, from your computer."}
+      <p
+        id={`${inputId}-help`}
+        role={preparing ? "status" : undefined}
+        className={cn("text-xs", fileError && !preparing ? "text-amber-200" : "text-white/70")}
+      >
+        {preparing
+          ? "Making the photo smaller…"
+          : (fileError ?? "JPG, PNG or WebP from your computer; over 2 MB is made smaller for you.")}
       </p>
       <PhotoCreditsField
         credits={credits}

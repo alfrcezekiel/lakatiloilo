@@ -53,7 +53,8 @@ example Resend or Brevo), which is outside the pinned stack, so everyone
 has to agree to add it first.
 
 ### From the buttons & cards round (2026-11-01)
-- A "Get directions in Google Maps" button on destination pages
+- ~~A "Get directions in Google Maps" button on destination pages~~ — done
+  2026-11-22 in the glass detail pages round (side panel and map popup)
 
 ### Extras from the login design (option 1a)
 The login page uses the look of option 1a from the "Lakat Auth" design
@@ -160,20 +161,21 @@ the NestJS backend. Still parked:
 - Keeping the backend address private. Moved into the security hardening
   round in the spec (2026-11-19).
 
-### Interactive map (Mapbox GL) — needs a team decision
-**Change (2026-11-22, team request):** the map is now on the destination
-and accommodation pages, with a route preview from the traveler's
-location (docs/SPEC.md, detail pages). Still open: a map of all places on
-the home page, and the Mapbox account's satellite tiles, which Mapbox
-currently refuses (no allowance on the account; only its owner can change
-that, and it may mean billing). Mapbox stays outside the pinned stack.
+### Interactive map (Mapbox GL) — agreed for the detail pages
+**Change (2026-11-22, team request):** the team agreed to Mapbox GL for
+the destination and accommodation pages: the map with Satellite,
+Satellite Streets and Streets, live traffic, a live route from the
+traveler's location, and a full-screen map on phones (docs/SPEC.md,
+detail pages; tickets 159 and 160). Satellite works on the second
+account's token (the first account had no satellite allowance). Mapbox
+stays outside the pinned stack and is billed past a free monthly limit.
 
-Proposed 2026-10-21. Mapbox GL is outside the pinned stack: it adds a new
-library, needs a Mapbox account and access token, and is billed past a
-free monthly limit. The team parked it until everyone agrees to add it.
-If agreed, it should be its own round (about one session): a map of
-destinations and accommodations from their coordinates, with pins that
-open the detail page.
+Still parked:
+- A map of all destinations and accommodations on the home page, with
+  pins that open the detail page (proposed 2026-10-21).
+- Nearby-place pins on the map: part of "Nearby places" above (same
+  /near endpoints). Its unused first draft was removed from PlaceMap.tsx
+  in the code review of 2026-11-22.
 
 ### Advanced filter search
 Proposed 2026-10-21. Filters beyond today's chips and City/Province
@@ -217,7 +219,8 @@ Round 28 moved into the spec on 2026-11-10 as the full admin management
 round (places add, edit every field and delete, with the photo uploaded
 from the computer; a Reviews screen with replies; removing Helpful
 likes). Parked to keep it to one round:
-- Picking a place's position on a map (needs the map library, still
+- Picking a place's position on a map (the map library, Mapbox GL, is
+  now in the app since 2026-11-22; the admin picker itself is still
   parked); the form uses latitude and longitude fields
 
 On 2026-11-10 the team moved three parked items into the round: new
@@ -250,3 +253,23 @@ to one session:
 - Price range display for accommodations
 - Room type information for accommodations
 - Business hours for destinations
+
+### From the reviews & media round (2026-11-22)
+Parked to keep the round to one session (docs/SPEC.md, Screens 32):
+- Videos on the traveler profile page (only the place pages and the admin
+  screens show them this round)
+- Captions or subtitles for review videos (needed for deaf and
+  hard-of-hearing travelers before videos become a big part of reviews)
+- More than one video per review
+- Shrinking or converting videos (the team wants them kept exactly as
+  uploaded; MOV videos from iPhones may not play in every browser)
+- Converting photos saved before this round to WebP (a one-off script)
+- ~~Raising the 2 MB photo limit~~ — instead, photos over 2 MB are made
+  smaller in the browser before upload (ticket 164 change, 2026-11-22);
+  the stored limit stays 2 MB
+- Removing a video that was uploaded but never attached to a saved review
+  (it stays in the traveler's folder and uses storage)
+- Remembering the chosen review sort between visits
+- **Storage:** Supabase's free plan holds 1 GB for all photos and videos
+  together (about 20 full-size videos). When the Overview turns amber, the
+  team decides: a paid plan, smaller video limits, or deleting old videos.

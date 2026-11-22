@@ -191,7 +191,7 @@ export default async function AccommodationDetailPage({
                   : <span className="font-normal text-white/80">No contact listed</span>}
           </Fact>
         </QuickFacts>
-        <SectionTabs tone="accommodation" tabs={tabs} />
+        <SectionTabs tabs={tabs} />
         <PlaceBody
           main={
             <>
@@ -227,7 +227,7 @@ export default async function AccommodationDetailPage({
               <Reveal>
                 <section id="location" className="scroll-mt-36" aria-labelledby="location-heading">
                   <SectionHeading id="location-heading" eyebrow={`${number("location")} — Location`}>
-                    What&apos;s around
+                    Getting there
                   </SectionHeading>
                   <PlaceMap
                     tone="accommodation"
@@ -253,7 +253,6 @@ export default async function AccommodationDetailPage({
                 {accommodation.email && <PanelFact label="Email">{accommodation.email}</PanelFact>}
               </SidePanel>
               <KeepExploring
-                tone="accommodation"
                 links={[
                   { label: "More places to stay", hint: `Compare stays in ${area}`, href: "/#accommodation-list" },
                   { label: `Things to see in ${area}`, hint: "Heritage, food, nature and more", href: "/#explore-categories" },

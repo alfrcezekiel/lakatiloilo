@@ -23,6 +23,15 @@ paths:
   listen to Supabase Realtime as a doorbell ("a row in this table
   changed"), then ask the backend again. Never use the rows Realtime
   sends, and never subscribe to review_reports.
+- Exception (reviews & media round, team decision 2026-11-22, ticket 165):
+  the browser may upload **a review video** straight into the traveler's
+  own folder of the `review-videos` Storage bucket, with the traveler's own
+  login and the public (anon) key (`src/lib/review-video.ts`), because a
+  video is too big for the backend (Vercel stops at 4.5 MB). Only that:
+  never another bucket, never someone else's folder, never a table. The
+  backend then checks the file and attaches it (POST
+  /v1/reviews/:id/video); Storage policies decide who may write
+  (supabase/sql/065).
 
 ## Screens
 

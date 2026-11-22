@@ -19,6 +19,7 @@ import { loginToken } from '../login-token';
 import { NewReview, PlaceType, ReviewChanges, ReviewsService } from './reviews.service';
 import { RepliesService } from './replies.service';
 import { ReviewPhotoUploadsService } from './review-photo-uploads.service';
+import { ReviewVideosService } from './review-videos.service';
 import { PhotoTooLargeFilter } from './photo-too-large.filter';
 import { PHOTO_MESSAGE, type UploadedPhoto } from './review-photos.service';
 import { idOf, placeIdQuery } from '../id-param';
@@ -52,6 +53,7 @@ export class ReviewsController {
   constructor(
     private readonly reviewsService: ReviewsService,
     private readonly photoUploads: ReviewPhotoUploadsService,
+    private readonly videos: ReviewVideosService,
     private readonly repliesService: RepliesService,
   ) {}
 
@@ -196,6 +198,37 @@ export class ReviewsController {
     @Param('photoId', idOf('photo')) photoId: string,
   ) {
     return this.photoUploads.remove(loginToken(authorization), id, photoId);
+  }
+
+  // POST /v1/reviews/<id>/video   (header: Authorization: Bearer <login token>)
+  // body: { path } — where the browser uploaded the video in the traveler's
+  // own folder of the review-videos bucket (ticket 165; a video is too big
+  // to come through here, Vercel stops at 4.5 MB). Attaches it to their own
+  // review, replacing (and deleting) an older one, and answers
+  // { video_url }. Refusals: 401 no login, 400 "Please choose an MP4, MOV or
+  // WebM video up to 50 MB and 60 seconds." (wrong folder, type or size),
+  // 404 not their review or no such file.
+  @Post(':id/video')
+  @HttpCode(200)
+  attachVideo(
+    @Headers('authorization') authorization: string | undefined,
+    @Param('id', idOf('review')) id: string,
+    @Body() body: { path?: unknown } | undefined,
+  ) {
+    return this.videos.attach(loginToken(authorization), id, body?.path);
+  }
+
+  // DELETE /v1/reviews/<id>/video   (header: Authorization: Bearer <login token>)
+  // Removes the video from the traveler's own review and deletes the file.
+  // Answers 200 { message }; 404 not their review.
+  @Delete(':id/video')
+  @HttpCode(200)
+  async removeVideo(
+    @Headers('authorization') authorization: string | undefined,
+    @Param('id', idOf('review')) id: string,
+  ) {
+    await this.videos.detach(loginToken(authorization), id);
+    return { message: 'The video has been removed.' };
   }
 
   // DELETE /v1/reviews/<id>   (header: Authorization: Bearer <login token>)

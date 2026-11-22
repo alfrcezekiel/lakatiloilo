@@ -11,6 +11,7 @@ import { ReportsController } from './reports.controller';
 import { ReportsService } from './reports.service';
 import { ReviewPhotosService } from './review-photos.service';
 import { ReviewPhotoUploadsService } from './review-photo-uploads.service';
+import { ReviewVideosService } from './review-videos.service';
 import { SupabaseModule } from '../../supabase/supabase.module';
 import { RatingsController } from './ratings.controller';
 import { ReviewsController } from './reviews.controller';
@@ -25,6 +26,7 @@ import { ReviewsService } from './reviews.service';
     ReportsService,
     ReviewPhotosService,
     ReviewPhotoUploadsService,
+    ReviewVideosService,
     TravelerTransactions,
   ],
 })

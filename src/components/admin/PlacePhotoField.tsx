@@ -1,13 +1,14 @@
 "use client";
 
 import { ImagePlus, X } from "lucide-react";
-import { useEffect, useMemo, type RefObject } from "react";
-import { MAX_PHOTO_BYTES, PHOTO_MESSAGE, PHOTO_TYPES } from "@/components/ReviewPhotoPicker";
+import { useEffect, useMemo, useState, type RefObject } from "react";
+import { PHOTO_MESSAGE, PHOTO_TYPES } from "@/components/ReviewPhotoPicker";
+import { fitPhoto } from "@/lib/shrink-photo";
 import { cn } from "@/lib/utils";
 
 // A place's photo on the Edit and Add forms (full admin management round,
 // ticket 119): the current one, or the new one chosen from the computer
-// (JPG, PNG or WebP up to 2 MB) with a preview, "Choose a photo" and
+// (JPG, PNG or WebP; over 2 MB it is made smaller first) with a preview, "Choose a photo" and
 // Remove. The form keeps the chosen file and uploads it on Save. Moved out
 // of AdminPlaceEdit.tsx in the code review of 2026-11-11.
 export function PlacePhotoField({
@@ -39,16 +40,19 @@ export function PlacePhotoField({
     },
     [preview],
   );
-  const choosePhoto = (file: File | undefined) => {
+  // True while a photo over 2 MB is being made smaller (team request
+  // 2026-11-22, src/lib/shrink-photo.ts).
+  const [preparing, setPreparing] = useState(false);
+  const choosePhoto = async (file: File | undefined) => {
     if (!file) return;
-    if (!PHOTO_TYPES.includes(file.type) || file.size > MAX_PHOTO_BYTES) {
-      onError(PHOTO_MESSAGE);
-    } else {
-      onError(null);
-      onPhoto(file);
-    }
     // Lets the same file be chosen again after Remove.
     if (inputRef.current) inputRef.current.value = "";
+    onError(null);
+    setPreparing(true);
+    const fitted = await fitPhoto(file);
+    setPreparing(false);
+    if (fitted) onPhoto(fitted);
+    else onError(PHOTO_MESSAGE);
   };
 
   return (
@@ -75,10 +79,10 @@ export function PlacePhotoField({
           type="file"
           accept={PHOTO_TYPES.join(",")}
           className="sr-only"
-          disabled={busy}
+          disabled={busy || preparing}
           aria-invalid={!!error}
           aria-describedby="place-photo-help"
-          onChange={(e) => choosePhoto(e.target.files?.[0])}
+          onChange={(e) => void choosePhoto(e.target.files?.[0])}
         />
         <div className="flex flex-wrap gap-2">
           {/* A label for the hidden file input, so it works with a click,
@@ -106,14 +110,16 @@ export function PlacePhotoField({
           )}
         </div>
       </div>
-      <p className="text-xs text-white/70">
-        {photo
+      <p role={preparing ? "status" : undefined} className="text-xs text-white/70">
+        {preparing
+          ? "Making the photo smaller…"
+          : photo
           ? adding
             ? `Photo: ${photo.name}.`
             : `New photo: ${photo.name}. It replaces the current one when you save.`
           : adding
-            ? "Needed. JPG, PNG or WebP, up to 2 MB, from your computer."
-            : "JPG, PNG or WebP, up to 2 MB, from your computer."}
+            ? "Needed. JPG, PNG or WebP from your computer; over 2 MB is made smaller for you."
+            : "JPG, PNG or WebP from your computer; over 2 MB is made smaller for you."}
       </p>
       {error && (
         <p id="place-photo-help" role="alert" className="text-sm font-medium text-amber-200">

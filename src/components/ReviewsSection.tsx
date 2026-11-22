@@ -1,7 +1,7 @@
 "use client";
 
 import { Check, EyeOff, LogIn } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -18,10 +18,20 @@ import { HelpfulButton } from "@/components/HelpfulButton";
 import { ReviewReplies } from "@/components/ReviewReplies";
 import { ReportReview } from "@/components/ReportReview";
 import { ReviewPhotos } from "@/components/ReviewPhoto";
+import { ReviewVideo } from "@/components/ReviewVideo";
 import { FromNotification, notifiedTint } from "@/components/FromNotification";
 import { SectionHeading } from "@/components/PlaceDetail";
 import { averageRating, RatingSummary, usePlaceReviews } from "@/components/PlaceReviews";
 import { travelerTypeLabels } from "@/lib/labels";
+import {
+  FIRST_SHOWN,
+  FIRST_SORT,
+  hasMedia,
+  orderReviews,
+  REVIEW_SORTS,
+  showMore,
+  type ReviewSort,
+} from "@/lib/review-order";
 
 // Scrolls a review or reply into view (below the navbar, scroll-mt-28),
 // one frame later so a thread that just opened has its full height.
@@ -65,6 +75,14 @@ export function ReviewsSection({ eyebrow }: { eyebrow?: string } = {}) {
 
   const average = reviews ? averageRating(reviews) : null;
 
+  // Sorting and Show more reviews (tickets 162 and 163): the chosen chip and
+  // how many reviews show. The order rules live in src/lib/review-order.ts.
+  const [sort, setSort] = useState<ReviewSort>(FIRST_SORT);
+  const [shown, setShown] = useState(FIRST_SHOWN);
+  // After Show more, the first newly shown review takes the keyboard
+  // focus, so a screen-reader user hears what was added.
+  const focusFrom = useRef<number | null>(null);
+
   // This traveler's own review of this place, if they wrote one.
   const myReview = user ? reviews?.find((r) => r.user_id === user.id) : undefined;
 
@@ -76,12 +94,45 @@ export function ReviewsSection({ eyebrow }: { eyebrow?: string } = {}) {
   // amber for a moment (animate-highlight).
   const focus = useFocusTarget();
   const scrolledTo = useRef<string | null>(null);
+
+  // The review a notification points at (the review itself, or the one a
+  // reply is under). It must be on screen: if "With photos & videos" would
+  // hide it, Newest is used instead, and the list opens far enough to
+  // include it.
+  const targetReview = useMemo(() => {
+    if (!reviews || !focus) return undefined;
+    const id = focus.slice(focus.indexOf("-") + 1);
+    return focus.startsWith("review-")
+      ? reviews.find((r) => r.id === id)
+      : reviews.find((r) => r.replies?.some((reply) => reply.id === id));
+  }, [reviews, focus]);
+  const activeSort: ReviewSort = sort === "media" && targetReview && !hasMedia(targetReview) ? "newest" : sort;
+  const ordered = useMemo(() => orderReviews(reviews ?? [], activeSort), [reviews, activeSort]);
+  const targetIndex = targetReview ? ordered.findIndex((r) => r.id === targetReview.id) : -1;
+  const visibleCount = Math.max(shown, targetIndex + 1);
+  const visible = ordered.slice(0, visibleCount);
+
+  const chooseSort = (next: ReviewSort) => {
+    setSort(next);
+    setShown(FIRST_SHOWN);
+  };
+  const pressShowMore = () => {
+    focusFrom.current = visibleCount;
+    setShown(showMore(visibleCount, ordered.length));
+  };
+  useEffect(() => {
+    const index = focusFrom.current;
+    if (index === null) return;
+    focusFrom.current = null;
+    const review = ordered[index];
+    if (review) document.getElementById(`review-${review.id}`)?.focus({ preventScroll: true });
+  }, [visibleCount, ordered]);
   useEffect(() => {
     if (!reviews || !focus || scrolledTo.current === focus) return;
     if (!document.getElementById(focus)) return;
     scrolledTo.current = focus;
     scrollToItem(focus);
-  }, [reviews, focus]);
+  }, [reviews, focus, visibleCount, activeSort]);
   // A notification clicked while this page is open, even one whose address
   // is already the current one: scroll to it again.
   useEffect(() => {
@@ -182,6 +233,33 @@ export function ReviewsSection({ eyebrow }: { eyebrow?: string } = {}) {
           )}
 
           {reviews.length > 0 && (
+            // On a phone the three chips are equal columns (a long label
+            // wraps under itself) instead of wrapping into uneven rows.
+            <div role="group" aria-label="Sort reviews" className="grid grid-cols-3 gap-2 sm:flex sm:flex-wrap">
+              {REVIEW_SORTS.map((option) => (
+                <button
+                  key={option.id}
+                  type="button"
+                  aria-pressed={activeSort === option.id}
+                  onClick={() => chooseSort(option.id)}
+                  className={cn(
+                    "min-h-11 cursor-pointer rounded-full px-3 py-2 text-center text-sm leading-tight font-semibold transition-colors select-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white sm:px-4.5",
+                    activeSort === option.id
+                      ? "bg-white text-teal-950"
+                      : "border border-white/25 bg-white/10 text-white/80 hover:bg-white/20 hover:text-white",
+                  )}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {reviews.length > 0 && ordered.length === 0 && (
+            <p className="text-white/90">No reviews with photos or videos yet.</p>
+          )}
+
+          {visible.length > 0 && (
             <ul className="flex flex-col">
               {/* A new review slides in at the top; a deleted one shrinks
                   away and the others glide into its place. initial={false}:
@@ -189,15 +267,18 @@ export function ReviewsSection({ eyebrow }: { eyebrow?: string } = {}) {
                   The gap between cards is padding inside each item, so it
                   shrinks away together with a deleted review. */}
               <AnimatePresence initial={false}>
-                {reviews.map((review) => (
+                {visible.map((review) => (
                   <motion.li
                     key={review.id}
                     id={`review-${review.id}`}
+                    // Takes the focus after Show more reviews (outline for
+                    // the keyboard only).
+                    tabIndex={-1}
                     layout
                     initial={{ opacity: 0, y: -16, height: 0 }}
                     animate={{ opacity: 1, y: 0, height: "auto" }}
                     exit={{ opacity: 0, scale: 0.96, height: 0 }}
-                    className="scroll-mt-28 overflow-hidden pb-3"
+                    className="scroll-mt-28 overflow-hidden rounded-xl pb-3 focus:outline-none focus-visible:outline-2 focus-visible:outline-white"
                   >
                     {/* The review a notification opened (a Helpful mark
                         on it): amber border, soft amber background and a
@@ -255,6 +336,7 @@ export function ReviewsSection({ eyebrow }: { eyebrow?: string } = {}) {
                           {review.comment}
                         </p>
                         <ReviewPhotos photos={review.photos} reviewerName={review.reviewer_name} />
+                        <ReviewVideo url={review.video_url} reviewerName={review.reviewer_name} />
                         {/* Helpful on the left, the small Report link
                             (ticket 80) on the right of the same row. */}
                         <div className="flex flex-wrap items-center justify-between gap-2">
@@ -293,6 +375,24 @@ export function ReviewsSection({ eyebrow }: { eyebrow?: string } = {}) {
                 ))}
               </AnimatePresence>
             </ul>
+          )}
+
+          {/* Show more reviews (ticket 163): 3 first, then 5 more each
+              press, so the page never turns into an endless scroll. */}
+          {ordered.length > visibleCount && (
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+              <button
+                type="button"
+                onClick={pressShowMore}
+                aria-describedby="reviews-shown-count"
+                className={pillButton({ kind: "glass" })}
+              >
+                Show more reviews
+              </button>
+              <p id="reviews-shown-count" className="text-sm text-white/80">
+                Showing {visibleCount} of {ordered.length}
+              </p>
+            </div>
           )}
         </div>
       )}

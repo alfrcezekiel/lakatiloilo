@@ -7,6 +7,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { SupabaseService } from '../../supabase/supabase.service';
+import { toSmallerWebp } from './photo-webp';
 
 const BUCKET = 'review-photos';
 export const MAX_PHOTO_BYTES = 2 * 1024 * 1024; // 2 MB, the same as the bucket (027)
@@ -78,22 +79,36 @@ export class ReviewPhotosService {
   }
 
   // Uploads the photo into the traveler's own folder under a new random
-  // name, and answers where it is ("<user id>/<random>.<jpg|png|webp>").
+  // name, and answers where it is ("<user id>/<random>.<webp|jpg|png>").
+  // A JPG or PNG is saved as a smaller WebP that looks the same (ticket
+  // 164, photo-webp.ts).
   async upload(accessToken: string, photo: UploadedPhoto): Promise<string> {
     const type = this.check(photo);
     const userId = await this.supabase.userIdFor(accessToken);
     if (!userId) throw new UnauthorizedException('Please log in again, then try again.');
 
-    const path = `${userId}/${randomUUID()}.${type.extension}`;
+    const stored = await this.toStored(photo, type);
+    const path = `${userId}/${randomUUID()}.${stored.extension}`;
     const { error } = await this.supabase
       .travelerClient(accessToken)
       .storage.from(BUCKET)
-      .upload(path, photo.buffer, { contentType: type.contentType, upsert: false });
+      .upload(path, stored.buffer, { contentType: stored.contentType, upsert: false });
     if (error) {
       this.logger.error(`Could not upload review photo: ${error.message}`);
       throw new ServiceUnavailableException("We couldn't save your photo. Please try again.");
     }
     return path;
+  }
+
+  // The file to store: the smaller WebP, or the photo as uploaded. A file
+  // that starts like a photo but can't be read as one gets the usual
+  // "Please choose a JPG, PNG or WebP photo up to 2 MB." (ticket 164).
+  async toStored(photo: UploadedPhoto, type: PhotoType) {
+    try {
+      return await toSmallerWebp({ buffer: photo.buffer, ...type });
+    } catch {
+      throw new BadRequestException(PHOTO_MESSAGE);
+    }
   }
 
   // Deletes a photo as the traveler. Used after a review is deleted, or to

@@ -24,20 +24,18 @@ export type Tone = "accommodation" | "destination";
 // The page background; the colour the photo fades into, so the photo melts
 // into the page instead of ending in a hard line; the soft glow behind the
 // body that gives the glass something to blur; and the dark glass tint of
-// the nav and tabs.
+// the nav and tabs. Ticket 161 (2026-11-22, team request): both kinds of
+// page are teal; accommodations were blue/indigo. "tone" stays, because the
+// pages still differ in their words ("Your stay", "Plan your visit").
+const teal = {
+  page: "bg-linear-to-br from-teal-950 via-teal-800 to-emerald-700",
+  fade: "from-teal-950 via-teal-950/40",
+  glow: "bg-teal-300/20",
+  bar: "bg-teal-950/55",
+};
 export const tones: Record<Tone, { page: string; fade: string; glow: string; bar: string }> = {
-  accommodation: {
-    page: "bg-linear-to-br from-indigo-950 via-indigo-800 to-blue-700",
-    fade: "from-indigo-950 via-indigo-950/40",
-    glow: "bg-indigo-400/25",
-    bar: "bg-indigo-950/55",
-  },
-  destination: {
-    page: "bg-linear-to-br from-teal-950 via-teal-800 to-emerald-700",
-    fade: "from-teal-950 via-teal-950/40",
-    glow: "bg-teal-300/20",
-    bar: "bg-teal-950/55",
-  },
+  accommodation: teal,
+  destination: teal,
 };
 
 // "Glass": see-through white with a blur behind it.
@@ -412,17 +410,15 @@ export function PanelFact({
 // "Keep exploring": links under the side panel, to more places like this
 // one and to the other kind of place.
 export function KeepExploring({
-  tone,
   links,
 }: {
-  tone: Tone;
   links: { label: string; hint: string; href: string }[];
 }) {
   return (
     <div
       className={cn(
         "glass rounded-3xl border border-white/20 p-5.5",
-        tone === "destination" ? "bg-teal-950/35" : "bg-indigo-950/35",
+        "bg-teal-950/35",
       )}
     >
       <p className="font-mono-label mb-3 text-[11px] text-white/80">Keep exploring</p>

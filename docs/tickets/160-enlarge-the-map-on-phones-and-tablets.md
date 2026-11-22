@@ -1,7 +1,7 @@
 # 160 — Enlarge the map on phones and tablets
 
-**What to build:** On screens 768 px wide and narrower (tablets and
-phones: 768, 425, 375, 320 px), the place map can be enlarged to fill the
+**What to build:** On screens narrower than 1024 px (tablets and
+phones; checked at 768, 425, 375 and 320 px), the place map can be enlarged to fill the
 whole screen and closed again. While enlarged, one finger moves the map
 and pinching zooms it; in the page, the map keeps today's behaviour (one
 finger scrolls the page, two fingers move the map), so the page never gets
@@ -35,8 +35,8 @@ expect maps to work on a phone.
 **Notes:** no new library or service: Mapbox GL's own
 `setCooperativeGestures` and `resize`, and CSS for the full-screen view.
 
-**Progress (2026-11-22):** built; boxes stay unticked until the team
-confirms on a real phone and tablet.
+**Progress (2026-11-22):** built; the team confirmed every box on the
+live site the same day.
 
 - Checked in headless Chrome with phone/tablet emulation (touch on) at
   1024, 768, 425, 375 and 320 px, on Dinagyang Festival with a live route
