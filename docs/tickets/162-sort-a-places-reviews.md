@@ -59,4 +59,5 @@ With photos & videos, the review is listed only if it has a photo or video.
 
 - [x] The team confirms a newly posted review shows first on localhost
       (confirmed 2026-11-23)
-- [ ] Works on the live URL
+- [x] Works on the live URL (the team confirmed it after commit 7194f5d,
+      2026-11-23)

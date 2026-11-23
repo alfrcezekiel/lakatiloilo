@@ -76,4 +76,5 @@ files, 34 MB), so no video file was left behind.
 
 - [x] With the Overview open, deleting a review with a video lowers Storage
       used within about 5 seconds, on localhost (confirmed 2026-11-23)
-- [ ] Works on the live URL
+- [x] Works on the live URL (the team confirmed it after commit 7194f5d,
+      2026-11-23)
