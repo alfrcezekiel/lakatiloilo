@@ -7,7 +7,7 @@ deleting for good treat a video like the review's photos.
 
 **Blocked by:** 165
 
-**Status:** in progress (the team confirmed it on localhost on 2026-11-22, the video thumbnail included; waiting for the live URL check)
+**Status:** done (the team confirmed it works on the live site, 2026-11-23)
 
 - [x] Editing a review shows its video with Remove and Replace; removing
       deletes the file; replacing deletes the old file
@@ -22,7 +22,7 @@ deleting for good treat a video like the review's photos.
 - [x] **(added 2026-11-22)** A review deleted for good after 30 days in the
       Trash (the Trash's automatic cleanup) also has its video file removed
       from Storage
-- [ ] Works on the live URL
+- [x] Works on the live URL
 
 **Change (2026-11-22, found while building):** the Trash's 30-day cleanup
 (062) deletes reviews for good whenever an admin opens the Trash, and
@@ -103,3 +103,7 @@ only on play. Also fixed: a replaced video no longer keeps an old "can't
 play" message; video addresses and file deletes come from one shared place
 in the backend; a video that uploaded but could not be attached is deleted
 again.
+
+**Live check (2026-11-23):** the team confirmed this ticket on the live site
+after commit 520e50d, so the "Not checked: the live URL" lines above are
+answered.

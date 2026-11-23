@@ -967,14 +967,14 @@ Reviews & media round: sorting, Show more and watching videos need no login. Add
 - [x] Photo uploads and display continue to work
 
 **Reviews & media round (2026-11-22), on the live URL:**
-- [ ] On a destination and an accommodation page, Most relevant, With photos & videos and Newest re-order or filter the reviews as described
-- [ ] Only 3 reviews show first; Show more reviews adds 5 at a time and disappears at the end
-- [ ] A logged-in traveler adds a video (under 50 MB and 60 s) to a review; it plays on a laptop and a phone, looking the same as the original
-- [ ] A too-big, too-long or wrong-type video gets the plain message, and nothing is uploaded
-- [ ] An uploaded JPG or PNG photo (review form and /admin) is saved as a smaller WebP that looks the same
-- [ ] The admin Reviews and Reports screens show the video; the Overview shows storage used
-- [ ] Accommodation pages are teal and the map is headed "Getting there"
-- [ ] Nothing scrolls sideways at 320, 375, 425, 768, 1024 and 1440 px
+- [x] On a destination and an accommodation page, Most relevant, With photos & videos and Newest re-order or filter the reviews as described
+- [x] Only 3 reviews show first; Show more reviews adds 5 at a time and disappears at the end
+- [x] A logged-in traveler adds a video (under 50 MB and 60 s) to a review; it plays on a laptop and a phone, looking the same as the original
+- [x] A too-big, too-long or wrong-type video gets the plain message, and nothing is uploaded
+- [x] An uploaded JPG or PNG photo (review form and /admin) is saved as a smaller WebP that looks the same
+- [x] The admin Reviews and Reports screens show the video; the Overview shows storage used
+- [x] Accommodation pages are teal and the map is headed "Getting there"
+- [x] Nothing scrolls sideways at 320, 375, 425, 768, 1024 and 1440 px
 
 ## Out of scope
 - Reviews & media round: videos on the traveler profile page, captions or subtitles for videos, more than one video per review, shrinking or converting videos, converting photos saved before this round to WebP, storing photos bigger than 2 MB (bigger ones are made smaller in the browser instead, change 2026-11-22), removing a video uploaded for a review that was never saved, and remembering the chosen sort between visits (parked in docs/LATER.md)

@@ -6,7 +6,7 @@
 
 **Blocked by:** 165
 
-**Status:** in progress (the team confirmed it on localhost on 2026-11-23; waiting for the live URL check)
+**Status:** done (the team confirmed it works on the live site, 2026-11-23)
 
 - [x] A numbered SQL file adds a read-only function, for admins only, that
       adds up the files in place-photos, review-photos and review-videos,
@@ -20,7 +20,7 @@
       80 %, with the colour not the only sign (the words say "nearly full")
 - [x] The number matches the Supabase dashboard's storage figure within a
       few MB
-- [ ] Works on the live URL
+- [x] Works on the live URL
 
 **Progress (2026-11-22):** supabase/sql/067 (admin_storage_used: per bucket
 for place-photos, review-photos and review-videos, plus the total across
@@ -54,3 +54,7 @@ rounded down, so it never reads "80 %" before the warning shows (79.6 %
 reads 79 %); the label says "Every file in the project, free plan", since
 the total counts every bucket. The breakdown and the "Full" message are
 now in docs/SPEC.md.
+
+**Live check (2026-11-23):** the team confirmed this ticket on the live site
+after commit 520e50d, so the "Not checked: the live URL" lines above are
+answered.
