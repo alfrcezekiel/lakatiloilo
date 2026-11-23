@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { backendPassHeaders } from "@/lib/backend-headers";
 
 // Next.js proxy (until Next.js 16 called "middleware"): runs on the server
 // before a page is served. Admin dashboard & moderation round, ticket 107,
@@ -58,7 +59,7 @@ async function isAdmin(accessToken: string) {
   if (!backend) return false;
   try {
     const response = await fetch(`${backend}/v1/admin/me`, {
-      headers: { Authorization: `Bearer ${accessToken}` },
+      headers: { Authorization: `Bearer ${accessToken}`, ...backendPassHeaders() },
       cache: "no-store",
       signal: AbortSignal.timeout(5000),
     });

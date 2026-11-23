@@ -10,6 +10,7 @@ const call = (handler: typeof GET, url: string, path: string[], init?: RequestIn
 beforeEach(() => vi.stubEnv("API_URL", BACKEND));
 afterEach(() => {
   vi.unstubAllEnvs();
+  vi.unstubAllGlobals();
   vi.restoreAllMocks();
 });
 
@@ -38,6 +39,30 @@ describe("backend proxy", () => {
     expect(response.headers.get("set-cookie")).toBeNull();
     expect(response.headers.get("cache-control")).toBe("no-store");
     expect(await response.json()).toEqual([{ id: "1" }]);
+  });
+
+  it("adds the staging pass on the server and ignores one sent by a browser", async () => {
+    // The test runner imitates a browser; the proxy really runs on a server.
+    vi.stubGlobal("window", undefined);
+    vi.stubEnv("BACKEND_PROTECTION_BYPASS", "pretend-server-pass");
+    const fetch = vi.spyOn(globalThis, "fetch").mockResolvedValue(Response.json([]));
+
+    const response = await call(GET, "/api/v1/places", ["v1", "places"], {
+      headers: { "x-vercel-protection-bypass": "pretend-browser-pass" },
+    });
+
+    expect(new Headers(fetch.mock.calls[0][1]?.headers).get("x-vercel-protection-bypass")).toBe("pretend-server-pass");
+    expect(response.headers.get("x-vercel-protection-bypass")).toBeNull();
+  });
+
+  it("never passes on a browser's bypass header when no pass is set", async () => {
+    const fetch = vi.spyOn(globalThis, "fetch").mockResolvedValue(Response.json([]));
+
+    await call(GET, "/api/v1/places", ["v1", "places"], {
+      headers: { "x-vercel-protection-bypass": "pretend-browser-pass" },
+    });
+
+    expect(new Headers(fetch.mock.calls[0][1]?.headers).get("x-vercel-protection-bypass")).toBeNull();
   });
 
   it("forwards upload bytes unchanged", async () => {

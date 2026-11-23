@@ -13,6 +13,8 @@
 // (/api/wikimedia-photo is its own route, and a fixed route always wins
 // over this catch-all one.)
 
+import { backendPassHeaders } from "@/lib/backend-headers";
+
 type Context = { params: Promise<{ path: string[] }> };
 
 // As long as the longest wait the browser allows (photo uploads, 60 s in
@@ -46,6 +48,9 @@ async function forward(request: Request, { params }: Context) {
     const value = request.headers.get(name);
     if (value) headers.set(name, value);
   }
+  // Added here on the server, after the short list, so a browser can never
+  // send or read it (staging only, see backend-headers.ts).
+  for (const [name, value] of Object.entries(backendPassHeaders())) headers.set(name, value);
 
   let upstream: Response;
   try {

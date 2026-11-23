@@ -1,4 +1,5 @@
 import axios from "axios";
+import { backendPassHeaders } from "./backend-headers";
 
 // Calls to the NestJS backend (backend/), made with axios. Every page and
 // component gets its data through these functions, so the backend address
@@ -75,7 +76,7 @@ const backendBase = () => {
 };
 
 const api = () => {
-  if (!client) client = axios.create({ baseURL: backendBase(), timeout: 10_000 });
+  if (!client) client = axios.create({ baseURL: backendBase(), timeout: 10_000, headers: backendPassHeaders() });
   return client;
 };
 
@@ -838,7 +839,7 @@ export const adminSendDelete = async (
 ) => {
   const response = await fetch(`${backendBase()}${path}`, {
     method,
-    headers: { Authorization: `Bearer ${accessToken}` },
+    headers: { Authorization: `Bearer ${accessToken}`, ...backendPassHeaders() },
     keepalive,
   });
   if (response.ok || response.status === 404) return;
