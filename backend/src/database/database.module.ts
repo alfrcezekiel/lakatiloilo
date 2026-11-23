@@ -49,12 +49,14 @@ const sslOptions = (caCert?: string) => {
 // once, answers took 2.1 s (p95) on 10 connections and 0.3 s on 20, with no
 // other change (docs/evaluations/2026-11-17-k6.md).
 //
-// DATABASE_POOL_MAX (backend/.env or Vercel) overrides it, 1 to 50. On
-// Vercel each running copy of the backend has its own pool, so copies x
-// pool size must stay under the Supabase plan's connection limit. Lower it
-// there if Supabase ever refuses connections.
+// DATABASE_POOL_MAX (backend/.env.local) overrides it locally, 1 to 50.
+//
+// On Vercel it is always 3 per running copy (team request 2026-11-24). Many
+// copies can run at once, so 20 each could use up Supabase's connections.
 const DEFAULT_POOL_MAX = 20;
+const SERVERLESS_POOL_MAX = 3;
 const poolMax = (value?: string) => {
+  if (process.env.VERCEL) return SERVERLESS_POOL_MAX;
   const max = Number(value);
   return Number.isInteger(max) && max >= 1 && max <= 50 ? max : DEFAULT_POOL_MAX;
 };
@@ -73,6 +75,10 @@ const poolMax = (value?: string) => {
           url: configService.get<string>('DATABASE_URL'),
           ssl: sslOptions(configService.get<string>('DATABASE_CA_CERT')),
           extra: { max },
+          // Give up quickly if the database is down, so a request is not
+          // left waiting through many slow retries.
+          retryAttempts: 2,
+          retryDelay: 1000,
           entities: [Destination, Accommodation, Review, ReviewLike, ReviewReply, ReviewReport, ReplyLike],
           // Off in every environment. Entities only describe tables that
           // already exist: the schema is managed by the Supabase CLI
