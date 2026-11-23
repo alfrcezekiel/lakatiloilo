@@ -50,7 +50,7 @@ paths:
   for auth), because the website shows `message` as it is.
 - Set the status code on purpose with `@HttpCode` (for example 200 with
   a `{ message }` body for DELETE, as the team asked).
-- CORS is off unless `CORS_ORIGIN` is set (`app-setup.ts`): browsers
+- CORS is off unless `CORS_ORIGINS` has a value (`app-setup.ts`): browsers
   reach the backend only through the website's `/api` proxy since ticket
   152. New methods must be added to the proxy route's exports
   (`src/app/api/[...path]/route.ts`) and new request headers to its

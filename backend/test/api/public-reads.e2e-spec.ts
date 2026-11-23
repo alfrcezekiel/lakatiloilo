@@ -51,7 +51,7 @@ describe('Public reads, headers and CORS (API)', () => {
       expect(res.headers['access-control-allow-origin']).toBeUndefined();
     });
 
-    it('lets no website call the API from a browser when CORS_ORIGIN is unset (since ticket 152)', async () => {
+    it('lets no website call the API from a browser when CORS_ORIGINS is blank (since ticket 152)', async () => {
       const { app: noCorsApp } = await createTestApp({ origins: [] });
 
       const res = await request(noCorsApp.getHttpServer())

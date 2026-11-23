@@ -14,7 +14,8 @@ the entry point and follow the links from here.
   Live at https://lakat-iloilo.vercel.app/
 - **Backend:** NestJS in `backend/`, with TypeORM. Live at
   https://api-lakat-iloilo.vercel.app — locally `http://localhost:5000`.
-- **Database / auth / storage:** a hosted Supabase project (never local).
+- **Database / auth / storage:** a hosted Supabase project, plus the
+  CLI's local stack for development and testing migrations.
 - **What we are building:** `docs/SPEC.md` (the endpoint list is in
   "API Endpoints"). Work items: `docs/tickets/NN-*.md`.
 
@@ -26,8 +27,9 @@ These are summaries. The full text wins: `CLAUDE.md`,
 `database.md` (`supabase/**`) and `testing.md` (test files, `e2e/**`,
 `security/**`, `performance/**`).
 
-1. **Pinned stack.** No new framework, database, host, CSS library, paid
-   service, or Docker. Ask the team first if you think one is needed.
+1. **Pinned stack.** No new framework, database, host, CSS library or
+   paid service. Docker is only for the Supabase CLI's local stack. Ask
+   the team first if you think something else is needed.
 2. **No spec, no code.** Feature work needs `docs/SPEC.md` and a ticket.
 3. **Security baseline.** Row Level Security on every table with explicit
    policies. The `service_role` key and any `sb_secret_` key never appear
@@ -37,8 +39,10 @@ These are summaries. The full text wins: `CLAUDE.md`,
 4. **Commit and push only when the team asks**, and only the files they
    named. Pushing to `main` deploys to the live URL.
 5. **Never create accounts or type real passwords** on the hosted
-   Supabase project. Never run SQL on it yourself — write the file in
-   `supabase/sql/`, and the team runs it.
+   Supabase project. Never run SQL on it yourself. Create a migration
+   with `npx supabase migration new <name>`, test it with
+   `npx supabase db reset` (never `--remote` or `--linked`), and the
+   team applies it. Never change the schema or RLS in the dashboard.
 6. **Backend dev server:** the team keeps `nest start --watch` on port
    5000. Do not start a second one and do not run `npm run build` in
    `backend/` (it deletes `dist/`). Use `npx tsc --noEmit -p tsconfig.json`.
@@ -77,7 +81,7 @@ open that file and follow it step by step.
 | Skill | File | What it does |
 |---|---|---|
 | `/new-endpoint` | `.claude/skills/new-endpoint/SKILL.md` | Adds one NestJS endpoint end to end: contract first, controller validation, service (TypeORM read or `asTraveler` write), CORS, a function in `src/lib/api.ts`, a spec line, then `curl` tests. |
-| `/sql-change` | `.claude/skills/sql-change/SKILL.md` | Writes the next numbered `supabase/sql/NNN-*.sql` file with RLS, policies, grants and check queries, and walks the team through running it. |
+| `/sql-change` | `.claude/skills/sql-change/SKILL.md` | Creates a `supabase/migrations/` file with RLS, policies, grants and check queries, tests it with a local reset, and hands it to the team to apply. |
 | `/responsive-check` | `.claude/skills/responsive-check/SKILL.md` | Measures an element with `getBoundingClientRect()` at 375/640/768/1024/1440 px, finds why it is squeezed or overflowing, fixes it and re-measures. |
 | `/ship` | `.claude/skills/ship/SKILL.md` | Safe commit: stages only the named files, checks for secrets, runs type-check/lint/build, writes the message, pushes to `main`. |
 | `/live-check` | `.claude/skills/live-check/SKILL.md` | Turns a ticket's acceptance criteria into a numbered test for the team on the live URL, then records their results. |
@@ -244,9 +248,9 @@ it answers 404 logged out and as a traveler. Do not add another.
 
 - **CORS** (`backend/src/main.ts`, `app-setup.ts`): since tickets 151–153
   no browser calls the backend (the website's `/api` proxy does, server to
-  server), so `CORS_ORIGIN` is normally unset and CORS is off: no origin,
+  server), so `CORS_ORIGINS` is normally blank and CORS is off: no origin,
   not even the website's own, gets `Access-Control-Allow-Origin`
-  (code review 2026-11-20). If `CORS_ORIGIN` is set, an allowed origin gets
+  (code review 2026-11-20). If `CORS_ORIGINS` has a value, an allowed origin gets
   the header and another origin does not.
   ```bash
   curl -s -i -X OPTIONS $API/v1/reviews -H "Origin: https://lakat-iloilo.vercel.app" -H "Access-Control-Request-Method: POST" | grep -i access-control
@@ -254,7 +258,7 @@ it answers 404 logged out and as a traveler. Do not add another.
   ```
   Methods should be exactly GET, POST, PUT, PATCH, DELETE (PUT since
   ticket 132, for photo credits); headers Content-Type and
-  Authorization, when `CORS_ORIGIN` is set. Unset (the normal case since
+  Authorization, when `CORS_ORIGINS` has a value. Blank (the normal case since
   ticket 152) means CORS off; it no longer stops the backend starting.
 - **Auth guard** (`loginToken` + Supabase token check): every write
   endpoint calls it; read endpoints that show `liked_by_me` still work
@@ -274,7 +278,7 @@ it answers 404 logged out and as a traveler. Do not add another.
 
 ### 4.5 Database and RLS (read-only)
 
-- List tables and their RLS state from the newest `supabase/sql/` files
+- List tables and their RLS state from `supabase/migrations/`
   and confirm each table has `enable row level security` plus a policy
   per action.
 - Grants: travelers may write only the columns they own.

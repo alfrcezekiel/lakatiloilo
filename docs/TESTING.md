@@ -599,7 +599,7 @@ app: **Automation** tab → **Load plan** → **Run**. Paths inside a plan
 | CSP: Failure to Define Directive with No Fallback | `base-uri`, `form-action` or `frame-ancestors` is missing: they don't fall back to `default-src` | Name each one. The backend's policy (`backend/src/app-setup.ts`) has all three since 2026-11-20 |
 | Strict-Transport-Security missing | The browser isn't told to always use HTTPS | Vercel usually adds this. Check on the API too |
 | Cookie without SameSite / HttpOnly / Secure | A cookie could be read by scripts or sent from other sites | Fix: set the flags where the cookie is made (`src/lib/admin-cookie.ts`) |
-| CORS misconfiguration | Another website could call our API | Check that `CORS_ORIGIN` is unset (no browser needs it since ticket 152), or lists only our own sites |
+| CORS misconfiguration | Another website could call our API | Check that `CORS_ORIGINS` is blank (no browser needs it since ticket 152), or lists only our own sites |
 | Application error disclosure | An error page shows stack traces or SQL | Fix: return a short message and log the details |
 | SQL injection / XSS (active scan) | Untrusted input reaches the database or the page | **Stop and fix before the demo** |
 

@@ -74,13 +74,17 @@ const poolMax = (value?: string) => {
           ssl: sslOptions(configService.get<string>('DATABASE_CA_CERT')),
           extra: { max },
           entities: [Destination, Accommodation, Review, ReviewLike, ReviewReply, ReviewReport, ReplyLike],
+          // Off in every environment. Entities only describe tables that
+          // already exist: the schema is managed by the Supabase CLI
+          // migrations in supabase/migrations (see CLAUDE.md, Database changes).
           synchronize: false,
+          migrationsRun: false,
           // PostGIS is already installed by the SQL scripts; never try to
           // create extensions (the backend's lakat_api role is not allowed to).
           installExtensions: false,
-          // Print every SQL query while developing, but not on Vercel, where
-          // it would bury real errors in the logs.
-          logging: configService.get<string>('NODE_ENV') !== 'production',
+          // Print every SQL query while developing, but not on staging or
+          // production, where it would bury real errors in the logs.
+          logging: configService.get<string>('APP_ENV') === 'local',
         };
       },
       inject: [ConfigService],

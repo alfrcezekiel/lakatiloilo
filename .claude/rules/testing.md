@@ -60,8 +60,9 @@ rules apply whenever test files are written or changed.
   `DELETE`, `ALTER` or `DROP` in that folder.
 - No `service_role` or `sb_secret_` value anywhere in test code, fixtures
   or `.env.test`.
-- Never run Supabase locally or require Docker (no pgTAP, no
-  Testcontainers, no ZAP Docker image. Use the ZAP desktop app).
+- Test tools never require Docker (no pgTAP, no Testcontainers, no ZAP
+  Docker image. Use the ZAP desktop app). The only Docker use is the
+  Supabase CLI's local stack, for `npx supabase db reset`.
 
 ## OWASP ZAP — security scans
 

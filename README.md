@@ -147,7 +147,7 @@ Use these while you build, whenever the situation fits.
 | When                                  | Command             | Produces                               |
 |---------------------------------------|---------------------|----------------------------------------|
 | A ticket needs a backend endpoint     | `/new-endpoint`     | controller, service, api.ts, spec line |
-| A ticket needs a database change      | `/sql-change`       | `supabase/sql/NNN-*.sql` to run        |
+| A ticket needs a database change      | `/sql-change`       | tested `supabase/migrations/` file     |
 | Something looks wrong at one width    | `/responsive-check` | measured fix at 375–1440 px            |
 | The team says "commit and push"       | `/ship`             | one safe commit on `main`              |
 | After a push, or after the team tests | `/live-check`       | a test to follow, ticked ticket        |
@@ -263,7 +263,9 @@ traffic. The team starts those tests, not the agent.
 src/app/page.tsx          the starter page — delete it and build yours
 src/components/ui/        Button, Card, Input, Textarea, Label
 src/lib/supabase/         database clients, with comments
-supabase/sql/             your database changes, numbered
+supabase/migrations/      your database changes (Supabase CLI)
+supabase/seed.sql         fake data for local development and staging
+supabase/sql/             older numbered changes, kept as history
 docs/                     problem, pitch, spec and tickets live here
 docs/TESTING.md           the testing plan: layers, tools, folders
 CLAUDE.md                 the rules the agent follows

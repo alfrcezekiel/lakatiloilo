@@ -9,12 +9,14 @@ to teach them as you go.
 
 - Next.js (App Router) + TypeScript
 - Tailwind CSS, with the UI components already in `src/components/ui/`
-- Supabase (HOSTED project only) for database, auth and storage
+- Supabase for database, auth and storage: the hosted project for the
+  live app, and the CLI's local stack for development and for testing
+  migrations
 - Vercel for hosting — every push to `main` deploys
 
 Never introduce another framework, database, hosting provider, CSS
-library or paid service. Never run Supabase locally. **Never require
-Docker** — nothing in this stack needs it. If you believe the project
+library or paid service. **Docker is only for the Supabase CLI's local
+stack**; nothing else may require it. If you believe the project
 genuinely needs something outside this stack, stop, explain why in plain
 English, and wait for the team to agree.
 
@@ -100,7 +102,7 @@ Project helpers (Lakat Iloilo):
 | When                                  | Command             | Produces                         |
 |---------------------------------------|---------------------|----------------------------------|
 | A ticket needs a backend endpoint     | `/new-endpoint`     | controller, service, api.ts, spec line |
-| A ticket needs a database change      | `/sql-change`       | `supabase/sql/NNN-*.sql` to run  |
+| A ticket needs a database change      | `/sql-change`       | tested `supabase/migrations/` file |
 | Something looks wrong at one width    | `/responsive-check` | measured fix at 375–1440 px      |
 | The team says "commit and push"       | `/ship`             | one safe commit on `main`        |
 | After a push, or after the team tests | `/live-check`       | a test to follow, ticked ticket  |
@@ -110,6 +112,37 @@ Project helpers (Lakat Iloilo):
 Project rules live in `.claude/rules/` (team habits always; backend,
 frontend, database and testing rules when those files are worked on).
 
+## Database changes
+
+The Supabase CLI migrations in `supabase/migrations/` are the source of
+truth for the schema. A migration is a timestamped SQL file that records
+one database change, so the whole database can be rebuilt from the repo.
+
+- **Every schema and RLS change is a new migration file**, made with:
+
+  ```bash
+  npx supabase migration new <name>
+  ```
+
+- **Test every migration on the local database** before sharing it:
+
+  ```bash
+  npx supabase db reset
+  ```
+
+  This wipes the local database, then replays all migrations and
+  `supabase/seed.sql`. It needs Docker running. Never add `--remote` or
+  `--linked`: those target the hosted database.
+- **Never make schema or RLS changes directly in the Supabase dashboard**,
+  including its SQL Editor and Table Editor.
+- **Never edit a migration that has already been shared.** Add a new one.
+- **TypeORM never changes the schema.** `synchronize` and `migrationsRun`
+  stay `false` in every environment, and there are no TypeORM migrations.
+  Entities only map tables that already exist.
+
+The numbered files in `supabase/sql/` are kept as history. Do not add to
+them or run them. The team applies migrations to hosted projects.
+
 ## Where things live
 
 - `docs/PROBLEM.md` — the problem, the person, the MVP cut
@@ -117,8 +150,10 @@ frontend, database and testing rules when those files are worked on).
 - `docs/SPEC.md` — what we are building
 - `docs/tickets/` — one file per ticket
 - `docs/LATER.md` — good ideas that are not in the MVP
-- `supabase/sql/` — every database change, numbered, so the database can
+- `supabase/migrations/` — every database change, so the database can
   be rebuilt from the repo
+- `supabase/seed.sql` — fake data for local development and staging
+- `supabase/sql/` — the older numbered changes, kept as history
 - `src/components/ui/` — the UI building blocks
 - `src/lib/supabase/` — the database clients, with comments explaining
   which to use where

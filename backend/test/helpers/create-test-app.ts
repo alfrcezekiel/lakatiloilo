@@ -9,7 +9,7 @@ import { V1Module } from '../../src/v1/v1.module';
 import { fakeDataSource } from '../fakes/database.fake';
 import { fakeSupabase } from '../fakes/supabase.fake';
 
-// The website addresses the test app accepts (CORS), like CORS_ORIGIN.
+// The website addresses the test app accepts (CORS), like CORS_ORIGINS.
 export const ALLOWED_ORIGIN = 'http://localhost:3000';
 
 // Builds the REAL /v1 API — controllers, the admin middleware, pipes,
@@ -18,7 +18,7 @@ export const ALLOWED_ORIGIN = 'http://localhost:3000';
 //   - the database (an empty pretend DataSource instead of DatabaseModule),
 //   - Supabase Auth (a pretend SupabaseService that knows two tokens).
 // It reads no backend/.env, so no real address, key or password is used.
-// origins: the CORS_ORIGIN list; [] is the live setup since ticket 152.
+// origins: the CORS_ORIGINS list; [] is the live setup since ticket 152.
 export async function createTestApp({ origins = [ALLOWED_ORIGIN] }: { origins?: string[] } = {}): Promise<{
   app: INestApplication;
   supabase: ReturnType<typeof fakeSupabase>;

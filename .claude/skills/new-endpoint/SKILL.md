@@ -29,7 +29,7 @@ it with `/to-spec` first. No spec, no code.
 4. **Module:** register it in `v1.module.ts`. New method or header → add
    it to `enableCors` in `backend/src/main.ts`.
 5. **Database:** if the table or column is new to `lakat_api`, use
-   `/sql-change` and wait for the team to run it.
+   `/sql-change` and wait for the team to apply it.
 6. **Website:** add one function to `src/lib/api.ts` with a comment
    saying what it calls and answers. Use it from the component, showing
    refusals with `backendMessage(error)`.
