@@ -2,7 +2,6 @@
 
 import { ChevronRight, EyeOff, Flag, HardDrive, MapPin, MessageSquareText, type LucideIcon } from "lucide-react";
 import Link from "next/link";
-import { useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { AdminShell } from "@/components/admin/AdminShell";
 import { adminGlass } from "@/components/admin/AdminFrame";
@@ -18,6 +17,7 @@ import { formatBytes, storageLevel, storagePercent } from "@/lib/storage-used";
 import { freshToken } from "@/lib/login";
 import { timeAgo } from "@/lib/notifications";
 import { useTableChanges } from "@/lib/realtime";
+import { useRefreshAfterFiles } from "@/lib/refresh-after-files";
 import { cn } from "@/lib/utils";
 
 // The dashboard home (/admin, admin dashboard & moderation round, ticket
@@ -241,7 +241,8 @@ function useOverview() {
 function OverviewData() {
   const overview = useOverview();
   const { refetch } = overview;
-  const refresh = useCallback(() => void refetch(), [refetch]);
+  // Storage used depends on files, which go just after their row changes.
+  const refresh = useRefreshAfterFiles(refetch);
   useTableChanges(OVERVIEW_TABLES, refresh, { quietMs: ADMIN_LIVE_QUIET_MS });
 
   if (overview.isPending) return <OverviewSkeleton />;

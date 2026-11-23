@@ -10,6 +10,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test --project=local --project=local-phone",
+    "test:e2e:chrome": "playwright test --config=playwright.chrome.config.ts --project=local --project=local-phone",
     "test:smoke": "playwright test --project=live",
     "test:smoke:local": "playwright test --project=smoke-local",
     "test:writes": "playwright test --project=real-writes",

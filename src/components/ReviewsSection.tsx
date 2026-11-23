@@ -100,7 +100,8 @@ export function ReviewsSection({ eyebrow }: { eyebrow?: string } = {}) {
       : reviews.find((r) => r.replies?.some((reply) => reply.id === id));
   }, [reviews, focus]);
   const activeSort: ReviewSort = sort === "media" && targetReview && !hasMedia(targetReview) ? "newest" : sort;
-  const ordered = useMemo(() => orderReviews(reviews ?? [], activeSort), [reviews, activeSort]);
+  const viewerId = user?.id;
+  const ordered = useMemo(() => orderReviews(reviews ?? [], activeSort, viewerId), [reviews, activeSort, viewerId]);
   const targetIndex = targetReview ? ordered.findIndex((r) => r.id === targetReview.id) : -1;
   const visibleCount = Math.max(shown, targetIndex + 1);
   const visible = ordered.slice(0, visibleCount);

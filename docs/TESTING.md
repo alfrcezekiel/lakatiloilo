@@ -4,8 +4,22 @@ How we check the quality of the Lakat Iloilo tourism platform, layer by
 layer, using the tools that teams building Next.js, NestJS and Supabase
 apps already use.
 
-> **Status (2026-11-21):** these layers are built and passing:
+> **Status (2026-11-23):** these layers are built and passing:
 >
+> - **L1–L5 on localhost, for tickets 161–167** (team run, 2026-11-23):
+>   website unit + component 184 of 184, backend unit 84 of 84, API 234 of
+>   234, every database check safe (`00`, `13`, `15`, `16`, `17`), and
+>   browser + accessibility 101 passed with 6 skipped on purpose (header
+>   checks run on the laptop only). `npm run test:e2e:chrome` runs L5 with
+>   the installed Google Chrome, so Playwright's browsers aren't needed.
+>   The first L5 run found two real bugs, both fixed: invalid list HTML in
+>   the place panel (`PanelFact`), and a newly posted review hidden behind
+>   Show more (the traveler's own review now comes first).
+>   **Not checked by these tests:** a real video upload to Storage, the
+>   admin video and storage screens in a full browser, and a live update
+>   keeping the chosen sort. The production build passes (`npm run build`,
+>   team run, 2026-11-23). The team checked a real video by hand on localhost: added, removed, gone from the bucket,
+>   and the Overview's Storage used dropped within 5 seconds (ticket 167).
 > - **Every k6 test, local and live** (L8, team run, 2026-11-21): all 14
 >   runs passed (backend smoke, stress, spike, soak; website smoke,
 >   stress, spike, soak; live backend smoke and load; live website load,
@@ -129,6 +143,25 @@ apps already use.
 >   Like 01–07, they were first proved on a throwaway local Postgres:
 >   every check showed 0 on a safe copy and caught one planted mistake of
 >   each kind.
+>
+>   **The team ran L4 on the hosted project on 2026-11-23: all safe.**
+>   `00-summary.sql` shows all 11 rows `✓ safe`, `13` shows 0 on all 12
+>   rules, `15` and `16` return no rows, and `17` shows 26 of 26 `✓ safe`.
+>
+>   **Added 2026-11-23:** `17`, run on
+>   its own, for tickets 164–167. It gives 26 rows, each `✓ safe` or
+>   `✗ look at this`, and shows only counts.
+>   - Rows 01–17, the rules: the video bucket's exact limits, the five
+>     Storage rules and that each is strict enough, the own-video guard, and
+>     the two admin functions.
+>   - Rows 18–26, the saved data: reviews and video files agree (none
+>     missing, shared or forgotten), file owners, sizes and types, `.webp`
+>     names, and storage under the 80 % warning.
+>
+>   Proved on a throwaway local Postgres with stand-ins for Supabase's
+>   `storage` and `auth` and the real 065–067 files: a safe copy showed 26
+>   of 26 safe, and each of 26 planted mistakes failed its own row and no
+>   other.
 >
 >   **Re-run on the hosted project after the fixes (2026-11-20): all safe.**
 >   `00-summary.sql` shows all 11 rows `✓ safe` (01–05 and 07–12), and

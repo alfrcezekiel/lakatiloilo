@@ -75,6 +75,41 @@ describe("orderReviews", () => {
 
     expect(all.map((r) => r.id)).toEqual(["middle", "fresh", "old"]);
   });
+
+  describe("the logged-in traveler's own review", () => {
+    it("comes first for Most relevant, even with no Helpful marks", () => {
+      const ids = orderReviews(all, "relevant", "user-middle").map((r) => r.id);
+
+      expect(ids).toEqual(["middle", "old", "fresh"]);
+    });
+
+    it("comes first for Newest, even when it is the oldest", () => {
+      const ids = orderReviews(all, "newest", "user-old").map((r) => r.id);
+
+      expect(ids).toEqual(["old", "fresh", "middle"]);
+    });
+
+    it("comes first for With photos & videos when it has a photo", () => {
+      const newer = review("newer", "2026-11-21T00:00:00Z", { photos: [photo] });
+
+      const ids = orderReviews([...all, newer], "media", "user-middle").map((r) => r.id);
+
+      expect(ids).toEqual(["middle", "newer"]);
+    });
+
+    it("is left out of With photos & videos when it has no photo or video", () => {
+      const ids = orderReviews(all, "media", "user-fresh").map((r) => r.id);
+
+      expect(ids).toEqual(["middle"]);
+    });
+
+    it("changes nothing for a traveler with no review here, or a logged-out visitor", () => {
+      const expected = ["old", "fresh", "middle"];
+
+      expect(orderReviews(all, "relevant", "user-nobody").map((r) => r.id)).toEqual(expected);
+      expect(orderReviews(all, "relevant").map((r) => r.id)).toEqual(expected);
+    });
+  });
 });
 
 describe("showMore", () => {

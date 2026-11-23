@@ -50,3 +50,13 @@ stars, a bar for each star level shows how many reviews gave it, as in the
 **Live check (2026-11-22):** the team confirmed this ticket on the live
 site the same day it was pushed (commit d2db292), so the "Not checked: the
 live URL" lines above are answered.
+
+**Change (2026-11-23, team request):** the logged-in traveler's own review
+now comes first in their list. The L5 traveler-journey test found that a
+new review with no Helpful marks could land behind Show more reviews, while
+the page said it was "below". Other visitors see the normal order. Under
+With photos & videos, the review is listed only if it has a photo or video.
+
+- [x] The team confirms a newly posted review shows first on localhost
+      (confirmed 2026-11-23)
+- [ ] Works on the live URL

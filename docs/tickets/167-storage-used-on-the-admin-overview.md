@@ -58,3 +58,22 @@ now in docs/SPEC.md.
 **Live check (2026-11-23):** the team confirmed this ticket on the live site
 after commit 520e50d, so the "Not checked: the live URL" lines above are
 answered.
+
+**Bug fix (2026-11-23, team report):** after a traveler removed a video, the
+file left the bucket but the Overview could keep showing the old MB. Root
+cause: the database row changes first and the file is deleted just after.
+Realtime rings on the row, so the Overview could add up Storage before the
+file had gone, and nothing rang again. The Overview now refreshes at once
+and again 4 seconds later (`src/lib/refresh-after-files.ts`, 4 unit tests).
+
+**Team check (2026-11-23, localhost):** with the Overview open, a traveler
+deleted their review with a video, and Storage used and the Review videos
+figure dropped within 5 seconds. A read-only query then showed no files left
+in `review-videos` (`place-photos` 30 files, 8830 kB; `review-photos` 182
+files, 34 MB), so no video file was left behind.
+
+**Not checked:** Supabase's own Usage page, which this app does not control.
+
+- [x] With the Overview open, deleting a review with a video lowers Storage
+      used within about 5 seconds, on localhost (confirmed 2026-11-23)
+- [ ] Works on the live URL

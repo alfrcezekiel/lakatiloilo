@@ -273,3 +273,11 @@ Parked to keep the round to one session (docs/SPEC.md, Screens 32):
 - **Storage:** Supabase's free plan holds 1 GB for all photos and videos
   together (about 20 full-size videos). When the Overview turns amber, the
   team decides: a paid plan, smaller video limits, or deleting old videos.
+- **Hidden videos can still be opened by their direct address** (found
+  during the L4 checks, 2026-11-23). The `review-videos` bucket is public,
+  so hiding a review or moving it to the Trash removes its video from the
+  app, but anyone who saved the address can still watch it until the review
+  is deleted for good. This matters most for a video hidden after a report.
+  Possible fix, for the team to agree first: make the bucket private and
+  have the backend give out short-lived links only for reviews a visitor
+  may see. Check whether review photos need the same change.

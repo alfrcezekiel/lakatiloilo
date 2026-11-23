@@ -44,10 +44,21 @@ function newestFirst(a: Review, b: Review) {
 }
 
 // The reviews for a chip: a new list, the one passed in is left as it is.
-export function orderReviews(reviews: Review[], sort: ReviewSort): Review[] {
-  if (sort === "media") return reviews.filter(hasMedia).sort(newestFirst);
-  if (sort === "newest") return [...reviews].sort(newestFirst);
-  return [...reviews].sort((a, b) => relevance(b) - relevance(a) || newestFirst(a, b));
+// viewerId: the logged-in traveler. Their own review comes first, so it is
+// never hidden behind Show more reviews (team decision 2026-11-23). Under
+// With photos & videos it still needs a photo or video to be listed.
+export function orderReviews(reviews: Review[], sort: ReviewSort, viewerId?: string): Review[] {
+  const ordered =
+    sort === "media"
+      ? reviews.filter(hasMedia).sort(newestFirst)
+      : sort === "newest"
+        ? [...reviews].sort(newestFirst)
+        : [...reviews].sort((a, b) => relevance(b) - relevance(a) || newestFirst(a, b));
+  if (!viewerId) return ordered;
+  return [
+    ...ordered.filter((review) => review.user_id === viewerId),
+    ...ordered.filter((review) => review.user_id !== viewerId),
+  ];
 }
 
 // How many to show after one more press of Show more reviews.

@@ -389,19 +389,23 @@ export function PanelFact({
   children: ReactNode;
 }) {
   return (
-    <div className="flex items-end justify-between gap-3">
-      <div className="min-w-0">
-        <dt className="text-xs text-white/80">{label}</dt>
-        <dd
-          className={cn(
-            "mt-0.5 wrap-break-word text-[15px] font-medium text-white",
-            mono && "[font-family:var(--font-plex-mono)] text-sm",
-          )}
-        >
-          {children}
+    // A <dl> group may hold only <dt> and <dd> directly (WCAG 1.3.1, found by
+    // axe 2026-11-23), so a grid places them instead of a wrapper <div>.
+    <div className={cn("grid", copy ? "grid-cols-[minmax(0,1fr)_auto] gap-x-3" : "grid-cols-1")}>
+      <dt className="col-start-1 text-xs text-white/80">{label}</dt>
+      <dd
+        className={cn(
+          "col-start-1 mt-0.5 wrap-break-word text-[15px] font-medium text-white",
+          mono && "[font-family:var(--font-plex-mono)] text-sm",
+        )}
+      >
+        {children}
+      </dd>
+      {copy && (
+        <dd className="col-start-2 row-span-2 row-start-1 self-end">
+          <CopyButton value={copy} label={`Copy ${label.toLowerCase()}`} />
         </dd>
-      </div>
-      {copy && <CopyButton value={copy} label={`Copy ${label.toLowerCase()}`} />}
+      )}
     </div>
   );
 }

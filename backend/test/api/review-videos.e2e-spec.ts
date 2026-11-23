@@ -1,5 +1,6 @@
-import { BadRequestException, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Logger, NotFoundException, ServiceUnavailableException } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
+import { QueryFailedError } from 'typeorm';
 import { SupabaseService } from '../../src/supabase/supabase.service';
 import { TravelerTransactions } from '../../src/v1/traveler-transactions';
 import { ReviewVideosService, VIDEO_MESSAGE } from '../../src/v1/reviews/review-videos.service';
@@ -16,9 +17,14 @@ const REVIEW = '55555555-5555-4555-8555-555555555555';
 const MB = 1024 * 1024;
 const own = (name = '66666666-6666-4666-8666-666666666666.mp4') => `${TRAVELER_ID}/${name}`;
 
-type StoredFile = { name: string; metadata: { size: number; mimetype: string } };
+type StoredFile = { name: string; metadata: { size?: number; mimetype: string } };
 
-async function setUp({ files = [] as StoredFile[], review = { video_path: null as string | null } as { video_path: string | null } | null } = {}) {
+async function setUp({
+  files = [] as StoredFile[],
+  review = { video_path: null as string | null } as { video_path: string | null } | null,
+  listError = null as { message: string } | null,
+  updateError = null as Error | null,
+} = {}) {
   const removed: string[] = [];
   const queries: { sql: string; params: unknown[] }[] = [];
   const supabase = {
@@ -27,8 +33,8 @@ async function setUp({ files = [] as StoredFile[], review = { video_path: null a
       storage: {
         from: () => ({
           list: async (_folder: string, options: { search: string }) => ({
-            data: files.filter((f) => f.name === options.search),
-            error: null,
+            data: listError ? null : files.filter((f) => f.name === options.search),
+            error: listError,
           }),
           remove: async (paths: string[]) => {
             removed.push(...paths);
@@ -42,6 +48,7 @@ async function setUp({ files = [] as StoredFile[], review = { video_path: null a
     query: async (sql: string, params: unknown[]) => {
       queries.push({ sql, params });
       if (sql.startsWith('select video_path')) return review ? [review] : [];
+      if (updateError) throw updateError;
       return [[], 1];
     },
   };
@@ -69,7 +76,13 @@ const mp4 = (size: number, name = '66666666-6666-4666-8666-666666666666.mp4'): S
   metadata: { size, mimetype: 'video/mp4' },
 });
 
+// For a test that breaks something on purpose: keeps the expected error out
+// of the test output, and lets the test check that it was still logged.
+const quietErrors = () => jest.spyOn(Logger.prototype, 'error').mockImplementation(() => undefined);
+
 describe('review videos (ticket 165)', () => {
+  afterEach(() => jest.restoreAllMocks());
+
   it('attaches an uploaded MP4 in the traveler\'s own folder and answers its address', async () => {
     const { videos, queries } = await setUp({ files: [mp4(12 * MB)] });
 
@@ -128,5 +141,81 @@ describe('review videos (ticket 165)', () => {
 
     expect(queries.some((q) => q.sql.startsWith('update public.reviews set video_path = null'))).toBe(true);
     expect(removed).toEqual([old]);
+  });
+
+  it('keeps the file when the same video is attached again', async () => {
+    const { videos, removed } = await setUp({ files: [mp4(MB)], review: { video_path: own() } });
+
+    await videos.attach(TOKENS.traveler, REVIEW, own());
+
+    expect(removed).toEqual([]);
+  });
+
+  it('refuses a file whose size Storage does not report, and deletes it', async () => {
+    const file: StoredFile = { name: '66666666-6666-4666-8666-666666666666.mp4', metadata: { mimetype: 'video/mp4' } };
+    const { videos, removed, queries } = await setUp({ files: [file] });
+
+    await expect(videos.attach(TOKENS.traveler, REVIEW, own())).rejects.toThrow(new BadRequestException(VIDEO_MESSAGE));
+
+    expect(removed).toEqual([own()]);
+    expect(queries).toHaveLength(0);
+  });
+
+  it('accepts a video of exactly 50 MB', async () => {
+    const { videos } = await setUp({ files: [mp4(50 * MB)] });
+
+    await expect(videos.attach(TOKENS.traveler, REVIEW, own())).resolves.toHaveProperty('video_url');
+  });
+
+  it('answers 503 and saves nothing when Storage cannot be read', async () => {
+    const errors = quietErrors();
+    const { videos, removed, queries } = await setUp({ listError: { message: 'storage is down' } });
+
+    await expect(videos.attach(TOKENS.traveler, REVIEW, own())).rejects.toThrow(ServiceUnavailableException);
+
+    expect(removed).toEqual([]);
+    expect(queries).toHaveLength(0);
+    expect(errors).toHaveBeenCalledWith(expect.stringContaining('storage is down'));
+  });
+
+  it("answers the usual 400 when the database refuses a path outside the traveler's folder", async () => {
+    const refusal = new QueryFailedError('update', [], Object.assign(new Error('not your folder'), { code: '42501' }));
+    const { videos, removed } = await setUp({ files: [mp4(MB)], updateError: refusal });
+
+    await expect(videos.attach(TOKENS.traveler, REVIEW, own())).rejects.toThrow(new BadRequestException(VIDEO_MESSAGE));
+
+    expect(removed).toEqual([]);
+  });
+
+  it('keeps the old video when saving the new one fails', async () => {
+    const errors = quietErrors();
+    const old = own('77777777-7777-4777-8777-777777777777.webm');
+    const { videos, removed } = await setUp({
+      files: [mp4(MB)],
+      review: { video_path: old },
+      updateError: new Error('connection lost'),
+    });
+
+    await expect(videos.attach(TOKENS.traveler, REVIEW, own())).rejects.toThrow(ServiceUnavailableException);
+
+    expect(removed).toEqual([]);
+    expect(errors).toHaveBeenCalledWith(expect.stringContaining('connection lost'));
+  });
+
+  it('deletes no file when the review has no video to remove', async () => {
+    const { videos, removed } = await setUp({ review: { video_path: null } });
+
+    await videos.detach(TOKENS.traveler, REVIEW);
+
+    expect(removed).toEqual([]);
+  });
+
+  it("answers 404 when removing the video of someone else's review, and changes nothing", async () => {
+    const { videos, removed, queries } = await setUp({ review: null });
+
+    await expect(videos.detach(TOKENS.traveler, REVIEW)).rejects.toThrow(NotFoundException);
+
+    expect(removed).toEqual([]);
+    expect(queries.some((q) => q.sql.startsWith('update'))).toBe(false);
   });
 });
