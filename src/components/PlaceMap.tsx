@@ -21,6 +21,7 @@ import {
   type RouteState,
   type StyleId,
 } from "@/components/place-map-parts";
+import { env, maybe } from "@/env";
 import {
   ARRIVED_METERS,
   googleDirectionsUrl,
@@ -175,7 +176,7 @@ export function PlaceMap({
   // The button that opened the enlarged map gets the focus back.
   const opener = useRef<HTMLElement | null>(null);
   const toggleButton = useRef<HTMLButtonElement>(null);
-  const token = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
+  const token = maybe(() => env.NEXT_PUBLIC_MAPBOX_TOKEN);
   // Both kinds of page are teal (ticket 161).
   const panel = "bg-teal-950/60";
 

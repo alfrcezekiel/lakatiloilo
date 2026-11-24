@@ -1,4 +1,10 @@
 import type { NextConfig } from "next";
+import { checkEnv } from "./src/env";
+
+// Stop `npm run dev` and `npm run build` (and so every Vercel deploy) right
+// away if an environment variable is missing or wrong, with a list of
+// which ones. The rules for each variable are in src/env.ts.
+checkEnv();
 
 // Security headers for every page (evaluation B5, 2026-11-04). The simple,
 // safe ones only: nosniff (the browser never guesses a file's type),

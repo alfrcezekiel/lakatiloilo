@@ -1,3 +1,5 @@
+import { env, maybe } from "@/env";
+
 // A video in a review (ticket 165, reviews & media round).
 //
 // The one place the browser talks to Supabase Storage itself (team decision
@@ -97,8 +99,8 @@ export function uploadReviewVideo(
   accessToken: string,
   onProgress: (percent: number) => void,
 ): Promise<string> {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  const supabaseUrl = maybe(() => env.NEXT_PUBLIC_SUPABASE_URL);
+  const anonKey = maybe(() => env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
   const userId = userIdFromToken(accessToken);
   if (!supabaseUrl || !anonKey || !userId) return Promise.reject(new Error("Please log in again, then try again."));
   const path = newVideoPath(userId, file);
@@ -127,8 +129,8 @@ export function uploadReviewVideo(
 // only in their own folder (065). Never throws: a leftover is only a
 // leftover (cleaning those up is parked in docs/LATER.md).
 export async function deleteUploadedVideo(path: string, accessToken: string): Promise<void> {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  const supabaseUrl = maybe(() => env.NEXT_PUBLIC_SUPABASE_URL);
+  const anonKey = maybe(() => env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
   if (!supabaseUrl || !anonKey) return;
   try {
     await fetch(`${supabaseUrl}/storage/v1/object/review-videos/${path}`, {

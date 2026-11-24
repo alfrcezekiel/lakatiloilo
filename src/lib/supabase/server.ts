@@ -1,5 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
+import { env } from "@/env";
 
 /**
  * Supabase client for SERVER code — server components, route handlers,
@@ -10,16 +11,9 @@ import { cookies } from "next/headers";
  * project: it bypasses Row Level Security entirely.
  */
 export async function createClient() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
-  if (!url || !anonKey) {
-    throw new Error(
-      "Supabase env vars missing. Copy .env.example to .env.local and fill in " +
-        "NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY from your " +
-        "Supabase project (click Connect). Add them in Vercel too.",
-    );
-  }
+  // Checked in src/env.ts: a missing value is an error naming it.
+  const url = env.NEXT_PUBLIC_SUPABASE_URL;
+  const anonKey = env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
   const cookieStore = await cookies();
 

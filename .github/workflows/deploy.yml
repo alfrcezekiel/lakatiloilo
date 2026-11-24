@@ -1,0 +1,72 @@
+# After a push to staging or main: update that branch's hosted database,
+# then deploy the backend. The backend deploys ONLY through this workflow
+# (backend/vercel.json turns off Vercel's own Git deploys for these two
+# branches), so it never goes live before the database changes it needs.
+# The website keeps deploying by itself on every push, as before.
+#
+# Secrets (GitHub: Settings -> Secrets and variables -> Actions):
+#   STAGING_DB_URL, STAGING_BACKEND_DEPLOY_HOOK   used on staging
+#   PROD_DB_URL,    PROD_BACKEND_DEPLOY_HOOK      used on main
+# *_DB_URL: the project's Session pooler address (port 5432) with the
+# postgres user's password. Supabase -> Connect -> Session pooler. Not the
+# direct db.<ref>.supabase.co address: GitHub's runners can't reach it.
+# *_DEPLOY_HOOK: the backend project's Deploy Hook for that branch
+# (Vercel: api-lakat-iloilo-backend -> Settings -> Git -> Deploy Hooks).
+#
+# The seed (fake data) is never sent to a hosted database from here.
+
+name: Deploy
+
+on:
+  push:
+    branches: [staging, main]
+
+# One deploy per branch at a time. A newer push waits for the running one
+# instead of cancelling it halfway through a migration.
+concurrency:
+  group: deploy-${{ github.ref_name }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    name: deploy
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      DB_URL: ${{ github.ref_name == 'main' && secrets.PROD_DB_URL || secrets.STAGING_DB_URL }}
+      DEPLOY_HOOK: ${{ github.ref_name == 'main' && secrets.PROD_BACKEND_DEPLOY_HOOK || secrets.STAGING_BACKEND_DEPLOY_HOOK }}
+    steps:
+      # Stop early, with a plain message, if a secret was never added.
+      # Only the secret's NAME is printed, never its value.
+      - name: Check the secrets are set
+        run: |
+          prefix=$([ "$GITHUB_REF_NAME" = "main" ] && echo PROD || echo STAGING)
+          missing=0
+          [ -n "$DB_URL" ] || { echo "::error::${prefix}_DB_URL is not set in GitHub secrets."; missing=1; }
+          [ -n "$DEPLOY_HOOK" ] || { echo "::error::${prefix}_BACKEND_DEPLOY_HOOK is not set in GitHub secrets."; missing=1; }
+          exit $missing
+
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      # The Supabase CLI is a devDependency of the root package.json.
+      - name: Install packages (Supabase CLI)
+        run: npm ci
+
+      # Applies only the migrations this database has not had yet, in order.
+      # --yes answers the CLI's "apply these?" question. No --include-seed.
+      - name: Apply new migrations
+        run: npx supabase db push --remote="$DB_URL" --yes
+
+      # Runs only if the migrations above succeeded (a failed step stops the
+      # job). -f fails on an error answer; the hook address is not printed.
+      - name: Deploy the backend
+        run: curl -fsS -o /dev/null -X POST "$DEPLOY_HOOK"

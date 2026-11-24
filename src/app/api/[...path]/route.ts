@@ -14,6 +14,7 @@
 // over this catch-all one.)
 
 import { backendPassHeaders } from "@/lib/backend-headers";
+import { env, maybe } from "@/env";
 
 type Context = { params: Promise<{ path: string[] }> };
 
@@ -34,7 +35,7 @@ async function forward(request: Request, { params }: Context) {
     return jsonError(404, "Not found");
   }
 
-  const backend = process.env.API_URL;
+  const backend = maybe(() => env.API_URL);
   if (!backend) {
     console.error("[api proxy] API_URL is not set. Add it to .env.local and to Vercel.");
     return jsonError(500, "Server is not configured");

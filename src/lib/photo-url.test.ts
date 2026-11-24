@@ -1,5 +1,10 @@
-import { describe, expect, it } from "vitest";
-import { photoSrcSet, photoThumb } from "./photo-url";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { photoSrcSet, photoThumb, reviewPhotoThumb } from "./photo-url";
+
+// Resized Supabase copies only exist on the production site's paid plan
+// (canResize in photo-url.ts), so most tests pretend to be production.
+beforeEach(() => vi.stubEnv("NEXT_PUBLIC_APP_ENV", "production"));
+afterEach(() => vi.unstubAllEnvs());
 
 const WIKI =
   "https://thumb.wikimedia.org/wikipedia/commons/thumb/a/a6/Bucari_Pine_Forest.jpg/1280px-Bucari_Pine_Forest.jpg";
@@ -58,5 +63,33 @@ describe("photoSrcSet", () => {
 
   it("is undefined when the address cannot be resized", () => {
     expect(photoSrcSet("https://images.unsplash.com/photo-123", [300])).toBeUndefined();
+  });
+});
+
+describe("Supabase photos off the production site", () => {
+  const REVIEW =
+    "https://ezcgvqfasuhsllbijqfm.supabase.co/storage/v1/object/public/review-photos/user/photo.webp";
+
+  it("asks production's Supabase for a small review thumbnail", () => {
+    const thumb = new URL(reviewPhotoThumb(REVIEW));
+
+    expect(thumb.pathname).toContain("/storage/v1/render/image/public/review-photos/");
+    expect(thumb.searchParams.get("width")).toBe("224");
+  });
+
+  it("uses the original review photo on staging, where resizing answers 403", () => {
+    vi.stubEnv("NEXT_PUBLIC_APP_ENV", "staging");
+
+    expect(reviewPhotoThumb(REVIEW)).toBe(REVIEW);
+  });
+
+  it("uses the original place photo on staging and in development", () => {
+    vi.stubEnv("NEXT_PUBLIC_APP_ENV", "staging");
+    const onStaging = photoThumb(SUPA, 800);
+    vi.stubEnv("NEXT_PUBLIC_APP_ENV", "development");
+    const inDevelopment = photoSrcSet(SUPA, [512, 800]);
+
+    expect(onStaging).toBe(SUPA);
+    expect(inDevelopment).toBeUndefined();
   });
 });
