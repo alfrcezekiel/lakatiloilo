@@ -6,6 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
+    "db:reset": "supabase db reset && npm run db:local:login",
+    "db:local:login": "node scripts/set-local-db-login.mjs",
     "lint": "eslint",
     "test": "vitest run",
     "test:watch": "vitest",

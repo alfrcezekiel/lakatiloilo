@@ -40,6 +40,17 @@ const sslOptions = (caCert?: string) => {
   return { rejectUnauthorized: false };
 };
 
+// The local Supabase database runs on this computer and has no SSL.
+// Only APP_ENV=local may skip it, so a hosted connection is always encrypted.
+const isLocalDatabase = (appEnv?: string, url?: string) => {
+  if (appEnv !== 'local' || !url) return false;
+  try {
+    return ['127.0.0.1', 'localhost'].includes(new URL(url).hostname);
+  } catch {
+    return false;
+  }
+};
+
 // How many database connections the backend keeps open at once (its
 // "pool"). Every request borrows one, so this caps how many database
 // questions run at the same time; the rest wait in line.
@@ -73,7 +84,9 @@ const poolMax = (value?: string) => {
         return {
           type: 'postgres' as const,
           url: configService.get<string>('DATABASE_URL'),
-          ssl: sslOptions(configService.get<string>('DATABASE_CA_CERT')),
+          ssl: isLocalDatabase(configService.get<string>('APP_ENV'), configService.get<string>('DATABASE_URL'))
+            ? false
+            : sslOptions(configService.get<string>('DATABASE_CA_CERT')),
           extra: { max },
           // Give up quickly if the database is down, so a request is not
           // left waiting through many slow retries.

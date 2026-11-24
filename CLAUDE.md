@@ -83,8 +83,9 @@ Testing never weakens the security baseline:
 - ZAP's active scan runs on localhost only.
 - k6 sends public GET requests only. Stress, spike and soak tests run on
   localhost unless the team agrees otherwise.
-- The local backend uses the **hosted** database, so heavy or attacking
-  tests are real traffic. The team starts them, not the agent.
+- `backend/.env.local` points at the **local** Supabase stack. Check that
+  before heavy or attacking tests, because any hosted address means real
+  traffic. The team starts them, not the agent.
 
 ## The workflow
 
@@ -132,7 +133,9 @@ one database change, so the whole database can be rebuilt from the repo.
 
   This wipes the local database, then replays all migrations and
   `supabase/seed.sql`. It needs Docker running. Never add `--remote` or
-  `--linked`: those target the hosted database.
+  `--linked`: those target the hosted database. A reset also removes the
+  local `lakat_api` password, so run `npm run db:local:login` afterwards.
+  `npm run db:reset` does both.
 - **Never make schema or RLS changes directly in the Supabase dashboard**,
   including its SQL Editor and Table Editor.
 - **Never edit a migration that has already been shared.** Add a new one.
