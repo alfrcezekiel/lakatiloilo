@@ -10,6 +10,7 @@
     "db:reset": "supabase db reset && npm run db:local:login",
     "db:local:login": "node scripts/set-local-db-login.mjs",
     "lint": "eslint",
+    "typecheck": "next typegen && tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test --project=local --project=local-phone",
