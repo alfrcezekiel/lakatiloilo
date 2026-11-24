@@ -1,9 +1,14 @@
 import { render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { ReviewPhotos } from "./ReviewPhoto";
+
+afterEach(() => vi.unstubAllEnvs());
 
 describe("review photo previews", () => {
   it("uses an aspect-preserving preview and keeps the original for the zoom view", () => {
+    // Resized previews are only asked for on the production site (paid
+    // Supabase plan, see canResize in src/lib/photo-url.ts).
+    vi.stubEnv("NEXT_PUBLIC_APP_ENV", "production");
     const original =
       "https://example.supabase.co/storage/v1/object/public/review-photos/traveler/photo.jpg";
 
