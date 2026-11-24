@@ -12,7 +12,8 @@ to teach them as you go.
 - Supabase for database, auth and storage: the hosted project for the
   live app, and the CLI's local stack for development and for testing
   migrations
-- Vercel for hosting — every push to `main` deploys
+- Vercel for hosting — every push to `main` (live) or `staging` deploys
+  (see CI/CD below)
 
 Never introduce another framework, database, hosting provider, CSS
 library or paid service. **Docker is only for the Supabase CLI's local
@@ -144,7 +145,47 @@ one database change, so the whole database can be rebuilt from the repo.
   Entities only map tables that already exist.
 
 The numbered files in `supabase/sql/` are kept as history. Do not add to
-them or run them. The team applies migrations to hosted projects.
+them or run them. Hosted databases get migrations only through the Deploy
+workflow (CI/CD below), when the team pushes to `staging` or `main`. Never
+run `db push` against a hosted database from your own machine.
+
+## CI/CD
+
+Two GitHub Actions workflows in `.github/workflows/`:
+
+- **`ci.yml`** runs on every pull request into `staging` or `main`. Three
+  jobs, which are required checks before merging (set in GitHub's branch
+  protection; never rename them):
+  - `backend`: lint (root ESLint on `backend/`), typecheck, unit and API
+    tests (pretend database), build.
+  - `frontend`: lint, typecheck, Vitest, `npm run build` with pretend,
+    non-secret env values so `src/env.ts` passes.
+  - `migrations`: a fresh database inside the runner, then
+    `npx supabase db reset`, proving every migration and `seed.sql` apply.
+  No secrets are used.
+- **`deploy.yml`** runs on every push to `staging` or `main`, one at a time
+  per branch. It runs `npx supabase db push --remote=… --yes` on that
+  branch's hosted database (never with `--include-seed`), and only if that
+  succeeds calls the backend's Vercel Deploy Hook.
+
+The backend deploys only through that hook: `backend/vercel.json` turns off
+Vercel's own Git deploys for `staging` and `main`. The website still
+deploys by itself on every push, so it can go live a minute before the
+backend. Keep database changes backward compatible (add, don't rename or
+drop in the same push).
+
+Secrets live only in GitHub (Settings → Secrets and variables → Actions),
+never in the repo or a chat:
+
+| Secret | Used on | What it is |
+|---|---|---|
+| `STAGING_DB_URL` | `staging` | staging's Session pooler address (port 5432, `postgres` user) |
+| `STAGING_BACKEND_DEPLOY_HOOK` | `staging` | the backend project's Deploy Hook for `staging` |
+| `PROD_DB_URL` | `main` | production's Session pooler address |
+| `PROD_BACKEND_DEPLOY_HOOK` | `main` | the backend project's Deploy Hook for `main` |
+
+Use the Session pooler, not the direct `db.<ref>.supabase.co` address:
+GitHub's runners can't reach the direct one.
 
 ## Where things live
 
