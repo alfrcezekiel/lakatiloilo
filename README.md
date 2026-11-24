@@ -126,6 +126,24 @@ with it. You will be asked.
 5. Read `supabase/sql/001-example.sql`. It explains Row Level Security,
    which is what stops strangers reading your data.
 
+## Running the website against staging
+
+`npm run dev` uses `.env.local`: your own backend on localhost:5000.
+To try the website on your laptop with **staging's** data instead:
+
+1. Copy `.env.staging.example` to `.env.staging.local` and fill it in
+   from the website's Vercel project (**Settings → Environment
+   Variables**, the staging/Preview values). Never Production's.
+2. Stop `npm run dev` first (Ctrl+C): Next.js runs only one dev server
+   per project folder. Then run `npm run dev:staging` and open
+   http://localhost:3000. The STAGING badge in the corner shows which one
+   you are on, and the terminal prints staging's backend and Supabase
+   addresses. It refuses to start if the file is missing, points at
+   localhost, or holds a secret Supabase key.
+
+`.env.local` is not changed. Stop with Ctrl+C and run `npm run dev` to go
+back. Anything you save while on staging is really saved there.
+
 ## The commands
 
 | Command            | What it does                                      |

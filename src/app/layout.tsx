@@ -3,6 +3,8 @@ import { connection } from "next/server";
 import { Fraunces, IBM_Plex_Mono, Inter } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/components/Providers";
+import { StagingBadge } from "@/components/StagingBadge";
+import { env } from "@/env";
 
 const fraunces = Fraunces({
   subsets: ["latin"],
@@ -30,6 +32,10 @@ const plexMono = IBM_Plex_Mono({
 export const metadata: Metadata = {
   title: "Lakat Iloilo",
   description: "Your guide to exploring Iloilo City and Iloilo Province",
+  // The staging site is for testing: ask search engines not to list it or
+  // follow its links (<meta name="robots" content="noindex, nofollow">).
+  // src/proxy.ts sends the same as an X-Robots-Tag header, for files too.
+  ...(env.isStaging && { robots: { index: false, follow: false } }),
 };
 
 export default async function RootLayout({ children }: LayoutProps<"/">) {
@@ -45,6 +51,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
     <html lang="en" className="h-full antialiased">
       <body className={`${fraunces.variable} ${inter.variable} ${plexMono.variable} min-h-full flex flex-col`}>
         <Providers>{children}</Providers>
+        {env.isStaging && <StagingBadge />}
       </body>
     </html>
   );

@@ -1,5 +1,6 @@
 import axios from "axios";
 import { backendPassHeaders } from "./backend-headers";
+import { env } from "@/env";
 
 // Calls to the NestJS backend (backend/), made with axios. Every page and
 // component gets its data through these functions, so the backend address
@@ -70,9 +71,7 @@ let client: ReturnType<typeof axios.create> | null = null;
 // The start of every backend address; the only place that reads API_URL.
 const backendBase = () => {
   if (typeof window !== "undefined") return "/api";
-  const backend = process.env.API_URL;
-  if (!backend) throw new Error("API_URL is not set. Add it to .env.local (see .env.example).");
-  return backend.replace(/\/+$/, "");
+  return env.API_URL.replace(/\/+$/, "");
 };
 
 const api = () => {

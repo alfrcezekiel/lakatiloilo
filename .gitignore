@@ -42,6 +42,7 @@ next-env.d.ts
 
 # ...but DO commit the template, it has no real values
 !.env.example
+!.env.staging.example
 !.env.test.example
 
 # k6 performance results (summaries go in docs/evaluations/ instead)

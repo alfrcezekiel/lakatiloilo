@@ -1,4 +1,5 @@
 import { createBrowserClient } from "@supabase/ssr";
+import { env } from "@/env";
 
 /**
  * Supabase client for BROWSER code — anything in a file with "use client".
@@ -9,16 +10,9 @@ import { createBrowserClient } from "@supabase/ssr";
  * public to the whole internet — see supabase/sql/001-example.sql.
  */
 export function createClient() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
-  if (!url || !anonKey) {
-    throw new Error(
-      "Supabase env vars missing. Copy .env.example to .env.local and fill in " +
-        "NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY from your " +
-        "Supabase project (click Connect). Add them in Vercel too.",
-    );
-  }
+  // Checked in src/env.ts: a missing value is an error naming it.
+  const url = env.NEXT_PUBLIC_SUPABASE_URL;
+  const anonKey = env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
   return createBrowserClient(url, anonKey);
 }

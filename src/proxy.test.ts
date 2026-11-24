@@ -125,3 +125,50 @@ describe("Content-Security-Policy", () => {
     expect(fetch).not.toHaveBeenCalled();
   });
 });
+
+describe("Maintenance mode and the staging site", () => {
+  it("shows the maintenance page with status 503 for every page when MAINTENANCE_MODE is true", async () => {
+    vi.stubEnv("MAINTENANCE_MODE", "true");
+
+    const response = await proxy(new NextRequest("http://localhost:3000/destinations/some-place"));
+
+    expect(response.status).toBe(503);
+    expect(response.headers.get("x-middleware-rewrite")).toBe("http://localhost:3000/maintenance");
+    expect(response.headers.get("content-security-policy")).toContain("default-src 'self'");
+  });
+
+  it("still serves files such as the icon during maintenance", async () => {
+    vi.stubEnv("MAINTENANCE_MODE", "true");
+
+    const response = await proxy(new NextRequest("http://localhost:3000/icon.png"));
+
+    expect(response.headers.get("x-middleware-rewrite")).toBeNull();
+  });
+
+  it("serves pages normally when MAINTENANCE_MODE is not set", async () => {
+    const response = await proxy(new NextRequest("http://localhost:3000/"));
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get("x-middleware-rewrite")).toBeNull();
+  });
+
+  it("asks search engines not to list the staging site, and only the staging site", async () => {
+    vi.stubEnv("NEXT_PUBLIC_APP_ENV", "staging");
+    const staging = await proxy(new NextRequest("http://localhost:3000/"));
+    vi.stubEnv("NEXT_PUBLIC_APP_ENV", "production");
+    const production = await proxy(new NextRequest("http://localhost:3000/"));
+
+    expect(staging.headers.get("x-robots-tag")).toBe("noindex, nofollow");
+    expect(production.headers.get("x-robots-tag")).toBeNull();
+  });
+});
+
+describe("Content-Security-Policy with the local Supabase stack", () => {
+  it("allows the local stack's address and its ws:// Realtime connection", async () => {
+    vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "http://127.0.0.1:54321");
+
+    const { enforced } = await policyFor("/");
+
+    expect(enforced).toContain("connect-src 'self' http://127.0.0.1:54321 ws://127.0.0.1:54321");
+  });
+});

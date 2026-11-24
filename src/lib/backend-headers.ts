@@ -1,3 +1,5 @@
+import { env } from "@/env";
+
 // The pass that lets the website's SERVER reach a backend protected by
 // Vercel's login screen (staging only). A visitor's browser is logged in to
 // nothing, and the website's server isn't either, so without this pass every
@@ -9,6 +11,6 @@
 // the staging branch on Vercel. Production and localhost do not have it.
 export const backendPassHeaders = (): Record<string, string> => {
   if (typeof window !== "undefined") return {};
-  const secret = process.env.BACKEND_PROTECTION_BYPASS;
+  const secret = env.BACKEND_PROTECTION_BYPASS;
   return secret ? { "x-vercel-protection-bypass": secret } : {};
 };

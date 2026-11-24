@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { backendPassHeaders } from "@/lib/backend-headers";
+import { env, maybe } from "@/env";
 
 // Next.js proxy (until Next.js 16 called "middleware"): runs on the server
 // before a page is served. Admin dashboard & moderation round, ticket 107,
@@ -55,7 +56,7 @@ async function isAdmin(accessToken: string) {
   if (until && until > Date.now()) return true;
   accepted.delete(accessToken);
 
-  const backend = process.env.API_URL;
+  const backend = maybe(() => env.API_URL);
   if (!backend) return false;
   try {
     const response = await fetch(`${backend}/v1/admin/me`, {
@@ -125,7 +126,7 @@ const MAPBOX = "https://api.mapbox.com https://*.tiles.mapbox.com https://events
 // the variable is missing (the app's Supabase client then fails loudly).
 function supabaseOrigin() {
   try {
-    return new URL(process.env.NEXT_PUBLIC_SUPABASE_URL ?? "").origin;
+    return new URL(env.NEXT_PUBLIC_SUPABASE_URL).origin;
   } catch {
     return "";
   }
@@ -137,9 +138,11 @@ function newNonce() {
 }
 
 export function contentSecurityPolicy(nonce: string) {
-  const dev = process.env.NODE_ENV === "development";
+  const dev = env.NODE_ENV === "development";
   const supabase = supabaseOrigin();
-  const realtime = supabase.replace(/^https:/, "wss:");
+  // Realtime's WebSocket address: wss:// for a hosted project (https), and
+  // ws:// for the Supabase CLI's local stack (http://127.0.0.1:54321).
+  const realtime = supabase.replace(/^http/, "ws");
   return [
     "default-src 'self'",
     `script-src 'self' 'nonce-${nonce}'${dev ? " 'unsafe-eval'" : ""}`,
@@ -179,9 +182,40 @@ export async function proxy(request: NextRequest) {
 
   const isAdminPage =
     (pathname === "/admin" || pathname.startsWith("/admin/")) && pathname !== "/admin/login";
-  // Every answer gets the policy, including the admin "not found" rewrite.
-  const response = isAdminPage ? await handleAdmin(request, requestHeaders) : NextResponse.next({ request: { headers: requestHeaders } });
+  // Every answer gets the policy, including the admin "not found" and
+  // maintenance rewrites.
+  const response = isMaintenance(pathname)
+    ? maintenance(request, requestHeaders)
+    : isAdminPage
+      ? await handleAdmin(request, requestHeaders)
+      : NextResponse.next({ request: { headers: requestHeaders } });
   response.headers.set(CSP_HEADER, policy);
+  // The staging site asks search engines not to list anything, photos and
+  // files included (the pages also say so in a <meta> tag, layout.tsx).
+  if (maybe(() => env.isStaging)) response.headers.set("X-Robots-Tag", "noindex, nofollow");
+  return response;
+}
+
+// Maintenance mode: with MAINTENANCE_MODE=true, every page shows the
+// maintenance page (src/app/maintenance/page.tsx), while the address bar
+// keeps the address that was asked for. Files with a dot in their name
+// (icon.png, robots.txt) still load, so the page keeps its icon. The
+// backend proxy (/api/v1/...) is outside the matcher below and is not
+// switched off. Status 503 ("back soon") tells search engines it is
+// temporary, so they keep the site listed.
+const MAINTENANCE_PAGE = "/maintenance";
+
+function isMaintenance(pathname: string) {
+  return maybe(() => env.MAINTENANCE_MODE) === true && !pathname.includes(".");
+}
+
+function maintenance(request: NextRequest, headers: Headers) {
+  const response = NextResponse.rewrite(new URL(MAINTENANCE_PAGE, request.url), {
+    status: 503,
+    request: { headers },
+  });
+  response.headers.set("Retry-After", "3600");
+  response.headers.set("Cache-Control", "no-store");
   return response;
 }
 
