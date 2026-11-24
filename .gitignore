@@ -17,6 +17,8 @@
 /.next/
 /out/
 
+staging-notes.txt
+
 # production
 /build
 
@@ -44,6 +46,7 @@ next-env.d.ts
 !.env.example
 !.env.staging.example
 !.env.test.example
+!.env.staging.example
 
 # k6 performance results (summaries go in docs/evaluations/ instead)
 /performance/k6/results/*
