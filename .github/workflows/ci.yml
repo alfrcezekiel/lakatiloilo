@@ -1,0 +1,142 @@
+# Checks every pull request into staging or main before it can be merged.
+#
+# Three jobs, run side by side. Their names (backend, frontend, migrations)
+# are what GitHub shows as status checks; mark all three "required" in
+# GitHub: Settings -> Branches -> branch protection for staging and main.
+# Renaming a job breaks that setting, so keep the names.
+#
+# No secrets are used here. Every value below is a pretend one, and the
+# database check runs on a fresh local database inside the runner.
+
+name: CI
+
+on:
+  pull_request:
+    branches: [staging, main]
+
+# A newer push to the same pull request cancels the older, unfinished run.
+concurrency:
+  group: ci-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  backend:
+    name: backend
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      # Node 24, the version Vercel builds both projects with.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            backend/package-lock.json
+
+      # The backend has no linter of its own: the root ESLint config covers
+      # backend/ too, so the root packages are installed for the lint step.
+      - name: Install root packages (ESLint)
+        run: npm ci
+
+      - name: Install backend packages
+        working-directory: backend
+        run: npm ci
+
+      - name: Lint
+        run: npx eslint backend
+
+      - name: Typecheck
+        working-directory: backend
+        run: npm run typecheck
+
+      # Unit tests, then the API tests (supertest). Both use a pretend
+      # database and pretend Supabase (backend/test/fakes), never a real one.
+      - name: Unit tests
+        working-directory: backend
+        run: npm run test
+
+      - name: API tests
+        working-directory: backend
+        run: npm run test:api
+
+      - name: Build
+        working-directory: backend
+        run: npm run build
+
+  frontend:
+    name: frontend
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    # src/env.ts checks these when the build starts. They are pretend,
+    # non-secret values: enough for the checks, never a real project.
+    # There is no NEXT_PUBLIC_API_URL: the backend address is the
+    # server-only API_URL (.claude/rules/frontend.md).
+    env:
+      NEXT_PUBLIC_APP_ENV: development
+      API_URL: http://localhost:5000
+      NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:54321
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ci-placeholder-anon-key
+      NEXT_PUBLIC_MAPBOX_TOKEN: pk.ci-placeholder-token
+      MAINTENANCE_MODE: "false"
+      NEXT_TELEMETRY_DISABLED: "1"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Install packages
+        run: npm ci
+
+      # backend/ is linted by the backend job.
+      - name: Lint
+        run: npx eslint . --ignore-pattern "backend/**"
+
+      - name: Typecheck
+        run: npx tsc --noEmit
+
+      - name: Unit and component tests
+        run: npm run test
+
+      - name: Build
+        run: npm run build
+
+  migrations:
+    name: migrations
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      # The Supabase CLI is a devDependency of the root package.json.
+      - name: Install packages (Supabase CLI)
+        run: npm ci
+
+      # A fresh, empty Postgres inside the runner (Docker), from
+      # supabase/config.toml. Nothing hosted is touched.
+      - name: Start a local database
+        run: npx supabase db start
+
+      # Replays every file in supabase/migrations/, then supabase/seed.sql.
+      # If any of them fails on a fresh database, this check fails.
+      - name: Apply all migrations and the seed
+        run: npx supabase db reset
+
+      - name: Stop the local database
+        if: always()
+        run: npx supabase stop --no-backup
