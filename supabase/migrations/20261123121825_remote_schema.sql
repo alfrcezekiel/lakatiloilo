@@ -2417,6 +2417,7 @@ CREATE POLICY "travelers can upload to their own video folder" ON "storage"."obj
   TO "authenticated"
   WITH CHECK (((bucket_id = 'review-videos'::text) AND ((storage.foldername(name))[1] = (( SELECT auth.uid() AS uid))::text)));
 
+DROP EVENT TRIGGER IF EXISTS "ensure_rls";
 CREATE EVENT TRIGGER "ensure_rls"
   ON ddl_command_end
   WHEN TAG IN ('CREATE TABLE', 'CREATE TABLE AS', 'SELECT INTO')
