@@ -106,7 +106,7 @@ Project helpers (Lakat Iloilo):
 | A ticket needs a backend endpoint     | `/new-endpoint`     | controller, service, api.ts, spec line |
 | A ticket needs a database change      | `/sql-change`       | tested `supabase/migrations/` file |
 | Something looks wrong at one width    | `/responsive-check` | measured fix at 375–1440 px      |
-| The team says "commit and push"       | `/ship`             | one safe commit on `main`        |
+| The team says "commit and push"       | `/ship`             | a branch + pull request link     |
 | After a push, or after the team tests | `/live-check`       | a test to follow, ticked ticket  |
 | A ticket, bug or demo needs tests     | `/write-tests`      | tests at the right layer, a plain-English result |
 | Before a demo, or "is it good?"       | `/evaluate-app`     | graded, read-only report         |
