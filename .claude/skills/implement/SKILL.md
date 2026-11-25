@@ -25,14 +25,17 @@ which command to run first. No spec, no code.
    table's SQL must enable Row Level Security and create its policies in
    the same file — see `supabase/sql/001-example.sql` for the shape. Test
    it with `npx supabase db reset`, never with `--remote` or `--linked`.
-   Show the team the SQL and wait for them to confirm they applied it to
-   the hosted project before continuing.
+   Show the team the SQL. Nobody applies it to a hosted project by hand:
+   the Deploy workflow does that when the pull request is merged
+   (CLAUDE.md, CI/CD).
 4. **Check it builds:** run `npm run build`. This is exactly what Vercel
    runs — if it fails here, it will fail there. Fix every error before
    moving on. A small test for tricky logic is welcome, not required.
-5. **Commit and push** with a message like `feat: 03 — booking form`.
-   Then tell the team to open the live URL in about a minute and check
-   the acceptance criteria themselves, on a phone if they can.
+5. **Commit and push only when the team asks, with `/ship`**: it commits
+   on a branch (for example `feat/03-booking-form`), pushes it and gives
+   the team a pull request link into `staging`. After they merge it, they
+   check the acceptance criteria on the staging site, on a phone if they
+   can. It reaches the live URL when staging is released into `main`.
 6. **Update the ticket:** tick the criteria that are met, and set
    `Status: done` once the team confirms it works live.
 7. **Explain** in two or three plain-English sentences what changed and
