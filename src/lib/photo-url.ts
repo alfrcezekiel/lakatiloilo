@@ -6,7 +6,7 @@ import { env, maybe } from "@/env";
 //     few fixed widths — 120, 250, 500, 960 and 1280; any other width
 //     answers 400 — so a smaller size snaps to the nearest one.
 //   - Place photos uploaded to Supabase Storage remain untouched in storage;
-//     on the production site the page requests high-quality WebP copies
+//     on a paid Supabase plan the page requests high-quality WebP copies
 //     sized for display (see canResize).
 //   - Anything else (Unsplash's already-sized URLs, the splash art):
 //     returned unchanged.
@@ -19,15 +19,15 @@ import { env, maybe } from "@/env";
 const WIKIMEDIA_BUCKETS = [120, 250, 500, 960, 1280];
 
 // Supabase can send a resized copy of a Storage photo (the
-// /storage/v1/render/image/ address), but only on a paid plan. The
-// production project has it. The free staging project answers every resize
-// with 403 "FeatureNotEnabled", which showed empty review thumbnails on
-// staging (2026-11-24). So resized copies are asked for only on the
-// production site; elsewhere the original photo is used, and the browser
-// shrinks it to fit. If staging moves to a paid plan, or production to the
-// free one, change this line.
+// /storage/v1/render/image/ address), but only on a paid plan. On the free
+// plan every resize answers 403 "FeatureNotEnabled", which showed empty
+// thumbnails on staging (2026-11-24) and, after production moved to a new
+// free project, on production too (2026-11-26). So resized copies are asked
+// for only when NEXT_PUBLIC_SUPABASE_IMAGE_RESIZE is "true" (a project on a
+// paid plan); otherwise the original photo is used, and the browser shrinks
+// it to fit.
 function canResize(parsed: URL) {
-  return parsed.hostname.endsWith(".supabase.co") && maybe(() => env.NEXT_PUBLIC_APP_ENV) === "production";
+  return parsed.hostname.endsWith(".supabase.co") && maybe(() => env.NEXT_PUBLIC_SUPABASE_IMAGE_RESIZE) === true;
 }
 
 // The size segment at the end of a thumbnail path: "/1280px-Name.jpg".

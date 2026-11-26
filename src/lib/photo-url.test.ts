@@ -1,9 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { photoSrcSet, photoThumb, reviewPhotoThumb } from "./photo-url";
 
-// Resized Supabase copies only exist on the production site's paid plan
-// (canResize in photo-url.ts), so most tests pretend to be production.
-beforeEach(() => vi.stubEnv("NEXT_PUBLIC_APP_ENV", "production"));
+// Resized Supabase copies only exist on a paid Supabase plan (canResize in
+// photo-url.ts), so most tests turn resizing on.
+beforeEach(() => vi.stubEnv("NEXT_PUBLIC_SUPABASE_IMAGE_RESIZE", "true"));
 afterEach(() => vi.unstubAllEnvs());
 
 const WIKI =
@@ -66,30 +66,38 @@ describe("photoSrcSet", () => {
   });
 });
 
-describe("Supabase photos off the production site", () => {
+describe("Supabase photos without image resizing", () => {
   const REVIEW =
     "https://ezcgvqfasuhsllbijqfm.supabase.co/storage/v1/object/public/review-photos/user/photo.webp";
 
-  it("asks production's Supabase for a small review thumbnail", () => {
+  it("asks a paid Supabase project for a small review thumbnail", () => {
     const thumb = new URL(reviewPhotoThumb(REVIEW));
 
     expect(thumb.pathname).toContain("/storage/v1/render/image/public/review-photos/");
     expect(thumb.searchParams.get("width")).toBe("224");
   });
 
-  it("uses the original review photo on staging, where resizing answers 403", () => {
-    vi.stubEnv("NEXT_PUBLIC_APP_ENV", "staging");
+  it("uses the original review photo when resizing is off, where it answers 403", () => {
+    vi.stubEnv("NEXT_PUBLIC_SUPABASE_IMAGE_RESIZE", "false");
 
     expect(reviewPhotoThumb(REVIEW)).toBe(REVIEW);
   });
 
-  it("uses the original place photo on staging and in development", () => {
-    vi.stubEnv("NEXT_PUBLIC_APP_ENV", "staging");
-    const onStaging = photoThumb(SUPA, 800);
-    vi.stubEnv("NEXT_PUBLIC_APP_ENV", "development");
-    const inDevelopment = photoSrcSet(SUPA, [512, 800]);
+  it("uses the original place photo when resizing is off or not set", () => {
+    vi.stubEnv("NEXT_PUBLIC_SUPABASE_IMAGE_RESIZE", "false");
+    const whenOff = photoThumb(SUPA, 800);
+    vi.stubEnv("NEXT_PUBLIC_SUPABASE_IMAGE_RESIZE", undefined);
+    const whenNotSet = photoSrcSet(SUPA, [512, 800]);
 
-    expect(onStaging).toBe(SUPA);
-    expect(inDevelopment).toBeUndefined();
+    expect(whenOff).toBe(SUPA);
+    expect(whenNotSet).toBeUndefined();
+  });
+
+  it("uses the original photo on production when resizing is off", () => {
+    vi.stubEnv("NEXT_PUBLIC_APP_ENV", "production");
+    vi.stubEnv("NEXT_PUBLIC_SUPABASE_IMAGE_RESIZE", "false");
+
+    expect(reviewPhotoThumb(REVIEW)).toBe(REVIEW);
+    expect(photoThumb(SUPA, 800)).toBe(SUPA);
   });
 });
