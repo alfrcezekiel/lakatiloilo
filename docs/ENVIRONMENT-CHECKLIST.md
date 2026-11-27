@@ -67,6 +67,11 @@ so a new project's backend cannot log in until someone sets one.
 - [ ] Delete that query from the SQL Editor's saved list or history afterwards.
 - [ ] Use the same password in step 1.
 
+This is the **only** change this project makes in the SQL Editor, because a
+password must never be written into a migration file in the repo. It is not
+permission for any other change there: tables, policies and grants change
+only through `supabase/migrations/`.
+
 Symptom when wrong: `password authentication failed for user "lakat_api"`.
 **One** such line right after a change is normal while the pooler catches up.
 It only matters if it keeps repeating.
@@ -140,12 +145,14 @@ On 2026-11-26 the matching values were 17, 62, 14, 3 and `extensions`. Recount
 them if migrations have been added since.
 
 - [ ] Only if they match, the team agrees, then marks the files that are
-      already in the database as applied. This writes only to the history
-      list and changes no tables:
-
-```bash
-npx supabase migration repair --remote="<the Session pooler address from step 5>" --status applied <version> <version>
-```
+      already in the database as applied. This is a rare emergency step. It
+      writes only to the history list and changes no tables. Run it from
+      GitHub, not from a laptop, so the `postgres` password never leaves
+      GitHub's secrets: **Actions → Repair migration history → Run
+      workflow**, pick `staging` or `production`, and type the versions (the
+      14-digit start of each file name), separated by spaces.
+      (`.github/workflows/repair-migrations.yml`). The run prints the history
+      before and after.
 
 - [ ] Re-run the Deploy workflow. It should apply only the missing files.
 
@@ -174,6 +181,8 @@ so a push alone does not redeploy it.
 - [ ] Re-run the Deploy workflow for the branch, or in Vercel filter
       Deployments by branch and **Redeploy** the newest one for **that branch**.
       A Preview deployment built from `main` does not serve the staging address.
+      Never push an empty commit (such as "redeploy staging") to redeploy:
+      it fills the history with commits that change nothing.
 - [ ] In the backend's logs, the newest lines show the **new** deployment ID
       and `Nest application successfully started`.
 - [ ] `/health` answers on the backend's address.

@@ -16,7 +16,16 @@ differ, these win, because the team asked for them.
   `backend/.env` is staged, and that no `service_role` or `sb_secret_`
   value appears in the staged diff.
 - Commit messages: `feat: NN — what it does`, `fix: …`, `docs: …`,
-  `refactor: …`, ending with the attribution line the app asks for.
+  `refactor: …`, `chore: …`, ending with the attribution line the app asks for.
+- **A commit message says what the commit changes.** A package update gets
+  its own commit, such as `chore: update Supabase CLI to 3.4.0`, never one
+  hidden under another message. The Supabase CLI matters most: the Deploy
+  workflow uses it on the hosted databases. (Code review, 2026-11-27: an
+  update to it was committed as "redeploy staging".)
+- **Never push an empty commit to redeploy.** Re-run the Deploy workflow
+  (GitHub → Actions → Deploy → Re-run all jobs), or press **Redeploy** on
+  that branch's newest deployment in Vercel
+  (`docs/ENVIRONMENT-CHECKLIST.md`, step 9).
 
 ## Testing
 

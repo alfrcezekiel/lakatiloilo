@@ -184,6 +184,12 @@ never in the repo or a chat:
 | `PROD_DB_URL` | `main` | production's Session pooler address |
 | `PROD_BACKEND_DEPLOY_HOOK` | `main` | the backend project's Deploy Hook for `main` |
 
+A third workflow, **`repair-migrations.yml`**, runs only when the team starts
+it by hand (Actions → Repair migration history). It marks migration files as
+already applied on a hosted database that has the tables but lost the
+history list, and changes no tables. Use it only for step 7 of
+`docs/ENVIRONMENT-CHECKLIST.md`, after the team agrees.
+
 Use the Session pooler, not the direct `db.<ref>.supabase.co` address:
 GitHub's runners can't reach the direct one.
 
@@ -194,6 +200,8 @@ GitHub's runners can't reach the direct one.
 - `docs/SPEC.md` — what we are building
 - `docs/tickets/` — one file per ticket
 - `docs/LATER.md` — good ideas that are not in the MVP
+- `docs/ENVIRONMENT-CHECKLIST.md` — moving staging or production to a
+  new Supabase project, step by step
 - `supabase/migrations/` — every database change, so the database can
   be rebuilt from the repo
 - `supabase/seed.sql` — fake data for local development and staging

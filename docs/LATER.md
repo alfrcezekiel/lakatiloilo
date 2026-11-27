@@ -281,3 +281,14 @@ Parked to keep the round to one session (docs/SPEC.md, Screens 32):
   Possible fix, for the team to agree first: make the bucket private and
   have the backend give out short-lived links only for reviews a visitor
   may see. Check whether review photos need the same change.
+
+### From the code review of the staging push (2026-11-27)
+- **Photos are full-size on staging and production.** Both Supabase projects
+  are on the free plan, so `NEXT_PUBLIC_SUPABASE_IMAGE_RESIZE` is `false`
+  (set in Vercel, 2026-11-27) and every thumbnail downloads the original
+  photo (`src/lib/photo-url.ts`). Uploads are already WebP and at most 2 MB,
+  so the cost is moderate. First measure it on a phone:
+  `npm run perf:lighthouse:mobile` (place page, LCP ≤ 2.5 s). If it misses,
+  options for the team to agree: save a small thumbnail copy when a photo is
+  uploaded (the backend already converts photos to WebP), or a paid
+  Supabase plan and the setting back to `true`.

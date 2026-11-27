@@ -66,7 +66,7 @@ describe("photoSrcSet", () => {
   });
 });
 
-describe("Supabase photos without image resizing", () => {
+describe("the Supabase image resizing setting", () => {
   const REVIEW =
     "https://ezcgvqfasuhsllbijqfm.supabase.co/storage/v1/object/public/review-photos/user/photo.webp";
 
