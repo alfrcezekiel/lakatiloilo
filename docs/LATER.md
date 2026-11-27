@@ -294,3 +294,13 @@ Parked to keep the round to one session (docs/SPEC.md, Screens 32):
   options for the team to agree: save a small thumbnail copy when a photo is
   uploaded (the backend already converts photos to WebP), or a paid
   Supabase plan and the setting back to `true`.
+- **Place page LCP on a simulated slow phone** (Lighthouse on localhost,
+  2026-11-27; team choice: accept and park). The header picture is small
+  (28 KB) and really appears in 0.72 s, but on the simulated slow 4G it
+  shares the connection with 583 KB of other files: three web fonts
+  (129 KB, at the same High priority as the picture), React and Next.js,
+  and the Supabase live-updates code. Simulated LCP 4.5 s (limit 2.5 s).
+  Ideas if it is picked up: stop preloading IBM Plex Mono and Fraunces
+  italic (`preload: false` in `src/app/layout.tsx`, about 80 KB), and load
+  Mapbox's stylesheet with the map instead of on every place page.
+  Details: `docs/evaluations/2026-11-27-lighthouse.md`.
