@@ -4,7 +4,7 @@
 //
 //   npm run perf:lighthouse:focus
 //
-// Same settings as run.mjs (BASE_URL, DEVICES, PAGES), plus:
+// Same settings as run.mjs (BASE_URL, DEVICES, PAGES, PLACE_ID), plus:
 //   AUDITS   comma-separated audit ids (default below). List what a run
 //            produced with: grep -o '"[a-z-]*": {' report.html is not
 //            reliable — check lhr.audits keys, or docs/TESTING.md.
@@ -23,6 +23,7 @@ import { fileURLToPath } from "node:url";
 import * as chromeLauncher from "chrome-launcher";
 import lighthouse from "lighthouse";
 import desktopConfig from "lighthouse/core/config/desktop-config.js";
+import { placePath } from "./place.mjs";
 
 const args = Object.fromEntries(
   process.argv.slice(2).filter((a) => a.includes("=")).map((a) => a.split(/=(.*)/s).slice(0, 2)),
@@ -32,7 +33,7 @@ const DEVICES = (args.DEVICES ?? process.env.DEVICES ?? "mobile").split(",").map
 
 const ALL_PAGES = [
   { name: "home", path: "/" },
-  { name: "place", path: "/destinations/5d1155a1-6e40-417d-9c84-09a990cae00d" },
+  { name: "place", path: placePath(BASE_URL, args.PLACE_ID ?? process.env.PLACE_ID) },
 ];
 const only = (args.PAGES ?? process.env.PAGES ?? "").split(",").map((p) => p.trim()).filter(Boolean);
 const PAGES = only.length ? ALL_PAGES.filter((p) => only.includes(p.name)) : ALL_PAGES;

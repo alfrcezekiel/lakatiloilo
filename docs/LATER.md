@@ -287,8 +287,10 @@ Parked to keep the round to one session (docs/SPEC.md, Screens 32):
   are on the free plan, so `NEXT_PUBLIC_SUPABASE_IMAGE_RESIZE` is `false`
   (set in Vercel, 2026-11-27) and every thumbnail downloads the original
   photo (`src/lib/photo-url.ts`). Uploads are already WebP and at most 2 MB,
-  so the cost is moderate. First measure it on a phone:
-  `npm run perf:lighthouse:mobile` (place page, LCP ≤ 2.5 s). If it misses,
+  so the cost is moderate. The team measures only on their own computer
+  (`docs/evaluations/2026-11-27-lighthouse.md`), where seed photos are
+  placeholders, so real photo sizes stay unmeasured until the team decides
+  otherwise. If a measurement shows place LCP over 2.5 s,
   options for the team to agree: save a small thumbnail copy when a photo is
   uploaded (the backend already converts photos to WebP), or a paid
   Supabase plan and the setting back to `true`.
