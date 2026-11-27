@@ -39,6 +39,11 @@ const publicSchema = z.object({
   NEXT_PUBLIC_SUPABASE_ANON_KEY: text,
   // Mapbox's public token (starts with pk.), for the maps on place pages.
   NEXT_PUBLIC_MAPBOX_TOKEN: text,
+  // "true" asks Supabase for resized photo copies (smaller thumbnails).
+  // Only a paid Supabase plan has image resizing; on the free plan every
+  // resized copy answers 403 and the photo stays empty (2026-11-26). Leave
+  // it out, or "false", to use the original photos (src/lib/photo-url.ts).
+  NEXT_PUBLIC_SUPABASE_IMAGE_RESIZE: z._default(z.enum(["true", "false"]), "false"),
 });
 
 // Server only. Never add NEXT_PUBLIC_ to these.
@@ -102,6 +107,9 @@ export const env = {
   },
   get NEXT_PUBLIC_MAPBOX_TOKEN() {
     return read("NEXT_PUBLIC_MAPBOX_TOKEN", process.env.NEXT_PUBLIC_MAPBOX_TOKEN);
+  },
+  get NEXT_PUBLIC_SUPABASE_IMAGE_RESIZE() {
+    return read("NEXT_PUBLIC_SUPABASE_IMAGE_RESIZE", process.env.NEXT_PUBLIC_SUPABASE_IMAGE_RESIZE) === "true";
   },
   get API_URL() {
     return serverOnly("API_URL", process.env.API_URL);

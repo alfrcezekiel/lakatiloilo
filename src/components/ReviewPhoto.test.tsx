@@ -6,9 +6,9 @@ afterEach(() => vi.unstubAllEnvs());
 
 describe("review photo previews", () => {
   it("uses an aspect-preserving preview and keeps the original for the zoom view", () => {
-    // Resized previews are only asked for on the production site (paid
+    // Resized previews are only asked for when image resizing is on (paid
     // Supabase plan, see canResize in src/lib/photo-url.ts).
-    vi.stubEnv("NEXT_PUBLIC_APP_ENV", "production");
+    vi.stubEnv("NEXT_PUBLIC_SUPABASE_IMAGE_RESIZE", "true");
     const original =
       "https://example.supabase.co/storage/v1/object/public/review-photos/traveler/photo.jpg";
 
