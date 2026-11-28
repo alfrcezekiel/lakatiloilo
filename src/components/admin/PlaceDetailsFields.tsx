@@ -53,9 +53,13 @@ export function PlaceDetailsFields({
       <GlassField
         id="place-description"
         label="Description"
-        hint={`${fields.description.trim().length} of ${PLACE_LIMITS.description} characters`}
+        hint={`Leave an empty line between paragraphs. ${fields.description.trim().length} of ${PLACE_LIMITS.description} characters`}
         error={errors.description}
       >
+        {/* Grows with the text (team request 2026-11-28), so the admin
+            sees every paragraph at once, as the place page shows them.
+            field-sizing-content does the growing; browsers without it
+            keep the 6 rows and the drag handle. */}
         <Textarea
           id="place-description"
           value={fields.description}
@@ -63,7 +67,7 @@ export function PlaceDetailsFields({
           rows={6}
           aria-invalid={!!errors.description}
           aria-describedby={describedBy("description", true)}
-          className={cn(fieldInputClass, "min-h-36 resize-y")}
+          className={cn(fieldInputClass, "field-sizing-content min-h-36 resize-y")}
         />
       </GlassField>
 
