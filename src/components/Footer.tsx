@@ -3,7 +3,9 @@ import Link from "next/link";
 import { Logo } from "@/components/Logo";
 import { scrollToSection } from "@/lib/utils/scroll";
 
-export function Footer() {
+// `hasFaqs`: the home page shows a FAQs section (ticket 171), so the
+// FAQs link has somewhere to go.
+export function Footer({ hasFaqs = false }: { hasFaqs?: boolean }) {
   const currentYear = new Date().getFullYear();
 
   return (
@@ -61,6 +63,17 @@ export function Footer() {
                   Explore
                 </button>
               </li>
+              {hasFaqs && (
+                <li>
+                  <button
+                    type="button"
+                    onClick={() => scrollToSection("faq")}
+                    className="min-h-6 cursor-pointer text-sm text-white/80 hover:text-white transition-colors"
+                  >
+                    FAQs
+                  </button>
+                </li>
+              )}
             </ul>
           </div>
 

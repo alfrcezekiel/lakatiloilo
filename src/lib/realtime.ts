@@ -33,7 +33,11 @@ export type LiveTable =
   | "report_signals"
   // The team added or deleted a category or kind (ticket 117,
   // supabase/sql/047).
-  | "place_categories";
+  | "place_categories"
+  // The team changed the FAQs (ticket 173). Holds only a time: the faqs
+  // table stays off the Realtime list, because a hidden question could not
+  // be announced to visitors (supabase/migrations/…_faq_signals.sql).
+  | "faq_signals";
 
 // What to listen to: a table name means every change in it. The longer
 // form narrows it to one kind of change and/or rows matching a filter that

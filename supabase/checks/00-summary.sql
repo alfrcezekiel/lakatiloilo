@@ -78,7 +78,8 @@ from (
   where n.nspname = 'public' and c.relkind in ('r', 'p', 'v', 'm')
     and c.relname not in ('destinations', 'accommodations', 'place_categories',
                           'reviews', 'review_replies', 'review_likes', 'reply_likes',
-                          'review_photos', 'report_signals', 'review_visibility_signals')
+                          'review_photos', 'report_signals', 'review_visibility_signals',
+                          'faqs', 'faq_signals')
     and (has_table_privilege('anon', c.oid, 'SELECT')
          or exists (select 1 from pg_policies p
                     where p.schemaname = 'public' and p.tablename = c.relname
@@ -138,7 +139,7 @@ from (
                                          'review_likes', 'review_replies', 'reply_likes',
                                          'notifications', 'review_visibility_signals',
                                          'review_photos', 'report_signals',
-                                         'place_categories')))
+                                         'place_categories', 'faq_signals')))
 ) as checks
 order by check_name;
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, Flag, LayoutDashboard, LogOut, MapPin, Menu, MessageSquare, Tags, Trash2, X, type LucideIcon } from "lucide-react";
+import { ArrowLeft, CircleHelp, Flag, LayoutDashboard, LogOut, MapPin, Menu, MessageSquare, Tags, Trash2, X, type LucideIcon } from "lucide-react";
 import { useState } from "react";
 import Link from "next/link";
 import { notFound, usePathname, useRouter } from "next/navigation";
@@ -13,7 +13,7 @@ import { displayNameOf, logOut, useCurrentUser } from "@/lib/login";
 import { cn } from "@/lib/utils";
 
 // The dashboard's sections (Reports since ticket 108, Places since 112,
-// Reviews since 122, Categories since 2026-11-11).
+// Reviews since 122, Categories since 2026-11-11, FAQs since 168).
 // "ready: false" shows a section as "Soon", not a link.
 const sections: { href: string; label: string; icon: LucideIcon; ready: boolean }[] = [
   { href: "/admin", label: "Overview", icon: LayoutDashboard, ready: true },
@@ -23,6 +23,8 @@ const sections: { href: string; label: string; icon: LucideIcon; ready: boolean 
   // Its own page since 2026-11-11 (team request): it was at the bottom of
   // Places.
   { href: "/admin/categories", label: "Categories", icon: Tags, ready: true },
+  // Ticket 168: the home page's frequently asked questions.
+  { href: "/admin/faqs", label: "FAQs", icon: CircleHelp, ready: true },
   // Ticket 147: what admins deleted waits there for 30 days.
   { href: "/admin/trash", label: "Trash", icon: Trash2, ready: true },
 ];

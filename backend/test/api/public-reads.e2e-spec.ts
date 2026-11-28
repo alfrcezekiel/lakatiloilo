@@ -70,6 +70,7 @@ describe('Public reads, headers and CORS (API)', () => {
       '/v1/accommodations',
       '/v1/ratings',
       '/v1/categories',
+      '/v1/faqs',
       '/v1/destinations/near?lat=10.72&lng=122.56&radius_km=5',
       '/v1/accommodations/near?lat=10.72&lng=122.56&radius_km=5',
       `/v1/reviews?place_type=destination&place_id=${UNKNOWN_ID}`,

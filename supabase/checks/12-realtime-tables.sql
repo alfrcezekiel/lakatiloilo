@@ -9,12 +9,14 @@
 -- be published at all. Publishing "all tables" would also publish every
 -- table added later.
 --
--- Expected published tables (11), and the file that added each:
+-- Expected published tables (12), and the file that added each:
 --   029: destinations, accommodations, reviews, review_likes,
 --        review_replies
 --   032: reply_likes          035: notifications
 --   041: review_visibility_signals          044: review_photos
 --   045: report_signals       047: place_categories
+--   migrations/…_faq_signals.sql: faq_signals (the faqs table itself is
+--   NOT published: a hidden question could not be announced to visitors)
 -- A new file that adds one must add it to the list below and in
 -- 00-summary.sql.
 --
@@ -45,7 +47,7 @@ where pt.pubname = 'supabase_realtime'
       'destinations', 'accommodations', 'reviews', 'review_likes',
       'review_replies', 'reply_likes', 'notifications',
       'review_visibility_signals', 'review_photos', 'report_signals',
-      'place_categories'
+      'place_categories', 'faq_signals'
     )
   )
 order by 1, 2;
