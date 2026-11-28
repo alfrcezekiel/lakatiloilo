@@ -180,23 +180,35 @@ export function PlaceMap({
   // Both kinds of page are teal (ticket 161).
   const panel = "bg-teal-950/60";
 
-  // Wait until the map is close to the screen before loading Mapbox.
+  // Load Mapbox (1.9 MB, 524 KB compressed) only once the page has finished
+  // loading AND the map is on screen. Lighthouse 2026-11-27, a short place
+  // page on a phone: with a 400 px head start the map loaded straight away,
+  // kept the phone busy for over a second (TBT 450 ms) and slowed the main
+  // photo on slow 4G (LCP 4.1 s).
   useEffect(() => {
     const element = frame.current;
     if (!element || near || failed) return;
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (!entries.some((e) => e.isIntersecting)) return;
-        // No WebGL (an old phone, or graphics switched off): the fallback
-        // card instead of an empty box. Checked here, in the observer's
-        // callback, so no state is set straight inside an effect.
-        if (supportsWebGL()) setNear(true);
-        else setFailed(true);
-      },
-      { rootMargin: "400px 0px" },
-    );
-    observer.observe(element);
-    return () => observer.disconnect();
+    let observer: IntersectionObserver | null = null;
+    const watch = () => {
+      observer = new IntersectionObserver(
+        (entries) => {
+          if (!entries.some((e) => e.isIntersecting)) return;
+          // No WebGL (an old phone, or graphics switched off): the fallback
+          // card instead of an empty box. Checked here, in the observer's
+          // callback, so no state is set straight inside an effect.
+          if (supportsWebGL()) setNear(true);
+          else setFailed(true);
+        },
+        { rootMargin: "0px" },
+      );
+      observer.observe(element);
+    };
+    if (document.readyState === "complete") watch();
+    else window.addEventListener("load", watch, { once: true });
+    return () => {
+      window.removeEventListener("load", watch);
+      observer?.disconnect();
+    };
   }, [near, failed]);
 
   useEffect(() => {

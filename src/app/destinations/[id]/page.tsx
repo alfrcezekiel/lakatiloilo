@@ -1,3 +1,4 @@
+import { PlaceDescription } from "@/components/PlaceDescription";
 import type { Metadata } from "next";
 import { cache } from "react";
 import { Navigation } from "lucide-react";
@@ -151,7 +152,7 @@ export default async function DestinationDetailPage({
               <Reveal>
                 <section id="overview" className="scroll-mt-36">
                   <SectionHeading eyebrow={`${number("overview")} — About`}>About</SectionHeading>
-                  <p className="max-w-[68ch] text-lg leading-relaxed text-white/90">{destination.description}</p>
+                  <PlaceDescription description={destination.description} />
                 </section>
               </Reveal>
               {/* Its other allowed photos (ticket 146). */}

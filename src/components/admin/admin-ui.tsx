@@ -28,6 +28,9 @@ export const REPORTS_KEY = ["admin", "reports"] as const;
 // The Trash (ticket 147): asked again after each delete and restore.
 export const ADMIN_TRASH_KEY = ["admin", "trash"] as const;
 
+// The FAQs list (tickets 168, 169): the screen and its Add / Edit form.
+export const ADMIN_FAQS_KEY = ["admin", "faqs"] as const;
+
 // Settings for every dashboard data request (slow admin pages, team
 // report 2026-11-09). Each page starts its request straight away, next to
 // the "who is logged in" check instead of after it, so the two run at the

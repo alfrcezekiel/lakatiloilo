@@ -281,3 +281,36 @@ Parked to keep the round to one session (docs/SPEC.md, Screens 32):
   Possible fix, for the team to agree first: make the bucket private and
   have the backend give out short-lived links only for reviews a visitor
   may see. Check whether review photos need the same change.
+
+### From the code review of the staging push (2026-11-27)
+- **Photos are full-size on staging and production.** Both Supabase projects
+  are on the free plan, so `NEXT_PUBLIC_SUPABASE_IMAGE_RESIZE` is `false`
+  (set in Vercel, 2026-11-27) and every thumbnail downloads the original
+  photo (`src/lib/photo-url.ts`). Uploads are already WebP and at most 2 MB,
+  so the cost is moderate. The team measures only on their own computer
+  (`docs/evaluations/2026-11-27-lighthouse.md`), where seed photos are
+  placeholders, so real photo sizes stay unmeasured until the team decides
+  otherwise. If a measurement shows place LCP over 2.5 s,
+  options for the team to agree: save a small thumbnail copy when a photo is
+  uploaded (the backend already converts photos to WebP), or a paid
+  Supabase plan and the setting back to `true`.
+- **Place page LCP on a simulated slow phone** (Lighthouse on localhost,
+  2026-11-27; team choice: accept and park). The header picture is small
+  (28 KB) and really appears in 0.72 s, but on the simulated slow 4G it
+  shares the connection with 583 KB of other files: three web fonts
+  (129 KB, at the same High priority as the picture), React and Next.js,
+  and the Supabase live-updates code. Simulated LCP 4.5 s (limit 2.5 s).
+  Ideas if it is picked up: stop preloading IBM Plex Mono and Fraunces
+  italic (`preload: false` in `src/app/layout.tsx`, about 80 KB), and load
+  Mapbox's stylesheet with the map instead of on every place page.
+  Details: `docs/evaluations/2026-11-27-lighthouse.md`.
+
+### From the FAQs round (2026-11-28)
+Parked when the FAQs round was written, to keep it to one round:
+- A search box inside the FAQs
+- "Was this helpful?" votes on each answer
+- A "Still have questions? Contact us" form (it needs somewhere to send messages)
+- FAQs on the destination and accommodation pages
+- Deleted questions going to the Trash (they get the 8-second Undo only)
+- Translations (Hiligaynon, Filipino)
+- Dragging questions to reorder them in /admin (Move up and Move down instead)

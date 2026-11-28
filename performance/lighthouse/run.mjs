@@ -14,6 +14,8 @@
 //   BASE_URL  default https://lakat-iloilo.vercel.app
 //   DEVICES   "mobile,desktop" (default), or just one of them
 //   PAGES     "home,place,login" (default), or some of them
+//   PLACE_ID  the place page to check. Default: a real place on the live
+//             sites, the seed's Mount Talabukon on localhost (place.mjs)
 //
 // Each page is checked twice: as a mid-range phone on slow 4G (Lighthouse's
 // "mobile", what Google uses) and as a laptop ("desktop"). HTML reports land
@@ -26,6 +28,7 @@ import { fileURLToPath } from "node:url";
 import * as chromeLauncher from "chrome-launcher";
 import lighthouse from "lighthouse";
 import desktopConfig from "lighthouse/core/config/desktop-config.js";
+import { placePath } from "./place.mjs";
 import { BACKEND_ADDRESSES, EXTRA_METRICS, SCORE_BUDGETS, VITALS_BUDGETS } from "./budgets.mjs";
 
 const args = Object.fromEntries(
@@ -34,9 +37,9 @@ const args = Object.fromEntries(
 // Say so when an option is not ours, for example k6's `-e LIVE_OK=yes`
 // (2026-11-21): Lighthouse only opens pages, like one visitor, so it needs
 // no agreement flag, and the option changes nothing.
-const unused = process.argv.slice(2).filter((a) => !/^(BASE_URL|DEVICES|PAGES)=/.test(a));
+const unused = process.argv.slice(2).filter((a) => !/^(BASE_URL|DEVICES|PAGES|PLACE_ID)=/.test(a));
 if (unused.length) {
-  console.warn(`ℹ Ignored: ${unused.join(" ")}. Lighthouse only takes BASE_URL=…, DEVICES=… and PAGES=….`);
+  console.warn(`ℹ Ignored: ${unused.join(" ")}. Lighthouse only takes BASE_URL=…, DEVICES=…, PAGES=… and PLACE_ID=….`);
 }
 const BASE_URL = (args.BASE_URL ?? process.env.BASE_URL ?? "https://lakat-iloilo.vercel.app").replace(/\/+$/, "");
 const DEVICES = (args.DEVICES ?? process.env.DEVICES ?? "mobile,desktop").split(",").map((d) => d.trim());
@@ -45,7 +48,7 @@ const DEVICES = (args.DEVICES ?? process.env.DEVICES ?? "mobile,desktop").split(
 // PAGES=home,place checks only those (by name).
 const ALL_PAGES = [
   { name: "home", path: "/" },
-  { name: "place", path: "/destinations/5d1155a1-6e40-417d-9c84-09a990cae00d" },
+  { name: "place", path: placePath(BASE_URL, args.PLACE_ID ?? process.env.PLACE_ID) },
   { name: "login", path: "/login" },
 ];
 const only = (args.PAGES ?? process.env.PAGES ?? "").split(",").map((p) => p.trim()).filter(Boolean);

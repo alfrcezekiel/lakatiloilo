@@ -1,0 +1,94 @@
+# Rare, manual repair of a hosted database's migration HISTORY list.
+# It never changes tables, policies or data: it only marks migration files
+# as already applied, for a database that has the schema but lost the
+# history (docs/ENVIRONMENT-CHECKLIST.md, step 7).
+#
+# Why a workflow and not a command on a laptop: the postgres password then
+# stays in GitHub's secrets (STAGING_DB_URL / PROD_DB_URL, the same ones the
+# Deploy workflow uses) and never has to be copied to anyone's computer.
+#
+# Run it only after the team agrees, and only after the read-only checks in
+# step 7 match. GitHub: Actions -> Repair migration history -> Run workflow.
+# Then re-run the Deploy workflow, which applies only the missing files.
+
+name: Repair migration history
+
+on:
+  workflow_dispatch:
+    inputs:
+      target:
+        description: "Which hosted database"
+        required: true
+        type: choice
+        options: [staging, production]
+      versions:
+        description: "Migration versions to mark as applied, separated by spaces (the 14-digit start of each file name in supabase/migrations/)"
+        required: true
+        type: string
+
+# Waits for a running Deploy on the same branch instead of racing it.
+concurrency:
+  group: deploy-${{ inputs.target == 'production' && 'main' || 'staging' }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  repair:
+    name: repair
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      TARGET: ${{ inputs.target }}
+      # Read through an environment variable, never pasted into the script,
+      # so text typed into the form cannot run as a command.
+      VERSIONS: ${{ inputs.versions }}
+      DB_URL: ${{ inputs.target == 'production' && secrets.PROD_DB_URL || secrets.STAGING_DB_URL }}
+    steps:
+      - name: Check the secret is set
+        run: |
+          name=$([ "$TARGET" = "production" ] && echo PROD_DB_URL || echo STAGING_DB_URL)
+          [ -n "$DB_URL" ] || { echo "::error::$name is not set in GitHub secrets."; exit 1; }
+
+      # Code from the default branch, so the list of migration files is the
+      # one that has been reviewed and merged.
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+
+      # Each version must be 14 digits and match a file in the repo, so a
+      # typo stops here instead of writing a wrong line to the history.
+      - name: Check the versions
+        run: |
+          set -f  # a * stays a *, never a list of file names
+          bad=0
+          for v in $VERSIONS; do
+            if ! [[ "$v" =~ ^[0-9]{14}$ ]]; then
+              echo "::error::'$v' is not a 14-digit migration version."; bad=1
+            elif [ -z "$(find supabase/migrations -maxdepth 1 -name "${v}_*.sql")" ]; then
+              echo "::error::No file in supabase/migrations/ starts with $v."; bad=1
+            fi
+          done
+          [ -n "${VERSIONS// /}" ] || { echo "::error::No versions given."; bad=1; }
+          exit $bad
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Install packages (Supabase CLI)
+        run: npm ci
+
+      - name: History before
+        run: npx supabase migration list --remote="$DB_URL"
+
+      - name: Mark as applied
+        run: |
+          set -f
+          npx supabase migration repair --remote="$DB_URL" --status applied $VERSIONS
+
+      - name: History after
+        run: npx supabase migration list --remote="$DB_URL"

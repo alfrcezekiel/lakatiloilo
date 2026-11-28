@@ -825,6 +825,8 @@ export const adminDeletePaths = {
   hideReply: (id: string) => `/v1/admin/replies/${id}/hide`,
   place: (type: AdminPlaceType, id: string) => `/v1/admin/places/${type}/${id}`,
   like: (kind: AdminLikeKind, id: string, userId: string) => `${likesPath(kind, id)}/${userId}`,
+  // A question on /admin/faqs (ticket 172): for good, not to the Trash.
+  faq: (id: string) => `/v1/admin/faqs/${id}`,
 };
 
 // Sends one of those deletes. Throws with the backend's own sentence when
@@ -1090,8 +1092,9 @@ export interface AdminPlaceChanges {
 // Inside Iloilo: the same box as the backend and the database (048).
 export const ILOILO = { latitude: [10.4, 11.7], longitude: [121.8, 123.3] } as const;
 
-// The same limits as the backend and the database (supabase/sql/043).
-export const PLACE_LIMITS = { name: 100, address: 200, description: 1000, phone: 40, email: 120 };
+// The same limits as the backend and the database (supabase/sql/043;
+// description raised to 3000 in migration 20261128064903).
+export const PLACE_LIMITS = { name: 100, address: 200, description: 3000, phone: 40, email: 120 };
 
 export const getAdminPlaces = async (accessToken: string) =>
   (
@@ -1183,6 +1186,85 @@ export const categoryName = async (id: string) => {
   } catch {
     return id;
   }
+};
+
+// The home page's frequently asked questions (FAQs round, ticket 168).
+// A built-in topic's id ("new_to_iloilo", "about_platform",
+// "finding_places") or, since ticket 173, a topic name the team typed
+// under Other ("Beaches"). src/lib/faqs.ts has the names and the order.
+export type FaqTopic = string;
+// The most questions the home page shows at once (the backend and the
+// database check it too).
+export const FAQ_SHOWN_LIMIT = 12;
+// The longest question and answer, in characters (ticket 169).
+export const FAQ_LIMITS = { question: 150, answer: 1000 };
+
+export interface AdminFaq {
+  id: string;
+  question: string;
+  answer: string;
+  topic: FaqTopic;
+  // Its order inside its topic, from 1.
+  position: number;
+  is_shown: boolean;
+  updated_at: string;
+}
+
+// One shown question, as the home page gets it (ticket 170).
+export type Faq = Pick<AdminFaq, "id" | "question" | "answer" | "topic">;
+
+// The shown questions, by topic and in order (anyone; GET /v1/faqs).
+export const getFaqs = async () => (await get<Faq[]>("/v1/faqs")) ?? [];
+
+// Every question, shown and hidden, by topic and in order (admins only).
+export const getAdminFaqs = async (accessToken: string) =>
+  (
+    await api().get<AdminFaq[]>("/v1/admin/faqs", {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    })
+  ).data;
+
+// What the FAQ form sends (ticket 169): all of it to add, any of it to edit.
+export interface FaqDraft {
+  question: string;
+  answer: string;
+  topic: FaqTopic;
+  is_shown: boolean;
+}
+
+// Adds a question at the end of its topic and answers with it. A refused
+// box answers 400 (or 409 for the 13th shown) with the box's name: see
+// backendField.
+export const addAdminFaq = async (accessToken: string, faq: FaqDraft) =>
+  (
+    await api().post<AdminFaq>("/v1/admin/faqs", faq, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    })
+  ).data;
+
+// Saves the changed parts of a question and answers with it.
+export const updateAdminFaq = async (accessToken: string, id: string, changes: Partial<FaqDraft>) =>
+  (
+    await api().patch<AdminFaq>(`/v1/admin/faqs/${encodeURIComponent(id)}`, changes, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    })
+  ).data;
+
+// Move up / Move down (ticket 172): swaps it with its neighbour in its
+// topic and answers with every question in the new order.
+export const moveAdminFaq = async (accessToken: string, id: string, direction: "up" | "down") =>
+  (
+    await api().post<AdminFaq[]>(`/v1/admin/faqs/${encodeURIComponent(id)}/move`, { direction }, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    })
+  ).data;
+
+// Which form box a refusal is about ("question", "answer", ...), when the
+// backend says (the FAQ form, ticket 169), or null.
+export const backendField = (error: unknown): string | null => {
+  if (!axios.isAxiosError(error)) return null;
+  const field = (error.response?.data as { field?: unknown } | undefined)?.field;
+  return typeof field === "string" ? field : null;
 };
 
 // The same with how many places use each (admins only).

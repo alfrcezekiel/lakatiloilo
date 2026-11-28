@@ -874,6 +874,17 @@ npm run perf:lighthouse
   | `npm run perf:lighthouse:local` | `localhost:3000`, phone and laptop (a production build: `npm run build` + `npm start`) |
   | `npm run perf:lighthouse:focus` | the evidence behind chosen audits (`focus.mjs`) |
 
+- **Which place page** (added 2026-11-27, `place.mjs`): on `localhost` the
+  runners check the seed's Mount Talabukon, because a local database has
+  only the places in `supabase/seed.sql`. The live sites keep a real place.
+  `PLACE_ID=<id>` after `--` picks another. Seed photos are placeholders
+  that load no image, so a local place check measures the page, not real
+  photo sizes.
+- **Only on your own computer, phone only** (team preference 2026-11-27,
+  so no hosted quota is used): first check that `.env.local` and
+  `backend/.env.local` point at `127.0.0.1` or `localhost`, then
+  `npm run perf:lighthouse -- BASE_URL=http://localhost:3000 DEVICES=mobile`.
+
 - **Plug in the charger.** On battery the phone numbers come out 2–3×
   worse; the runner warns when the laptop's CPU score is under 2,000.
 - Results: each check prints ✓ or ✗ against `budgets.mjs`, and lists the

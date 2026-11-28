@@ -1,8 +1,8 @@
 -- Fake starter data for local development and staging.
 --
 -- What it adds: the 8 place categories, 10 destinations (3 mountains,
--- 3 festivals, 4 others) and 4 accommodations.
---
+-- 3 festivals, 4 others), 4 accommodations and one fake local admin login
+-- (section 4 at the bottom: admin@lakat.local).
 -- Everything is invented. The places and festivals are fictional, although
 -- they sit in real Iloilo towns so the map looks right. Phone numbers use a
 -- made-up 555 range, emails use example.com, and photo links are placeholders
@@ -116,3 +116,55 @@ values
      'A fictional condominium with furnished studio units for short stays, a kitchenette, Wi-Fi and a rooftop garden.',
      'condominium', 'iloilo_city')
 on conflict (id) do nothing;
+
+
+-- 4. A fake admin account, LOCAL ONLY ----------------------------------------
+--
+-- Why: every `npm run db:reset` wipes all local accounts, so the team had to
+-- recreate an admin by hand after each reset. This brings one back each time.
+--
+--   Email:    admin@lakat.local
+--   Password: lakat-local-admin
+--
+-- Both are fake and public (they are in this file). That is fine only because
+-- this file runs on the LOCAL database. Never run this file on staging or
+-- production: anyone who reads the repo could log in as this admin there.
+-- (The Deploy workflow never runs seed.sql, so hosted databases are safe.)
+--
+-- An account needs two rows: one in auth.users (the login, with the password
+-- stored scrambled by crypt) and one in auth.identities (says "this login uses
+-- email and password"). The token columns must be '' rather than empty (null),
+-- or Supabase's login service fails to read the account.
+
+insert into auth.users (
+    instance_id, id, aud, role, email, encrypted_password,
+    email_confirmed_at, raw_app_meta_data, raw_user_meta_data,
+    created_at, updated_at,
+    confirmation_token, recovery_token, email_change_token_new, email_change
+) values (
+    '00000000-0000-0000-0000-000000000000',
+    '30000000-0000-4000-8000-000000000001',
+    'authenticated', 'authenticated',
+    'admin@lakat.local',
+    extensions.crypt('lakat-local-admin', extensions.gen_salt('bf')),
+    now(),
+    '{"provider": "email", "providers": ["email"]}',
+    '{"display_name": "Local Admin"}',
+    now(), now(),
+    '', '', '', ''
+)
+on conflict (id) do nothing;
+
+insert into auth.identities (
+    provider_id, user_id, identity_data, provider, last_sign_in_at, created_at, updated_at
+) values (
+    '30000000-0000-4000-8000-000000000001',
+    '30000000-0000-4000-8000-000000000001',
+    '{"sub": "30000000-0000-4000-8000-000000000001", "email": "admin@lakat.local", "email_verified": true}',
+    'email', now(), now(), now()
+)
+on conflict (provider_id, provider) do nothing;
+
+insert into public.admins (user_id) values
+    ('30000000-0000-4000-8000-000000000001')
+on conflict (user_id) do nothing;
