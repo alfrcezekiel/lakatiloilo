@@ -1090,8 +1090,9 @@ export interface AdminPlaceChanges {
 // Inside Iloilo: the same box as the backend and the database (048).
 export const ILOILO = { latitude: [10.4, 11.7], longitude: [121.8, 123.3] } as const;
 
-// The same limits as the backend and the database (supabase/sql/043).
-export const PLACE_LIMITS = { name: 100, address: 200, description: 1000, phone: 40, email: 120 };
+// The same limits as the backend and the database (supabase/sql/043;
+// description raised to 3000 in migration 20261128064903).
+export const PLACE_LIMITS = { name: 100, address: 200, description: 3000, phone: 40, email: 120 };
 
 export const getAdminPlaces = async (accessToken: string) =>
   (

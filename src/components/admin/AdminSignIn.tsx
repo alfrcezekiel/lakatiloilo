@@ -12,6 +12,12 @@ import { AdminFrame, adminGlass } from "@/components/admin/AdminFrame";
 import { adminLogInThroughBackend, backendRefusal } from "@/lib/api";
 import { setAdminCookie } from "@/lib/admin-cookie";
 import { freshToken, readLogin, saveLogin, useCurrentUser } from "@/lib/login";
+import {
+  LOGIN_FIELD_CODES,
+  LOGIN_FIELD_MESSAGES,
+  checkLogInFields,
+  type LogInFieldErrors,
+} from "@/lib/login-fields";
 import { cn } from "@/lib/utils";
 
 // Supabase's codes for a refused log-in, as plain sentences (the same as
@@ -46,6 +52,10 @@ export function AdminSignIn() {
   useEffect(() => {
     router.prefetch("/admin");
   }, [router]);
+  // A message under the box it is about (team request 2026-11-28: the same
+  // per-box messages as the traveler log-in), and one under the button for
+  // everything else (a wrong password, not a team account).
+  const [fieldErrors, setFieldErrors] = useState<LogInFieldErrors>({});
   const [error, setError] = useState<string | null>(null);
 
   // An admin who is already signed in (for example after the cookie the
@@ -62,12 +72,11 @@ export function AdminSignIn() {
 
   const signIn = async (event: React.FormEvent) => {
     event.preventDefault();
-    if (!email.trim() || !password) {
-      setError("Please enter your email and password.");
-      return;
-    }
-    setBusy(true);
+    const found = checkLogInFields(email, password);
+    setFieldErrors(found);
     setError(null);
+    if (found.email || found.password) return;
+    setBusy(true);
     try {
       const { session } = await adminLogInThroughBackend(email.trim(), password);
       if (!session) {
@@ -81,6 +90,14 @@ export function AdminSignIn() {
       router.replace("/admin");
     } catch (e) {
       const refusal = backendRefusal(e);
+      // The backend's own box checks (RequiredAuthFieldsMiddleware and
+      // emailAndPassword) show under that box.
+      const code = refusal?.code ?? "";
+      const field = LOGIN_FIELD_CODES[code];
+      if (field) {
+        setFieldErrors({ [field]: LOGIN_FIELD_MESSAGES[code as keyof typeof LOGIN_FIELD_MESSAGES] });
+        return;
+      }
       setError(
         refusal?.status === 403
           ? "This sign-in is for the Lakat Iloilo team."
@@ -110,7 +127,7 @@ export function AdminSignIn() {
           </h1>
 
           <form onSubmit={signIn} noValidate className="space-y-3">
-            <GlassField id="admin-email" label="Email">
+            <GlassField id="admin-email" label="Email" error={fieldErrors.email}>
               <Input
                 id="admin-email"
                 type="email"
@@ -118,12 +135,15 @@ export function AdminSignIn() {
                 onChange={(e) => setEmail(e.target.value)}
                 autoComplete="username"
                 placeholder="you@example.com"
+                aria-invalid={!!fieldErrors.email}
+                aria-describedby={fieldErrors.email ? "admin-email-error" : undefined}
                 className={fieldInputClass}
               />
             </GlassField>
             <GlassField
               id="admin-password"
               label="Password"
+              error={fieldErrors.password}
               action={
                 <button
                   type="button"
@@ -142,6 +162,8 @@ export function AdminSignIn() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 autoComplete="current-password"
+                aria-invalid={!!fieldErrors.password}
+                aria-describedby={fieldErrors.password ? "admin-password-error" : undefined}
                 className={fieldInputClass}
               />
             </GlassField>

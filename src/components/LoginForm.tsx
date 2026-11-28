@@ -13,6 +13,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { StatusModal } from "@/components/StatusModal";
 import { backendRefusal, logInThroughBackend, signUpThroughBackend } from "@/lib/api";
 import { rememberedEmail, rememberEmail, safeNextPath } from "@/lib/auth";
+import { LOGIN_FIELD_MESSAGES, checkLogInFields } from "@/lib/login-fields";
 import { displayNameOf, saveLogin, useCurrentUser } from "@/lib/login";
 import { travelerTypes, type TravelerType } from "@/lib/labels";
 
@@ -28,15 +29,23 @@ const authErrors: Record<string, { field: Field; message: string }> = {
   user_already_exists: { field: "email", message: "That email already has an account. Try logging in instead." },
   email_exists: { field: "email", message: "That email already has an account. Try logging in instead." },
   weak_password: { field: "password", message: `That password is too weak. Use at least ${MIN_PASSWORD_LENGTH} characters.` },
-  email_address_invalid: { field: "email", message: "Please enter a valid email address." },
+  email_address_invalid: { field: "email", message: LOGIN_FIELD_MESSAGES.email_address_invalid },
   validation_failed: { field: "form", message: "Please check your email address and password." },
   email_not_confirmed: { field: "form", message: "Please confirm your email first, using the link we sent you." },
   over_request_rate_limit: { field: "form", message: "Too many tries. Please wait a minute and try again." },
   // Supabase's built-in email sender allows only a few emails an hour.
   over_email_send_rate_limit: { field: "form", message: "Too many new accounts right now. Please try again in about an hour." },
   // The backend's own checks (POST /v1/auth/signup).
-  display_name_invalid: { field: "name", message: "Your display name needs 2 to 40 characters." },
+  // "username", like the box's label (team request 2026-11-28).
+  display_name_invalid: { field: "name", message: "Your username needs 2 to 40 characters." },
   traveler_type_invalid: { field: "traveler", message: "Please pick how you're traveling." },
+  // Empty boxes (the form's own checks, and the backend's
+  // RequiredAuthFieldsMiddleware, which uses the same codes).
+  email_required: { field: "email", message: LOGIN_FIELD_MESSAGES.email_required },
+  password_required: { field: "password", message: LOGIN_FIELD_MESSAGES.password_required },
+  new_password_required: { field: "password", message: "Please create a password." },
+  display_name_required: { field: "name", message: "Please choose a username." },
+  traveler_type_required: { field: "traveler", message: "Please pick how you're traveling." },
 };
 const fallbackError = "Something went wrong. Please try again.";
 
@@ -106,23 +115,34 @@ export function LoginForm() {
     setRememberMyEmail(false);
   };
 
-  // Checks that need no trip to Supabase.
+  // Checks that need no trip to Supabase. An empty box gets its own
+  // message ("Please enter your email address."), different from one that
+  // is filled in wrongly ("Please enter a valid email address."), and the
+  // words fit the tab: Log in asks for the password they already have,
+  // Create account asks them to make one up. The backend's
+  // RequiredAuthFieldsMiddleware sends the same sentences.
   const checkFields = (): Errors => {
     const found: Errors = {};
     const name = displayName.trim();
-    if (mode === "signup" && (name.length < 2 || name.length > 40)) {
-      found.name = "Your display name needs 2 to 40 characters.";
+    if (mode === "signup") {
+      if (!name) {
+        found.name = authErrors.display_name_required.message;
+      } else if (name.length < 2 || name.length > 40) {
+        found.name = authErrors.display_name_invalid.message;
+      }
+      if (!travelerType) {
+        found.traveler = "Please pick how you're traveling.";
+      }
     }
-    if (mode === "signup" && !travelerType) {
-      found.traveler = "Please pick how you're traveling.";
-    }
-    if (!email.includes("@")) {
-      found.email = "Please enter a valid email address.";
-    }
-    if (mode === "signup" && password.length < MIN_PASSWORD_LENGTH) {
+    // Email and password: the same checks as the team's sign-in
+    // (src/lib/login-fields.ts), then Create account's own password words.
+    const logIn = checkLogInFields(email, password);
+    if (logIn.email) found.email = logIn.email;
+    if (!password) {
+      found.password =
+        mode === "signup" ? authErrors.new_password_required.message : logIn.password;
+    } else if (mode === "signup" && password.length < MIN_PASSWORD_LENGTH) {
       found.password = `Use at least ${MIN_PASSWORD_LENGTH} characters.`;
-    } else if (!password) {
-      found.password = "Please enter your password.";
     }
     return found;
   };
