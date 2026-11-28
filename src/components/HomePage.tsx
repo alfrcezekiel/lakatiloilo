@@ -132,7 +132,7 @@ export function HomePage({ places }: { places: Promise<HomePlaces> }) {
   // Arriving from a link to a section ("Keep exploring" on a place page:
   // /#walking-list, /#accommodation-list). The browser scrolls there at
   // once, while the lists are still grey skeletons of 3 cards; when the real
-  // cards arrive (up to 6, and empty categories disappear) everything above
+  // cards arrive (up to 6, every one for Mountains, and empty categories disappear) everything above
   // grows or shrinks, so the traveler ended up in the wrong section (team
   // report 2026-11-22). Once the places are in, scroll to the section again,
   // with no glide. Only once per visit: a live refresh never moves the page.
