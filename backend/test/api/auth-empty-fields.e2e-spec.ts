@@ -14,7 +14,7 @@ const FULL_SIGNUP = {
   traveler_type: 'local',
 };
 
-describe('Log in and Create account: empty fields (API)', () => {
+describe('Log in, Create account and team sign-in: empty fields (API)', () => {
   let app: INestApplication;
   let supabase: Awaited<ReturnType<typeof createTestApp>>['supabase'];
   const post = (path: string, body?: object) => {
@@ -79,6 +79,28 @@ describe('Log in and Create account: empty fields (API)', () => {
 
       expect(res.status).toBe(400);
       expect(res.body.code).toBe('weak_password');
+    });
+  });
+
+  // The team's sign-in, same middleware (team request 2026-11-28).
+  describe('POST /v1/admin/login', () => {
+    it.each([
+      ['no body at all', undefined, 'email_required', 'Please enter your email address.'],
+      ['both empty', { email: '', password: '' }, 'email_required', 'Please enter your email address.'],
+      ['password empty', { email: 'team@example.com', password: '' }, 'password_required', 'Please enter your password.'],
+    ])('%s answers 400 with the traveler log-in\'s message', async (_name, body, code, message) => {
+      const res = await post('/v1/admin/login', body);
+
+      expect(res.status).toBe(400);
+      expect(res.body).toEqual({ statusCode: 400, code, message });
+    });
+
+    it('an email without "@" gets the same message as the traveler log-in', async () => {
+      const res = await post('/v1/admin/login', { email: 'team', password: 'x' });
+
+      expect(res.status).toBe(400);
+      expect(res.body.code).toBe('email_address_invalid');
+      expect(res.body.message).toBe('Please enter a valid email address.');
     });
   });
 

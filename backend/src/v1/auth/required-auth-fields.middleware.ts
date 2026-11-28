@@ -3,11 +3,12 @@ import type { NextFunction, Request, Response } from 'express';
 
 // The login page's "empty box" check, on the backend (team request
 // 2026-11-28). NestJS runs this before POST /v1/auth/login and
-// POST /v1/auth/signup (see AuthModule), so a request with an empty field
+// POST /v1/auth/signup (see AuthModule), and before the team's sign-in,
+// POST /v1/admin/login (see AdminModule; same day), so a request with an empty field
 // is refused here, before the controller or Supabase Auth sees it. Each
 // empty field gets its own sentence and code, the same ones the website's
-// log-in form shows (LoginForm.tsx, authErrors):
-//   log in:          email_required, password_required
+// log-in forms show (src/lib/login-fields.ts, LoginForm.tsx authErrors):
+//   log in (traveler and admin):  email_required, password_required
 //   create account:  display_name_required, email_required,
 //                    new_password_required, traveler_type_required
 // Only the first empty field is reported (one refusal per request). Fields

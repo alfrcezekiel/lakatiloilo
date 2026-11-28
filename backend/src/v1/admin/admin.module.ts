@@ -8,6 +8,7 @@ import { AdminCategoriesController } from './admin-categories.controller';
 import { AdminController } from './admin.controller';
 import { AdminTrashController } from './admin-trash.controller';
 import { AdminOnlyMiddleware } from './admin-only.middleware';
+import { RequiredAuthFieldsMiddleware } from '../auth/required-auth-fields.middleware';
 import { AdminOverviewService } from './admin-overview.service';
 import { AdminPhotoCreditsService } from './admin-photo-credits.service';
 import { AdminPlaceGalleryService } from './admin-place-gallery.service';
@@ -46,5 +47,10 @@ export class AdminModule implements NestModule {
       .apply(AdminOnlyMiddleware)
       .exclude({ path: 'v1/admin/login', method: RequestMethod.POST })
       .forRoutes(AdminController, AdminCategoriesController, AdminTrashController);
+    // The team's sign-in refuses empty fields with the same per-box
+    // messages as the traveler log-in (team request 2026-11-28).
+    consumer
+      .apply(RequiredAuthFieldsMiddleware)
+      .forRoutes({ path: 'v1/admin/login', method: RequestMethod.POST });
   }
 }

@@ -16,8 +16,8 @@ import { RequiredAuthFieldsMiddleware } from './required-auth-fields.middleware'
 })
 export class AuthModule implements NestModule {
   // Log in and Create account refuse empty fields before the controller
-  // runs (team request 2026-11-28). Only these two routes: the admin
-  // sign-in (POST /v1/admin/login) keeps its own checks.
+  // runs (team request 2026-11-28). The admin sign-in (POST /v1/admin/login)
+  // gets the same middleware in AdminModule.
   configure(consumer: MiddlewareConsumer) {
     consumer
       .apply(RequiredAuthFieldsMiddleware)

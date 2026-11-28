@@ -13,6 +13,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { StatusModal } from "@/components/StatusModal";
 import { backendRefusal, logInThroughBackend, signUpThroughBackend } from "@/lib/api";
 import { rememberedEmail, rememberEmail, safeNextPath } from "@/lib/auth";
+import { LOGIN_FIELD_MESSAGES, checkLogInFields } from "@/lib/login-fields";
 import { displayNameOf, saveLogin, useCurrentUser } from "@/lib/login";
 import { travelerTypes, type TravelerType } from "@/lib/labels";
 
@@ -28,7 +29,7 @@ const authErrors: Record<string, { field: Field; message: string }> = {
   user_already_exists: { field: "email", message: "That email already has an account. Try logging in instead." },
   email_exists: { field: "email", message: "That email already has an account. Try logging in instead." },
   weak_password: { field: "password", message: `That password is too weak. Use at least ${MIN_PASSWORD_LENGTH} characters.` },
-  email_address_invalid: { field: "email", message: "Please enter a valid email address." },
+  email_address_invalid: { field: "email", message: LOGIN_FIELD_MESSAGES.email_address_invalid },
   validation_failed: { field: "form", message: "Please check your email address and password." },
   email_not_confirmed: { field: "form", message: "Please confirm your email first, using the link we sent you." },
   over_request_rate_limit: { field: "form", message: "Too many tries. Please wait a minute and try again." },
@@ -39,8 +40,8 @@ const authErrors: Record<string, { field: Field; message: string }> = {
   traveler_type_invalid: { field: "traveler", message: "Please pick how you're traveling." },
   // Empty boxes (the form's own checks, and the backend's
   // RequiredAuthFieldsMiddleware, which uses the same codes).
-  email_required: { field: "email", message: "Please enter your email address." },
-  password_required: { field: "password", message: "Please enter your password." },
+  email_required: { field: "email", message: LOGIN_FIELD_MESSAGES.email_required },
+  password_required: { field: "password", message: LOGIN_FIELD_MESSAGES.password_required },
   new_password_required: { field: "password", message: "Please create a password." },
   display_name_required: { field: "name", message: "Please choose a username." },
   traveler_type_required: { field: "traveler", message: "Please pick how you're traveling." },
@@ -122,7 +123,6 @@ export function LoginForm() {
   const checkFields = (): Errors => {
     const found: Errors = {};
     const name = displayName.trim();
-    const trimmedEmail = email.trim();
     if (mode === "signup") {
       if (!name) {
         found.name = authErrors.display_name_required.message;
@@ -133,16 +133,13 @@ export function LoginForm() {
         found.traveler = "Please pick how you're traveling.";
       }
     }
-    if (!trimmedEmail) {
-      found.email = authErrors.email_required.message;
-    } else if (!trimmedEmail.includes("@")) {
-      found.email = "Please enter a valid email address.";
-    }
+    // Email and password: the same checks as the team's sign-in
+    // (src/lib/login-fields.ts), then Create account's own password words.
+    const logIn = checkLogInFields(email, password);
+    if (logIn.email) found.email = logIn.email;
     if (!password) {
       found.password =
-        mode === "signup"
-          ? authErrors.new_password_required.message
-          : authErrors.password_required.message;
+        mode === "signup" ? authErrors.new_password_required.message : logIn.password;
     } else if (mode === "signup" && password.length < MIN_PASSWORD_LENGTH) {
       found.password = `Use at least ${MIN_PASSWORD_LENGTH} characters.`;
     }
