@@ -304,3 +304,13 @@ Parked to keep the round to one session (docs/SPEC.md, Screens 32):
   italic (`preload: false` in `src/app/layout.tsx`, about 80 KB), and load
   Mapbox's stylesheet with the map instead of on every place page.
   Details: `docs/evaluations/2026-11-27-lighthouse.md`.
+
+### From the FAQs round (2026-11-28)
+Parked when the FAQs round was written, to keep it to one round:
+- A search box inside the FAQs
+- "Was this helpful?" votes on each answer
+- A "Still have questions? Contact us" form (it needs somewhere to send messages)
+- FAQs on the destination and accommodation pages
+- Deleted questions going to the Trash (they get the 8-second Undo only)
+- Translations (Hiligaynon, Filipino)
+- Dragging questions to reorder them in /admin (Move up and Move down instead)

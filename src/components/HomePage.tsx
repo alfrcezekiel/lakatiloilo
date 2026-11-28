@@ -1,6 +1,6 @@
 "use client";
 
-import type { Accommodation, Destination, PlaceCategory, PlaceRating } from "@/lib/api";
+import type { Accommodation, Destination, Faq, PlaceCategory, PlaceRating } from "@/lib/api";
 import { ratingKey, type RatingsByPlace } from "@/components/CardRating";
 import { useState, useEffect, useMemo, useRef, startTransition } from "react";
 import { useRouter } from "next/navigation";
@@ -14,6 +14,7 @@ import { FeaturesSection } from "@/components/FeaturesSection";
 import { CategoryExploreSection } from "@/components/CategoryExploreSection";
 import { CategoryList } from "@/components/CategoryList";
 import { AccommodationList } from "@/components/AccommodationList";
+import { FaqSection } from "@/components/FaqSection";
 import { Footer } from "@/components/Footer";
 import { DockNavbar } from "@/components/DockNavbar";
 import { ScrollToTop } from "@/components/ScrollToTop";
@@ -39,6 +40,8 @@ export type HomePlaces = {
   ratings: PlaceRating[] | null;
   // The team's categories and kinds (GET /v1/categories); null if it failed.
   categories: PlaceCategory[] | null;
+  // The shown FAQs (GET /v1/faqs, ticket 170); null if it failed.
+  faqs: Faq[] | null;
   failed: boolean;
 };
 
@@ -53,6 +56,8 @@ const HOME_TABLES = [
   "review_visibility_signals",
   // A category or kind added or deleted from the dashboard (ticket 117).
   "place_categories",
+  // The team changed the FAQs (ticket 173): the section follows.
+  "faq_signals",
 ] as const;
 
 // The home page itself. The Next.js server has already started asking the
@@ -80,6 +85,8 @@ export function HomePage({ places }: { places: Promise<HomePlaces> }) {
   const [ratings, setRatings] = useState<RatingsByPlace>(null);
   // The team's categories and kinds (ticket 117); empty until they arrive.
   const [categories, setCategories] = useState<PlaceCategory[]>([]);
+  // The shown FAQs (ticket 170); empty until they arrive.
+  const [faqs, setFaqs] = useState<Faq[]>([]);
 
   // Live updates (ticket 90): when a destination, accommodation or review
   // changes anywhere, Supabase Realtime rings and the page asks the Next.js
@@ -120,6 +127,8 @@ export function HomePage({ places }: { places: Promise<HomePlaces> }) {
         );
         // Categories that fail on a live refresh keep the ones on screen.
         if (result.categories) setCategories(result.categories);
+        // FAQs that fail on a live refresh keep the ones on screen.
+        if (result.faqs) setFaqs(result.faqs);
         setLoadError(result.failed);
         setLoading(false);
       });
@@ -132,7 +141,7 @@ export function HomePage({ places }: { places: Promise<HomePlaces> }) {
   // Arriving from a link to a section ("Keep exploring" on a place page:
   // /#walking-list, /#accommodation-list). The browser scrolls there at
   // once, while the lists are still grey skeletons of 3 cards; when the real
-  // cards arrive (up to 6, and empty categories disappear) everything above
+  // cards arrive (up to 6, every one for Mountains, and empty categories disappear) everything above
   // grows or shrinks, so the traveler ended up in the wrong section (team
   // report 2026-11-22). Once the places are in, scroll to the section again,
   // with no glide. Only once per visit: a live refresh never moves the page.
@@ -316,11 +325,17 @@ export function HomePage({ places }: { places: Promise<HomePlaces> }) {
           ratings={ratings}
           loading={loading}
         />
+
+        {/* Frequently asked questions (FAQs round, ticket 170), after
+            Accommodations and before the footer. Inside this section, so
+            it shares one teal-to-emerald background with the lists
+            instead of starting a second one (team request 2026-11-28). */}
+        <FaqSection faqs={faqs} loading={loading} />
       </section>
 
       <ScrollToTop />
 
-      <Footer />
+      <Footer hasFaqs={faqs.length > 0} />
     </main>
   );
 }

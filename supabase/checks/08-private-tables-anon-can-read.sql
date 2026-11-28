@@ -34,7 +34,12 @@ with meant_public (table_name) as (
     ('reply_likes'),
     ('review_photos'),
     ('report_signals'),
-    ('review_visibility_signals')
+    ('review_visibility_signals'),
+    -- FAQs round (tickets 168, 173): visitors read the SHOWN questions
+    -- only (policy "anyone can read shown faqs"; hidden ones are for
+    -- admins), and the faq_signals doorbell holds only an id and a time.
+    ('faqs'),
+    ('faq_signals')
 ),
 public_tables as (
   select c.oid, c.relname::text as table_name

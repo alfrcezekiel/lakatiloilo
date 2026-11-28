@@ -52,6 +52,8 @@ Security hardening round (team request; from docs/LATER.md, parked after evaluat
 
 Reviews & media round (2026-11-22, team request; one round, tickets from 161): on a destination or accommodation page a traveler can sort the reviews (Most relevant, With photos & videos, Newest) and sees only the first few, with a Show more reviews button, so the page no longer turns into an endless scroll. A traveler can add one video to their review, kept exactly as uploaded. Every photo uploaded as JPG or PNG, by a traveler or by the Lakat Iloilo team in /admin, is saved as WebP, a modern format that makes the file smaller while it looks the same. Accommodation pages now share the destinations' teal look, and their map is headed "Getting there".
 
+FAQs round (2026-11-28, team request): travelers who are new to Iloilo or to Lakat Iloilo keep asking the same few things: what the site is, whether they need an account, and whether the place details can be trusted. The home page gains a "Frequently asked questions" section that answers 6 to 12 of them in a glass accordion, grouped by topic. The Lakat Iloilo team writes, orders, shows and hides the questions from the admin dashboard, and they are kept in the database.
+
 ## The user
 Travelers planning weekend trips around Iloilo Province. No login required for browsing; an account is needed only to write a review.
 
@@ -121,6 +123,11 @@ Travelers planning weekend trips around Iloilo Province. No login required for b
 61. As a traveler on a phone, I want place and review photos to be small files, so that pages load quickly on mobile data.
 62. As a member of the Lakat Iloilo team, I want the photos I upload in /admin to be saved as WebP too, so that every photo on the site is light.
 63. As a member of the Lakat Iloilo team, I want to see review videos in Reviews and Reports and how much storage is used, so that I can moderate videos and know before the free storage runs out.
+64. As a traveler, I want to open a question and read its answer on the home page, so that I do not have to search elsewhere.
+65. As a traveler, I want to pick a topic, so that I only see the questions that matter to me.
+66. As a traveler using a keyboard or a screen reader, I want the FAQs to work without a mouse, so that I can read every answer.
+67. As a member of the Lakat Iloilo team, I want to add, edit, hide and delete questions in /admin, so that the FAQs stay accurate.
+68. As a member of the Lakat Iloilo team, I want to change the order of the questions, so that the most useful ones come first.
 
 ## Screens
 1. Home page hero — redesigned to match the team's mockup:
@@ -133,7 +140,7 @@ Travelers planning weekend trips around Iloilo Province. No login required for b
    - Category chips under the bar: All, Mountains, Food, Festivals, Hotels, Condominiums, Walking Areas, Nature & Parks, Heritage Sites. Clicking a chip highlights it, shows it in the search bar's Category field and narrows the suggestions to that category. It does not change the category cards or list sections further down the page, which keep their own behaviour: every section is visible, and clicking a category card scrolls to its section.
    - Two wide glass cards, **Featured** (Dinagyang Festival) and **Trending** (Bucari Little Baguio, a mountain with a real photo), each with photo, badge, name and a "View details →" link to its detail page. Both come from real data, not hard-coded examples.
    - The navbar keeps the current Lakat Iloilo PNG logo.
-2. Home page (rest) — shows welcome text, navigation bar, About Iloilo section, Features section, category cards (mountains, food, walking, festivals, nature, heritage, hotels, condominiums) with location filter (All/Iloilo City/Iloilo Province), separate list sections for each destination category, and accommodations list. Clicking a category card scrolls to that category's section; all sections are always visible. The category cards use real photos from Iloilo City and Province. Frontend calls NestJS API to fetch data.
+2. Home page (rest) — shows welcome text, navigation bar, About Iloilo section, Features section, category cards (mountains, food, walking, festivals, nature, heritage, hotels, condominiums) with location filter (All/Iloilo City/Iloilo Province), separate list sections for each destination category, and accommodations list. **Change (2026-11-28, team request):** the Mountains & Hiking Spots section shows every mountain and hiking spot (for the chosen location), not only the first 6; the other sections still show up to 6. Clicking a category card scrolls to that category's section; all sections are always visible. The category cards use real photos from Iloilo City and Province. Frontend calls NestJS API to fetch data.
 3. Destination detail page — shows destination name, address, coordinates, photo, and description. Data fetched from NestJS API.
 4. Accommodation detail page — shows accommodation name, address, phone, email, photo, and description. Data fetched from NestJS API.
    - **Look (both detail pages, "Option 1A" of the Detail Pages Glass design; changed since, see the 2026-11-22 note at the end of this line and Screens 32):** a tall photo with two glass chips (category or type, and Iloilo City / Iloilo Province), the name in large Fraunces letters with the last word in italics, and the address. Under it, three glass tiles (Category or Type, Area, Rating with the average stars and review count), then About and Reviews with serif headings. A glass side panel sits on the right on a laptop and rises into the photo; on a phone it comes after About. Accommodations: "Get in touch" with a white Call button, a glass "Email the front desk" button, then address, phone and email (buttons only for the contacts that exist). Destinations: "Plan your visit" with address and coordinates. Accommodations use a blue/indigo background, destinations teal/emerald. **Change (2026-11-22, reviews & media round):** accommodations now use the same teal as destinations, the map is headed "Getting there", and the strip has four tiles (see Screens 32). **Change (2026-11-28, team request): About keeps its paragraphs and uses the full width.** The description shows the paragraphs the admin typed on /admin/places (an empty line starts a new paragraph; a single line break stays a line break; extra empty lines are ignored), as plain text, and fills the main column up to the side panel instead of a narrow 68-character block. On the admin's place form, the Description box grows with the text so every paragraph shows at once, with the hint "Leave an empty line between paragraphs." Descriptions may be up to 3000 characters (was 1000; same day, team request). No endpoint or database change: descriptions were already saved with their line breaks.
@@ -326,6 +333,21 @@ Travelers planning weekend trips around Iloilo Province. No login required for b
      - **Words:** every photo picker says "Making your photo smaller…".
      - **Storage on the Overview:** "312 MB of 1 GB used", a meter screen readers read, what uses it (review videos, review photos, place photos, other files) and the label "Every file in the project, free plan". Amber **from** 80 %, with "Nearly full (85 %): …" in words, and at 100 % "Full: new photos and videos can't be uploaded. …"; the percent is rounded down, so it never reads 80 % before the warning shows.
 
+33. FAQs round — frequently asked questions on the home page, written by the team in /admin (2026-11-28, team request; one round, tickets 168–173):
+   - **Home page, FAQs section:** after Accommodations and before the footer, with its own address (`/#faq`). On a laptop it has two columns. The left one stays in place while the traveler scrolls: the heading "Frequently asked questions", one short line under it, and topic chips with a count on each: **All**, **New to Iloilo**, **About Lakat Iloilo** and **Finding the right place**. The right one is the accordion. On phones the columns stack and the chips sit in a grid of equal columns, so they never wrap into uneven rows. A topic with no shown questions has no chip.
+   - **Accordion:** each question is a glass card with a small number badge ("01") and a chevron that turns when it opens. Only one answer is open at a time; opening another closes the first. The open card gets an amber accent line and a brighter border, and its answer slides open. Answers keep the team's paragraphs (an empty line starts a new one), like a place's About.
+   - **Look:** glassmorphism without blur, because the section sits on the plain teal background (the "no white bands" rule): a plain glass fill and border, hover shown by a brighter border, never a white tint.
+   - **Keyboard and screen readers:** every question is a real button that says whether it is open. Tab, Enter and Space open and close it; the Up and Down arrows move between questions, and Home and End go to the first and last. The keyboard outline stays visible. With "reduce motion" turned on, answers appear without sliding.
+   - **Footer:** gains an **FAQs** link next to Home, About Iloilo, Features and Explore.
+   - **Loading and live updates:** while the questions load, the section shows its title and 4 skeleton cards. When the team changes a question, the home page shows it within a few seconds, without a reload. With no shown question, the section is hidden.
+   - **Admin FAQs (/admin/faqs, "FAQs" in the sidebar):** the questions grouped by topic, in their order, each with a Shown or Hidden label, and a counter "8 of 12 shown" with the hint "6 to 12 questions works best".
+     - **Add and Edit** open a glass form: Question (up to 150 characters), Answer (up to 1000 characters; an empty line starts a new paragraph; the box grows with the text), Topic, and a "Show on the home page" tick box. Each box has a live character count and its own message when it is empty or too long.
+     - **Order:** Move up and Move down arrows on each question, within its topic. No dragging.
+     - **Delete:** a confirmation pop-up, then the dashboard's usual 8-second Undo. Deleted questions do not go to the Trash.
+     - **At most 12 shown:** with 12 already shown, showing another is refused: "Only 12 questions can show at once. Hide one first."
+     - **Other topics (change 2026-11-28, team request, ticket 173):** the form's Topic list ends with "Other…", which shows a "New topic" box below it (2 to 40 characters). New topics come after the three built-in ones, A to Z, everywhere topics appear; typing an existing topic's name uses that topic.
+   - **FAQs page (/faqs, change 2026-11-28, team request, ticket 173):** every shown question under its topic's heading, each topic an accordion like the home page's, with "Back to Home"; the home FAQs section links to it ("See every question by topic"). It updates live like the home page. Redesigned the same day (team request): a header ("Help for travelers", the title, one line, and how many answers and topics); a topic menu with an icon and count for each topic, which on a laptop is a sticky left column marking the topic being read, and on phones a grid of 2 equal columns; each topic as a glass section with its icon, name and count; and a closing card, "Ready to explore Iloilo?", with one centred "Explore destinations" button (change 2026-11-28, team request: no Back to Home in the card; it stays at the top).
+
 ## Data
 
 **destinations table:**
@@ -505,6 +527,13 @@ PostGIS extension: Enabled on Supabase database. The `location` column stores ge
 - **Storage used:** a read-only database function for admins only (admin_storage_used, supabase/sql/067) that adds up the size of the files in place-photos, review-photos and review-videos, and across every bucket (the 1 GB limit counts all of them), for the Overview. Sizes only, never names or contents.
 - **review-photos and place-photos buckets:** unchanged; they already accept WebP. New JPG and PNG uploads arrive as WebP. Existing files are not converted.
 - No other table or Row Level Security change. Sorting and Show more use data each review already has (Helpful count, replies, photos).
+
+**FAQs round (2026-11-28):**
+- **faqs table (new):** id; question (1 to 150 characters); answer (1 to 1000 characters); topic (one of "new_to_iloilo", "about_platform", "finding_places", or since ticket 173 a topic name the team typed, 2 to 40 characters); position (its order within its topic); is_shown (true or false, false for a new question); created_at; updated_at. The database refuses a 13th shown question.
+- **faq_signals (new, ticket 173):** a live doorbell: one row (an id and a time, nothing about the question) each time the faqs change, so open pages hear about a hidden or deleted question too. Anyone may read it; nobody may write it except the database's own trigger. Rows older than a day are cleared.
+- **Who may do what (Row Level Security):** anyone, logged in or not, may read the questions that are shown. Admins (`is_admin()`) may read every question and add, edit and delete them. The backend's `lakat_api` login gets its own read access, as for the places.
+- **Starter questions:** the migration adds 10 hidden starter questions, so the live site has them too (seed.sql never runs on production). The team reads and corrects each one in /admin before ticking it to show. New to Iloilo: "What's the difference between Iloilo City and Iloilo Province?", "When is a good time to visit?", "How do I get to a place I found here?". About Lakat Iloilo: "What is Lakat Iloilo?", "Do I need an account?", "Is it free?", "How do I write a review?". Finding the right place: "How do I find places by category or area?", "How do you keep place details accurate?", "What do the star ratings mean?".
+- No other table or Row Level Security change.
 
 ## API Endpoints (NestJS Backend)
 
@@ -716,6 +745,14 @@ All writes in these rounds run as the logged-in traveler (the asTraveler step), 
   - GET /v1/admin/overview — also answers storage: { used_bytes (every file in the project), limit_bytes (1 GB), place_photos_bytes, review_photos_bytes, review_videos_bytes }, or null when it can't be read (the rest still answers); from admin_storage_used() (supabase/sql/067)
   - POST /v1/reviews/:id/photos, POST /v1/admin/places/:type, POST /v1/admin/places/:type/:id/photos and POST /v1/admin/places/:type/:id/photo — unchanged requests and messages; a JPG or PNG is saved as WebP (sharp, agreed by the team 2026-11-22), unless that would be bigger
   - Each goes through the Next.js /api proxy like every other route
+- **FAQs round (2026-11-28):**
+  - GET /v1/faqs — anyone; the shown questions (id, question, answer, topic), in topic and position order
+  - GET /v1/admin/faqs — every question, shown and hidden, with is_shown and position
+  - POST /v1/admin/faqs — { question, answer, topic, is_shown }; topic is a built-in id or, since ticket 173, a new topic name (2 to 40 characters); adds one at the end of its topic (400 with a plain message for an empty or too-long box or a topic outside 2 to 40 characters; 409 "Only 12 questions can show at once. Hide one first.")
+  - PATCH /v1/admin/faqs/:id — any of { question, answer, topic, is_shown }; the same 400 and 409 answers; 404 for an unknown question
+  - POST /v1/admin/faqs/:id/move — { direction: "up" | "down" }; swaps it with its neighbour in its topic (400 at the first or last)
+  - DELETE /v1/admin/faqs/:id — 200 { id, message: "The question has been deleted." }; for good, and the questions after it in its topic move up one. The dashboard sends it only after its 8-second Undo, as for every delete there, so Undo needs no endpoint and the question keeps its details and place (ticket 172)
+  - Each goes through the Next.js /api proxy like every other route
 - The Next.js API route layer accepts requests with the same path structure as the backend, forwards only paths starting with v1/ (anything else 404 without calling the backend) and the methods GET, POST, PUT, PATCH, DELETE; forwards only the Authorization, Content-Type, Accept and X-Forwarded-For headers, the body as raw bytes (photo uploads arrive intact; Vercel caps a body at 4.5 MB) and the query string; and returns the backend's status code, body, Content-Type and Cache-Control. A backend that does not answer within 60 seconds (the photo uploads' own limit; code review 2026-11-20) gives 504, a browser that gives up first stops the call, one that cannot be reached 502. Server components call the backend directly at API_URL, not through /api (ticket 152). The backend address is stored in a server-side environment variable (API_URL, not NEXT_PUBLIC_), never exposed to the browser.
 - Content-Security-Policy header is set on the Next.js application (in src/proxy.ts). The policy allows scripts and styles from the site's own domain, images from Supabase Storage and Wikimedia Commons, and connections to Supabase for Realtime updates. The CSP is tested in report-only mode first, then enforced after verification.
 
@@ -773,6 +810,8 @@ Admin dashboard & moderation round (changed 2026-11-08): the Lakat Iloilo team s
 Security hardening round: no login changes. The same Supabase Auth flow continues to work. Login tokens are still sent through the proxy to the backend, which validates them with Supabase Auth. The browser's network inspection shows only calls to /api/*, not direct backend calls.
 
 Reviews & media round: sorting, Show more and watching videos need no login. Adding a video to a review needs the traveler's account, as writing the review does; the Overview's storage line needs an admin account.
+
+FAQs round: reading the FAQs needs no login. Adding, editing, ordering, hiding and deleting questions need an admin account, signed in on /admin/login.
 
 ## Done for the demo
 - [x] NestJS backend project structure created in `backend/` directory
@@ -976,7 +1015,19 @@ Reviews & media round: sorting, Show more and watching videos need no login. Add
 - [x] Accommodation pages are teal and the map is headed "Getting there"
 - [x] Nothing scrolls sideways at 320, 375, 425, 768, 1024 and 1440 px
 
+**FAQs round (2026-11-28), on the live URL:**
+- [ ] The home page shows the shown questions in the glass accordion; the topic chips filter them and only one answer is open at a time
+- [ ] The accordion works with the keyboard alone (Tab, Enter, Space, Up and Down arrows) and a screen reader says whether each question is open
+- [ ] The footer's FAQs link scrolls to the section
+- [ ] An admin adds, edits, reorders, hides and deletes a question (with Undo) in /admin/faqs, and the home page follows within a few seconds, without a reload
+- [ ] Showing a 13th question is refused with the plain message
+- [ ] A logged-out visitor cannot read hidden questions through GET /v1/faqs
+- [ ] An admin adds a question under Other with a new topic; it gets its own chip and section after the built-in topics, and typing that topic again with other capitals joins it (ticket 173)
+- [ ] /faqs shows every shown question under its topic; the topic menu stays in place on a laptop and marks the topic being read; it follows the team's changes without a reload (ticket 173)
+- [ ] Nothing scrolls sideways at 320, 375, 425, 768, 1024 and 1440 px
+
 ## Out of scope
+- FAQs round: a search box inside the FAQs, "Was this helpful?" votes, a "Still have questions? Contact us" form, FAQs on the place pages, deleted questions going to the Trash, translations, and dragging to reorder (parked in docs/LATER.md)
 - Reviews & media round: videos on the traveler profile page, captions or subtitles for videos, more than one video per review, shrinking or converting videos, converting photos saved before this round to WebP, storing photos bigger than 2 MB (bigger ones are made smaller in the browser instead, change 2026-11-22), removing a video uploaded for a review that was never saved, and remembering the chosen sort between visits (parked in docs/LATER.md)
 - Admin extras round: travelers' own deletes going to the Trash (it is for admin deletes only), restoring a single Helpful like or notifications, uploading a new photo just for a category card, reordering photos by dragging (arrow buttons instead), more than 6 photos per place, and a scheduled job to empty the Trash
 - Photo credits round: removing a place's credits once saved (they can be changed, not cleared), moving the 30 hard-coded Wikimedia credits into the table (they keep working as they are), credits for travelers' review photos, and checking automatically whether a URL or licence is real (the team checks by hand; the status records it)

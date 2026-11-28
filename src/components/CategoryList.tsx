@@ -26,10 +26,14 @@ interface CategoryListProps {
   loading: boolean;
 }
 
+// How many cards a section shows. Mountains & Hiking Spots shows every
+// place (team request 2026-11-28); the other sections keep their first 6.
+const SECTION_LIMIT = 6;
+const SHOW_EVERY_PLACE = new Set(["mountain"]);
+
 export function CategoryList({ destinations, category, title, id, ratings, loading }: CategoryListProps) {
-  const filteredDestinations = destinations
-    .filter((dest) => dest.category === category)
-    .slice(0, 6);
+  const inCategory = destinations.filter((dest) => dest.category === category);
+  const filteredDestinations = SHOW_EVERY_PLACE.has(category) ? inCategory : inCategory.slice(0, SECTION_LIMIT);
 
   // While loading, show the title and skeleton cards. After loading, a
   // section with no places is hidden, as before.

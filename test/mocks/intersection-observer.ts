@@ -43,3 +43,14 @@ export function scrollIntoView() {
     if (entries.length > 0) callback(entries, observer);
   }
 }
+
+// Only this element comes onto the screen, and every other watched one
+// leaves it (the FAQs page's topic menu follows the section being read,
+// ticket 173).
+export function bringIntoView(element: Element) {
+  for (const { callback, targets, observer } of [...watchers]) {
+    if (!targets.has(element)) continue;
+    const entries = [...targets].map((target) => ({ target, isIntersecting: target === element }) as IntersectionObserverEntry);
+    callback(entries, observer);
+  }
+}

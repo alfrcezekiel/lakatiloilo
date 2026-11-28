@@ -5,6 +5,8 @@ import { ReviewPhotosService } from '../reviews/review-photos.service';
 import { TravelerTransactions } from '../traveler-transactions';
 import { CategoriesModule } from '../categories/categories.module';
 import { AdminCategoriesController } from './admin-categories.controller';
+import { AdminFaqsController } from './admin-faqs.controller';
+import { FaqsModule } from '../faqs/faqs.module';
 import { AdminController } from './admin.controller';
 import { AdminTrashController } from './admin-trash.controller';
 import { AdminOnlyMiddleware } from './admin-only.middleware';
@@ -24,8 +26,8 @@ import { AdminService } from './admin.service';
 // (AdminAccess) from AuthModule. Every admin endpoint except the sign-in
 // goes through AdminOnlyMiddleware first (admins only).
 @Module({
-  imports: [AuthModule, SupabaseModule, CategoriesModule],
-  controllers: [AdminController, AdminCategoriesController, AdminTrashController],
+  imports: [AuthModule, SupabaseModule, CategoriesModule, FaqsModule],
+  controllers: [AdminController, AdminCategoriesController, AdminTrashController, AdminFaqsController],
   providers: [
     AdminService,
     AdminOverviewService,
@@ -46,7 +48,7 @@ export class AdminModule implements NestModule {
     consumer
       .apply(AdminOnlyMiddleware)
       .exclude({ path: 'v1/admin/login', method: RequestMethod.POST })
-      .forRoutes(AdminController, AdminCategoriesController, AdminTrashController);
+      .forRoutes(AdminController, AdminCategoriesController, AdminTrashController, AdminFaqsController);
     // The team's sign-in refuses empty fields with the same per-box
     // messages as the traveler log-in (team request 2026-11-28).
     consumer
