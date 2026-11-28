@@ -85,8 +85,9 @@ const numberFrom = (value: unknown) =>
       ? Number(value.trim())
       : NaN;
 
-// The same limits as the database (043), with plain messages.
-export const PLACE_LIMITS = { name: 100, address: 200, description: 1000, phone: 40, email: 120 };
+// The same limits as the database (043; description raised to 3000 in
+// migration 20261128064903), with plain messages.
+export const PLACE_LIMITS = { name: 100, address: 200, description: 3000, phone: 40, email: 120 };
 
 export const placeNotFound = () => new NotFoundException("We couldn't find that place.");
 
