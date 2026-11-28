@@ -37,6 +37,13 @@ const authErrors: Record<string, { field: Field; message: string }> = {
   // The backend's own checks (POST /v1/auth/signup).
   display_name_invalid: { field: "name", message: "Your display name needs 2 to 40 characters." },
   traveler_type_invalid: { field: "traveler", message: "Please pick how you're traveling." },
+  // Empty boxes (the form's own checks, and the backend's
+  // RequiredAuthFieldsMiddleware, which uses the same codes).
+  email_required: { field: "email", message: "Please enter your email address." },
+  password_required: { field: "password", message: "Please enter your password." },
+  new_password_required: { field: "password", message: "Please create a password." },
+  display_name_required: { field: "name", message: "Please choose a username." },
+  traveler_type_required: { field: "traveler", message: "Please pick how you're traveling." },
 };
 const fallbackError = "Something went wrong. Please try again.";
 
@@ -106,23 +113,38 @@ export function LoginForm() {
     setRememberMyEmail(false);
   };
 
-  // Checks that need no trip to Supabase.
+  // Checks that need no trip to Supabase. An empty box gets its own
+  // message ("Please enter your email address."), different from one that
+  // is filled in wrongly ("Please enter a valid email address."), and the
+  // words fit the tab: Log in asks for the password they already have,
+  // Create account asks them to make one up. The backend's
+  // RequiredAuthFieldsMiddleware sends the same sentences.
   const checkFields = (): Errors => {
     const found: Errors = {};
     const name = displayName.trim();
-    if (mode === "signup" && (name.length < 2 || name.length > 40)) {
-      found.name = "Your display name needs 2 to 40 characters.";
+    const trimmedEmail = email.trim();
+    if (mode === "signup") {
+      if (!name) {
+        found.name = authErrors.display_name_required.message;
+      } else if (name.length < 2 || name.length > 40) {
+        found.name = "Your display name needs 2 to 40 characters.";
+      }
+      if (!travelerType) {
+        found.traveler = "Please pick how you're traveling.";
+      }
     }
-    if (mode === "signup" && !travelerType) {
-      found.traveler = "Please pick how you're traveling.";
-    }
-    if (!email.includes("@")) {
+    if (!trimmedEmail) {
+      found.email = authErrors.email_required.message;
+    } else if (!trimmedEmail.includes("@")) {
       found.email = "Please enter a valid email address.";
     }
-    if (mode === "signup" && password.length < MIN_PASSWORD_LENGTH) {
+    if (!password) {
+      found.password =
+        mode === "signup"
+          ? authErrors.new_password_required.message
+          : authErrors.password_required.message;
+    } else if (mode === "signup" && password.length < MIN_PASSWORD_LENGTH) {
       found.password = `Use at least ${MIN_PASSWORD_LENGTH} characters.`;
-    } else if (!password) {
-      found.password = "Please enter your password.";
     }
     return found;
   };
