@@ -36,7 +36,8 @@ const authErrors: Record<string, { field: Field; message: string }> = {
   // Supabase's built-in email sender allows only a few emails an hour.
   over_email_send_rate_limit: { field: "form", message: "Too many new accounts right now. Please try again in about an hour." },
   // The backend's own checks (POST /v1/auth/signup).
-  display_name_invalid: { field: "name", message: "Your display name needs 2 to 40 characters." },
+  // "username", like the box's label (team request 2026-11-28).
+  display_name_invalid: { field: "name", message: "Your username needs 2 to 40 characters." },
   traveler_type_invalid: { field: "traveler", message: "Please pick how you're traveling." },
   // Empty boxes (the form's own checks, and the backend's
   // RequiredAuthFieldsMiddleware, which uses the same codes).
@@ -127,7 +128,7 @@ export function LoginForm() {
       if (!name) {
         found.name = authErrors.display_name_required.message;
       } else if (name.length < 2 || name.length > 40) {
-        found.name = "Your display name needs 2 to 40 characters.";
+        found.name = authErrors.display_name_invalid.message;
       }
       if (!travelerType) {
         found.traveler = "Please pick how you're traveling.";

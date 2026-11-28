@@ -33,8 +33,11 @@ export class AuthController {
     const { email, password } = emailAndPassword(body);
     const displayName = typeof body?.display_name === 'string' ? body.display_name.trim() : '';
     const travelerType = body?.traveler_type;
+    // "username": the Create account box is labelled Username (team
+    // request 2026-11-28). Edit profile (PATCH /me) says "display name",
+    // like its box.
     if (displayName.length < 2 || displayName.length > 40) {
-      throw new BadRequestException({ statusCode: 400, code: 'display_name_invalid', message: 'Your display name needs 2 to 40 characters.' });
+      throw new BadRequestException({ statusCode: 400, code: 'display_name_invalid', message: 'Your username needs 2 to 40 characters.' });
     }
 
     if (typeof travelerType !== 'string' || !TRAVELER_TYPES.includes(travelerType)) {

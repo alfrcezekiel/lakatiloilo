@@ -74,6 +74,20 @@ describe('Log in, Create account and team sign-in: empty fields (API)', () => {
       expect(res.body.code).toBe('display_name_required');
     });
 
+    it.each([['one letter', 'J'], ['41 letters', 'J'.repeat(41)]])(
+      'a username of %s says "username", like the box',
+      async (_name, displayName) => {
+        const res = await post('/v1/auth/signup', { ...FULL_SIGNUP, display_name: displayName });
+
+        expect(res.status).toBe(400);
+        expect(res.body).toEqual({
+          statusCode: 400,
+          code: 'display_name_invalid',
+          message: 'Your username needs 2 to 40 characters.',
+        });
+      },
+    );
+
     it('a short password still gets the controller\'s own message', async () => {
       const res = await post('/v1/auth/signup', { ...FULL_SIGNUP, password: 'short' });
 
