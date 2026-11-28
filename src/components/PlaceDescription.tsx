@@ -10,11 +10,21 @@
 // form can add links or scripts to the page.
 
 export function descriptionParagraphs(description: string): string[] {
-  return description
-    .replace(/\r\n?/g, "\n")
-    .split(/\n[ \t]*\n/)
-    .map((paragraph) => paragraph.replace(/^\n+|\s+$/g, "").replace(/^[ \t]+/, ""))
-    .filter((paragraph) => paragraph !== "");
+  // Line by line: a line that is empty or only spaces ends a paragraph
+  // (code review 2026-11-28: splitting on "\n\n" alone let a line of only
+  // spaces leave a gap at the top of the next paragraph).
+  const paragraphs: string[] = [];
+  let lines: string[] = [];
+  for (const line of description.replace(/\r\n?/g, "\n").split("\n")) {
+    if (line.trim() === "") {
+      if (lines.length > 0) paragraphs.push(lines.join("\n"));
+      lines = [];
+    } else {
+      lines.push(line.trim());
+    }
+  }
+  if (lines.length > 0) paragraphs.push(lines.join("\n"));
+  return paragraphs;
 }
 
 export function PlaceDescription({ description }: { description: string }) {

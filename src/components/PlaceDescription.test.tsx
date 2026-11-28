@@ -15,6 +15,11 @@ describe("descriptionParagraphs", () => {
     expect(descriptionParagraphs("\n\nOne.\r\n  \r\n\r\n\r\nTwo.  \n\n")).toEqual(["One.", "Two."]);
   });
 
+  it("treats a line of only spaces or tabs as an empty line, with no gap left behind", () => {
+    expect(descriptionParagraphs("A\n\n \nB")).toEqual(["A", "B"]);
+    expect(descriptionParagraphs("A\n \t \nB\n  C")).toEqual(["A", "B\nC"]);
+  });
+
   it("gives one paragraph for text with no line breaks", () => {
     expect(descriptionParagraphs("Just one paragraph.")).toEqual(["Just one paragraph."]);
   });
